@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "reactk"
+version = "0.1.0"
+description = "Build cross-platform native UIs with a react-like feel."
+authors = ["GregRos <gregros@gregros.dev>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+typeguard = "^4.4.0"
+pywin32 = "^308"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

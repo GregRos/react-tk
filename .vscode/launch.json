@@ -1,0 +1,40 @@
+{
+  "configurations": [
+    {
+      "name": "Python: Current File",
+
+      "type": "debugpy",
+      "cwd": "${workspaceFolder}",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Python: Current File (Module)",
+
+      "type": "debugpy",
+      "cwd": "${workspaceFolder}",
+      "request": "launch",
+      "module": "${relativeFileDirname}.${fileBasenameNoExtension}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "ui_test",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "example.main",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false
+    },
+    {
+      "name": "Main",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "main.pyw",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false
+    }
+  ]
+}
