@@ -77,12 +77,6 @@ class PropSection(Mapping[str, SomeProp]):
     def __len__(self) -> int:
         return len(self.props)
 
-    def transform(self, key: str, value: Any) -> tuple[str, Any]:
-        from reactk.model.props.prop_values import PValues
-
-        assert isinstance(value, Mapping), f"Value {value} is not a mapping"
-        return key, PValues(self, value)
-
     def merge_props(
         self, other: "Mapping[str, SomeProp] | PropSection"
     ) -> "PropSection":
@@ -137,14 +131,14 @@ class PropSection(Mapping[str, SomeProp]):
         return self.merge_props(props)
 
     @overload
-    def __call__[
-        **P, R
-    ](self, f: Callable[Concatenate[R, P], None]) -> Callable[Concatenate[R, P], R]: ...
+    def __call__[**P, R](
+        self, f: Callable[Concatenate[R, P], None]
+    ) -> Callable[Concatenate[R, P], R]: ...
 
     @overload
-    def __call__[
-        **P, R
-    ](self) -> Callable[
+    def __call__[**P, R](
+        self,
+    ) -> Callable[
         [Callable[Concatenate[R, P], Any]], Callable[Concatenate[R, P], R]
     ]: ...
 
