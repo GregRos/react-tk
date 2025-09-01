@@ -1,14 +1,14 @@
 from inspect import isfunction
 
 
-def get_attrs_downto(cls, stop_class=object):
+def get_attrs_downto(cls, stop_classes: set[type]):
     def iter_attrs(cls):
         for attr_name in vars(cls):
             attr = getattr(cls, attr_name)
             yield attr_name, attr
 
         for base_class in cls.__mro__[1:]:
-            if base_class == stop_class:
+            if base_class in stop_classes:
                 break
             yield from iter_attrs(base_class)
 
