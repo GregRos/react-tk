@@ -12,9 +12,7 @@ from reactk.model.trace.key_tools import Display
 from reactk.model.trace.render_trace import RenderTrace
 from reactk.model2.prop_model.common import _IS_REQUIRED_TYPE, IS_REQUIRED, Converter
 from reactk.model2.prop_model.v_mapping import (
-    VMapping,
     VMappingBase,
-    VMappingInput,
     deep_merge,
 )
 

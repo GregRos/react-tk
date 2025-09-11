@@ -15,7 +15,7 @@ from typing import (
 
 from reactk.model2.annotationss.annotations import OrigAccessor
 from reactk.model2.prop_model.common import IS_REQUIRED, Converter, DiffMode
-from reactk.model2.prop_model.prop_annotations import MetaAccessor
+from reactk.model2.prop_annotations.prop_annotations import MetaAccessor
 
 if TYPE_CHECKING:
     from reactk.model2.prop_model.prop import (

@@ -1,7 +1,6 @@
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Annotated, Any, Required, TypedDict, is_typeddict
-from reactk.annotations.get_methods import get_attrs_downto
-from reactk.model.annotation_reader import read_annotations
+from reactk.model2.annotationss.get_methods import get_attrs_downto
 from reactk.model.props import prop
 from reactk.model.trace.render_trace import RenderTrace
 from reactk.model2.annotationss.annotations import (
@@ -10,11 +9,12 @@ from reactk.model2.annotationss.annotations import (
     MethodReader,
 )
 from reactk.model2.annotationss.key_accessor import KeyAccessor
-from reactk.model2.prop_model.c_meta import prop_meta, schema_meta, some_meta
+from reactk.model2.prop_annotations.c_meta import prop_meta, schema_meta, some_meta
 from reactk.model2.prop_model.common import IS_REQUIRED
 from reactk.model2.prop_model.prop import SomeProp
-from reactk.model2.prop_model.v_mapping import VMapping
 import funcy
+
+from reactk.model2.prop_model.v_mapping import VMappingBase
 
 if TYPE_CHECKING:
     from reactk.model2.prop_model.prop import Prop, PropBlock
@@ -78,9 +78,9 @@ def _get_default_meta_for_prop(
     annotation: AnnotationWrapper2,
 ) -> some_meta:
     match annotation.target:
-        case _ if issubclass(annotation.target, (Mapping, VMapping)) or is_typeddict(
-            annotation.target
-        ):
+        case _ if issubclass(
+            annotation.target, (Mapping, VMappingBase)
+        ) or is_typeddict(annotation.target):
             return schema_meta(repr="recursive", metadata={})
         case _:
             return prop_meta(
@@ -112,7 +112,7 @@ def _methods_to_props(path: tuple[str, ...], cls: type):
             continue
         if k.startswith("_"):
             continue
-        p = _method_to_prop(path, v)
+        p = _method_to_prop(path, MethodReader(v))
         if k == "__init__":
             if not isinstance(p, schema_meta):
                 raise TypeError(

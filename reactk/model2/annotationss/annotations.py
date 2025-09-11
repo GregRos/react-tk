@@ -2,11 +2,11 @@ from collections.abc import Iterable, Iterator, Mapping
 from types import MethodType
 from typing import TYPE_CHECKING, Any, Callable, TypedDict, get_type_hints
 
-from reactk.annotations.get_methods import get_attrs_downto
+from reactk.model2.annotationss.get_methods import get_attrs_downto
 from reactk.model2.annotationss.key_accessor import KeyAccessor
 
 if TYPE_CHECKING:
-    from reactk.model2.prop_model.c_meta import some_meta
+    from reactk.model2.prop_annotations.c_meta import some_meta
 
 
 class AnnotationWrapper2:

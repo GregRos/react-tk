@@ -14,7 +14,7 @@ from typing import (
 )
 
 from reactk.annotations.annotation_wrapper import AnnotationWrapper
-from reactk.annotations.get_methods import get_attrs_downto
+from reactk.model2.annotationss.get_methods import get_attrs_downto
 
 
 if TYPE_CHECKING:

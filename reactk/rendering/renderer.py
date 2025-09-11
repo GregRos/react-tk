@@ -29,42 +29,6 @@ class ComponentMount[X: ShadowNode]:
         self.context(**ctx_args)
         return self.context
 
-    def _compute_render(self):
-        rendering = ()
-        trace = RenderTrace()
-
-        def on_yielded_for(base_trace: RenderTrace):
-            occurence_by_line = defaultdict(lambda: 1)
-
-            def on_yielded(
-                node: Component[X] | X | Iterable[X] | Iterable[Component[X]],
-            ):
-                caller = sys._getframe(1)
-                line_no = caller.f_lineno
-                nodes = list(node) if isinstance(node, Iterable) else [node]
-                for node in nodes:
-                    node_type = self._reconciler.node_type
-                    nonlocal rendering
-                    my_trace = base_trace + RenderFrame(
-                        node, line_no, occurence_by_line[line_no]
-                    )
-                    occurence_by_line[line_no] += 1
-
-                    if isinstance(node, node_type):  # type: ignore
-                        rendering += (with_trace(node, my_trace),)
-                    elif isinstance(node, Component):
-                        node.render(on_yielded_for(my_trace), self.context)
-                    else:
-                        raise TypeError(
-                            f"Expected render method to return {node_type} or Component, but got {type(node)}"
-                        )
-
-            return on_yielded
-
-        yield_ = on_yielded_for(trace)
-        yield_(self._mounted)
-        return rendering
-
     def remount(self, root: Component[X]):
         self._mounted = root
         self.force_rerender()
