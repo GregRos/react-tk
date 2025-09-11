@@ -1,54 +1,139 @@
 from collections.abc import Iterable, Mapping
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated, Any, Required, TypedDict, is_typeddict
+from reactk.annotations.get_methods import get_attrs_downto
 from reactk.model.annotation_reader import read_annotations
-from reactk.model2.annotations import AnnotationWrapper2, ClassReader
+from reactk.model.props import prop
+from reactk.model.trace.render_trace import RenderTrace
+from reactk.model2.annotations import AnnotationWrapper2, ClassReader, MethodReader
+from reactk.model2.key_accessor import KeyAccessor
 from reactk.model2.prop_model.c_meta import prop_meta, schema_meta, some_meta
+from reactk.model2.prop_model.common import IS_REQUIRED
 from reactk.model2.prop_model.prop import SomeProp
+from reactk.model2.v_mapping import VMapping
+import funcy
 
 if TYPE_CHECKING:
     from reactk.model2.prop_model.prop import Prop, PropBlock
 
 
-def meta_to_props(
+class MetaAccessor(KeyAccessor[some_meta]):
+    @property
+    def key(self) -> str:
+        return "__reactk_meta__"
+
+
+def _create_prop(
+    path: tuple[str, ...], name: str, annotation: AnnotationWrapper2, meta: prop_meta
+):
+    from reactk.model2.prop_model.prop import Prop
+
+    return Prop(
+        name=name,
+        repr=meta.repr,
+        no_value=meta.no_value,
+        converter=meta.converter,
+        metadata=meta.metadata,
+        value_type=annotation.inner_type or Any,
+        path=(
+            *path,
+            name,
+        ),
+    )
+
+
+def _create_schema(
+    path: tuple[str, ...], name: str, annotation: AnnotationWrapper2, meta: schema_meta
+):
+    from reactk.model2.prop_model.prop import PropBlock
+
+    return PropBlock(
+        path=path,
+        name=name,
+        props=_read_props_from_class(path + (name,), annotation.inner_type),
+        repr=meta.repr,
+        metadata=meta.metadata,
+    )
+
+
+def _create(
+    path: tuple[str, ...], name: str, annotation: AnnotationWrapper2, meta: some_meta
+) -> SomeProp:
+    match meta:
+        case prop_meta() as p_m:
+            return _create_prop(path, name, annotation, p_m)
+        case schema_meta() as s_m:
+            return _create_schema(path, name, annotation, s_m)
+        case _:
+            raise TypeError(f"Unknown meta type {type(meta)} for key {name}")
+
+
+def _get_default_meta_for_prop(
+    annotation: AnnotationWrapper2,
+) -> some_meta:
+    match annotation.target:
+        case _ if issubclass(annotation.target, (Mapping, VMapping)) or is_typeddict(
+            annotation.target
+        ):
+            return schema_meta(repr="recursive", metadata={})
+        case _:
+            return prop_meta(
+                no_value=IS_REQUIRED, converter=None, repr="recursive", metadata={}
+            )
+
+
+def _attrs_to_props(
     path: tuple[str, ...], meta: Mapping[str, AnnotationWrapper2]
 ) -> "Iterable[SomeProp]":
     for k, v in meta.items():
-        meta_thing = v.metadata_of_type(schema_meta, prop_meta)
-        match meta_thing:
-            case prop_meta(
-                repr=repr, no_value=no_value, converter=converter, metadata=meta
-            ):
-                yield Prop(
-                    name=k,
-                    repr=repr,
-                    no_value=no_value,
-                    converter=converter,
-                    metadata=meta,
-                    value_type=v.inner_type,
-                    path=path + (k,),
+        if k.startswith("_"):
+            continue
+        metas = map(lambda x: x.target, v.metadata_of_type(schema_meta, prop_meta))
+        fst = next(iter(metas), None)
+        yield _create(path, k, v, fst or _get_default_meta_for_prop(v))
+
+
+def _method_to_prop(path: tuple[str, ...], method: MethodReader) -> "SomeProp":
+    annotation = method.get_arg(1)
+    meta = method[MetaAccessor] or _get_default_meta_for_prop(annotation)
+    return _create(path, method.name, annotation, meta)
+
+
+def _methods_to_props(path: tuple[str, ...], cls: type):
+    methods = get_attrs_downto(cls, stop_at={object, Mapping})
+    for k, v in methods.items():
+        if not callable(v):
+            continue
+        if k.startswith("_"):
+            continue
+        p = _method_to_prop(path, v)
+        if k == "__init__":
+            if not isinstance(p, schema_meta):
+                raise TypeError(
+                    f"__init__ method must be annotated with schema_meta, got {type(p)}"
                 )
-            case schema_meta(repr=repr, metadata=meta):
-                yield PropBlock(
-                    name=k,
-                    props=_read_props_from_class(path + (k,), v.inner_type),
-                    repr=repr,
-                    metadata=meta,
-                )
-            case _:
-                raise TypeError(f"Unknown meta type {type(v)} for key {k}")
+        yield p
 
 
 def _read_props_from_class(path: tuple[str, ...], cls: type):
     reader = ClassReader(cls)
 
-    normal_props = {k: x for k, x in reader.annotations.items()}
-    method_props = {k: x.get_arg(1) for k, x in reader.methods.items()}
-    all_props = {**normal_props, **method_props}
-
-    return meta_to_props(path, all_props)
+    normal_props = _attrs_to_props(path, reader.annotations)
+    method_props = _methods_to_props(path, cls)
+    all_props = (
+        *normal_props,
+        *method_props,
+    )
+    return all_props
 
 
 def read_props_from_top_class(cls: type) -> "PropBlock":
-    props = _read_props_from_class((), cls)
+    props = [*_read_props_from_class((), cls)]
+    init_block = funcy.first(x for x in props if x.name == "__init__")
+    repr = "recursive"
+    metadata = {}
+    if init_block:
+        props.remove(init_block)
+        repr = init_block.repr
+        metadata = init_block.metadata
     name = cls.__name__
-    return PropBlock(name=name, props=props, repr="recursive", metadata={})
+    return PropBlock(path=(), name=name, props=props, repr=repr, metadata=metadata)

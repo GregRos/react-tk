@@ -92,9 +92,7 @@ class PropSection(Mapping[str, SomeProp]):
 
     def merge_class(self, obj: type):
         props = PropDict()
-        attrs = get_attrs_downto(
-            obj, stop_classes={object, PropSection, PropDict, dict}
-        )
+        attrs = get_attrs_downto(obj, stop_at={object, PropSection, PropDict, dict})
         for k, f in attrs.items():
             if not isfunction(f):
                 continue

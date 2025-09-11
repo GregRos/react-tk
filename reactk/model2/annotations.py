@@ -1,9 +1,12 @@
-from abc import abstractmethod
 from collections.abc import Iterable, Iterator, Mapping
 from types import MethodType
-from typing import Any, TypedDict, get_type_hints
+from typing import TYPE_CHECKING, Any, Callable, TypedDict, get_type_hints
 
 from reactk.annotations.get_methods import get_attrs_downto
+from reactk.model2.key_accessor import KeyAccessor
+
+if TYPE_CHECKING:
+    from reactk.model2.prop_model.c_meta import some_meta
 
 
 class AnnotationWrapper2:
@@ -21,6 +24,19 @@ class AnnotationWrapper2:
     @property
     def target(self) -> Any:
         return self._target
+
+    @property
+    def is_required(self) -> bool:
+        t = self
+        match t.name:
+            case "NotRequired":
+                return False
+            case "Optional":
+                return True
+            case "Annotated" | "Unpack":
+                return AnnotationWrapper2(t.args[0]).is_required
+            case _:
+                return True
 
     # ---- Getters -------------------------------------------------
     @property
@@ -72,10 +88,10 @@ class AnnotationWrapper2:
                 raise TypeError(f"Unknown annotation type {t.name!r}")
 
     @property
-    def inner_type(self) -> type | None:
+    def inner_type(self) -> type:
         """Return the inner / unwrapped type (inlined)."""
         x = self._get_inner_type()
-        return x.value if x is not None else None
+        return x.value
 
     @property
     def inner_type_reader(self) -> "ClassReader":
@@ -86,50 +102,18 @@ class AnnotationWrapper2:
         return ClassReader(t)
 
 
-class KeyAccessor:
-
-    @property
-    @abstractmethod
-    def key(self) -> str: ...
-    def __init__(self, target: Any) -> None:
-        self.target = target
-
-    def set(self, value: Any) -> None:
-        try:
-            setattr(self.target, self.key, value)
-        except Exception:
-            pass
-
-    @property
-    def has_key(self) -> bool:
-        return hasattr(self.target, self.key)
-
-    def _get(self) -> Any:
-
-        return getattr(self.target, self.key)
-
-    def get(self) -> Any:
-        return self._get()
-
-
-class MetaAccessor(KeyAccessor):
-    @property
-    def key(self) -> str:
-        return "__reactk_meta__"
-
-
-class OrigAccessor(KeyAccessor):
+class OrigAccessor(KeyAccessor[Callable[..., Any]]):
     @property
     def key(self) -> str:
         return "__reactk_original__"
 
-    def get(self) -> Any:
+    def get(self) -> "OrigAccessor.Value":
         if not self.has_key:
             return self.target
         cur = self
         while cur.has_key:
             cur = OrigAccessor(cur._get())
-        return cur
+        return cur.target
 
 
 class MethodReader:
@@ -140,6 +124,10 @@ class MethodReader:
         orig_accessor = OrigAccessor(target)
         self.target = orig_accessor.get()
         self._refresh_annotations()
+
+    @property
+    def name(self) -> str:
+        return self.target.__name__
 
     def _refresh_annotations(self) -> None:
         self._annotations = get_type_hints(
@@ -154,6 +142,14 @@ class MethodReader:
             return AnnotationWrapper2(self._annotations["return"])
         except KeyError:
             raise KeyError("return") from None
+
+    def __getitem__[X](self, accessor: type[KeyAccessor[X]]) -> X | None:
+        ma = accessor(self.target)
+        return ma.get() if ma.has_key else None
+
+    def __setitem__[X](self, accessor: type[KeyAccessor[X]], value: X) -> None:
+        ma = accessor(self.target)
+        ma.set(value)
 
     def get_arg(self, pos: int | str) -> AnnotationWrapper2:
         if pos == "return":

@@ -27,11 +27,11 @@ class VMappingBase[K, V](ABC, Iterable[V]):
     @abstractmethod
     def _get_key(self, value: V) -> K: ...
 
-    def _to_dict(self, values: Input) -> Mapping[K, V]:
+    def _to_dict(self, values: Input) -> dict[K, V]:
         """Convert an iterable of values or a mapping to a plain mapping."""
         match values:
             case Mapping() as m:
-                return m  # type: ignore[return-value]
+                return dict(m)  # type: ignore[return-value]
             case _:
                 return {self._get_key(v): v for v in values}
 

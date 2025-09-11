@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Callable, Iterator, Mapping
+from copy import copy, deepcopy
 from dataclasses import dataclass, field
 from functools import cached_property
 from typing import Any, Iterable, Literal, Self
@@ -37,15 +38,16 @@ class PropLike:
 
 
 class PropBlock(VMappingBase[str, "SomeProp"], PropLike):
-    repr: DiffMode
 
     def __init__(
         self,
+        path: tuple[str, ...],
         name: str,
         props: "PropBlock.Input" = (),
         repr: DiffMode = "recursive",
         metadata: dict[str, Any] = {},
     ):
+        self.path = path
         self.name = name
         self.repr = repr
         self.metadata = metadata
@@ -61,7 +63,11 @@ class PropBlock(VMappingBase[str, "SomeProp"], PropLike):
     def _with_props(self, new_props: "PropBlock.Input") -> Self:
         """Return a new instance of the same concrete class with the given values."""
         return type(self)(
-            name=self.name, props=new_props, repr=self.repr, metadata=self.metadata
+            path=self.path,
+            name=self.name,
+            props=new_props,
+            repr=self.repr,
+            metadata=self.metadata,
         )
 
     def __iter__(self) -> Iterator["SomeProp"]:
@@ -91,6 +97,10 @@ class PropBlock(VMappingBase[str, "SomeProp"], PropLike):
             joined = ", ".join(extra_props)
             raise ValueError(f"Extra props {joined} in {self.name}")
 
+    def update(self, other: "PropBlock.Input") -> "PropBlock":
+        merged_props = deep_merge(self._props, self._to_dict(other))
+        return self._with_props(merged_props)
+
 
 @dataclass(kw_only=True)
 class Prop[T](PropLike):
@@ -100,7 +110,7 @@ class Prop[T](PropLike):
     name: str
     repr: DiffMode = field(default="recursive")
     metadata: dict[str, Any] = field(default_factory=dict)
-    path: list[str] = field(default_factory=list)
+    path: tuple[str, ...] = field(default_factory=tuple)
 
     @property
     def is_required(self) -> bool:
@@ -115,7 +125,7 @@ class Prop[T](PropLike):
 
     @property
     def fqn(self) -> str:
-        return ".".join(self.path + [self.name]) if self.path else self.name
+        return ".".join(self.path + (self.name,)) if self.path else self.name
 
     def assert_valid(self, input: Any):
         try:
@@ -148,7 +158,7 @@ class PropValue[T]:
     __match_args__ = ("value", "prop")
     prop: Prop[T]
     value: T
-    old: "PropValue[T] | None" = None
+    old: T | None = None
 
     def __repr__(self) -> str:
         match self.prop.repr:
@@ -184,7 +194,7 @@ class PropValue[T]:
         return self.prop.name
 
     def update(self, value: T) -> "PropValue[T]":
-        return PropValue(prop=self.prop, value=value, old=self)
+        return PropValue(prop=self.prop, value=value, old=self.value)
 
 
 class PropBlockValues(VMappingBase[str, "SomePropValue"]):
@@ -257,5 +267,12 @@ class PropBlockValues(VMappingBase[str, "SomePropValue"]):
         return value.name
 
     def update(self, overrides: Mapping[str, Any]) -> "PropBlockValues":
-        new_values = deep_merge(self._values, overrides)
+        new_values = self._to_dict(self)
+        for x in self:
+            other = overrides.get(x.name)
+            if other is None:
+                continue
+            cur = new_values[x.name]
+            cur = cur.update(other)
+            new_values[x.name] = cur
         return PropBlockValues(schema=self.schema, values=new_values, old=self._values)
