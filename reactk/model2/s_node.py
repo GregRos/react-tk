@@ -1,11 +1,12 @@
 from copy import copy
 from typing import Any, ClassVar, Self
-from reactk.model2.prop_model.prop_annotations import read_props_from_class
+from reactk.model2.prop_model.prop_annotations import (
+    read_props_from_top_class,
+)
 from reactk.model2.prop_model.prop import PropBlock, PropBlockValues
 
 
-class ShNode:
-    _props: PropBlockValues
+class _HasPropsSchema:
     PROPS: ClassVar[PropBlock]
 
     def __init_subclass__(cls) -> None:
@@ -13,8 +14,12 @@ class ShNode:
 
     @classmethod
     def _embed_props_block(cls) -> None:
-        props_block = read_props_from_class(cls)
+        props_block = read_props_from_top_class(cls)
         cls.PROPS = props_block
+
+
+class ShNode(_HasPropsSchema):
+    _props: PropBlockValues
 
     def _copy(self, **overrides: Any) -> Self:
         clone = copy(self)

@@ -9,7 +9,7 @@ from typeguard import TypeCheckError, check_type
 from reactk.model.props.prop import DiffMode
 from reactk.model.trace.key_tools import Display
 from reactk.model.trace.render_trace import RenderTrace
-from reactk.model2.prop_model.coommon import _IS_REQUIRED_TYPE, IS_REQUIRED, Converter
+from reactk.model2.prop_model.common import _IS_REQUIRED_TYPE, IS_REQUIRED, Converter
 from reactk.model2.v_mapping import VMapping, VMappingBase, VMappingInput, deep_merge
 
 

@@ -77,6 +77,14 @@ class AnnotationWrapper2:
         x = self._get_inner_type()
         return x.value if x is not None else None
 
+    @property
+    def inner_type_reader(self) -> "ClassReader":
+        """Return a ClassReader for the inner type, if it's a class."""
+        t = self.inner_type
+        if t is None or not isinstance(t, type):
+            raise TypeError(f"Inner type {t!r} is not a class")
+        return ClassReader(t)
+
 
 class KeyAccessor:
 
@@ -104,10 +112,16 @@ class KeyAccessor:
         return self._get()
 
 
+class MetaAccessor(KeyAccessor):
+    @property
+    def key(self) -> str:
+        return "__reactk_meta__"
+
+
 class OrigAccessor(KeyAccessor):
     @property
     def key(self) -> str:
-        return "__original__"
+        return "__reactk_original__"
 
     def get(self) -> Any:
         if not self.has_key:
@@ -179,8 +193,8 @@ class ClassReader:
         return {k: self.get_annotation(k) for k in self._annotation_names}
 
     @property
-    def methods(self) -> Iterable[str]:
-        return self._methods.keys()
+    def methods(self) -> Mapping[str, MethodReader]:
+        return self._methods
 
     def get_annotation(self, key: str) -> AnnotationWrapper2:
         try:
