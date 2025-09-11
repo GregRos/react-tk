@@ -8,6 +8,7 @@ from typing import (
     Any,
     ClassVar,
     Iterable,
+    Never,
     NotRequired,
     Protocol,
     Required,
@@ -20,7 +21,7 @@ from reactk.model2.prop_model.prop_annotations import (
     read_props_from_top_class,
 )
 from reactk.model2.prop_model.prop import PropBlock, PropBlockValues
-from reactk.model2.v_mapping import deep_merge
+from reactk.model2.prop_model.v_mapping import deep_merge
 
 
 class _WithDefaults(TypedDict):
@@ -54,16 +55,17 @@ class HasPropsSchema:
         return clone
 
 
-class ShNode(HasPropsSchema, ABC):
+class InitPropsBase(TypedDict):
+    key: Annotated[NotRequired[str], prop_meta(no_value=None)]
+
+
+class ShNode[Kids = Never](HasPropsSchema, HasChildren[Kids], ABC):
     @prop_getter()
     def __TRACE__(self) -> RenderTrace: ...
+
     @prop_getter()
     def key(self) -> str: ...
 
     @property
     def uid(self):
         return self.__TRACE__.to_string("id")
-
-
-class A(ShNode, HasChildren[ShNode]):
-    pass

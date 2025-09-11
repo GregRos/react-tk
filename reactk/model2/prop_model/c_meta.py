@@ -15,6 +15,7 @@ from typing import (
 
 from reactk.model2.annotationss.annotations import OrigAccessor
 from reactk.model2.prop_model.common import IS_REQUIRED, Converter, DiffMode
+from reactk.model2.prop_model.prop_annotations import MetaAccessor
 
 if TYPE_CHECKING:
     from reactk.model2.prop_model.prop import (
@@ -30,10 +31,12 @@ if TYPE_CHECKING:
 class common_meta:
     metadata: dict[str, Any] = {}
     repr: DiffMode = "recursive"
+    name: str | None = None
 
 
 @dataclass(kw_only=True)
 class prop_meta(common_meta):
+    subsection: str | None = None
     no_value: Any = IS_REQUIRED
     converter: Converter[Any] | None = None
 
@@ -50,7 +53,12 @@ class _HasMerge(Protocol):
     def __merge__(self, other: Mapping[str, Any]) -> Self: ...
 
 
+@dataclass
 class MethodSetterTransformer:
+    @property
+    @abstractmethod
+    def self_meta(self) -> "some_meta": ...
+
     def _transform(self, f: Callable) -> Callable:
         def wrapper(self: _HasMerge, input: Mapping[str, Any]) -> Self:
             if not isinstance(input, Mapping):
@@ -78,6 +86,7 @@ class MethodSetterTransformer:
         def apply(f: Callable) -> Any:
             transformed = self._transform(f)
             OrigAccessor(transformed).set(f)
+            MetaAccessor(f).set(self.self_meta)
             return transformed
 
         return apply(f) if f else apply
@@ -85,12 +94,16 @@ class MethodSetterTransformer:
 
 @dataclass(kw_only=True)
 class schema_setter(schema_meta, MethodSetterTransformer):
-    pass
+    @property
+    def self_meta(self) -> "some_meta":
+        return self
 
 
 @dataclass(kw_only=True)
 class prop_setter(prop_meta, MethodSetterTransformer):
-    pass
+    @property
+    def self_meta(self) -> "some_meta":
+        return self
 
 
 @dataclass

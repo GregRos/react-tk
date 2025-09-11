@@ -11,7 +11,12 @@ from reactk.model.props.prop import DiffMode
 from reactk.model.trace.key_tools import Display
 from reactk.model.trace.render_trace import RenderTrace
 from reactk.model2.prop_model.common import _IS_REQUIRED_TYPE, IS_REQUIRED, Converter
-from reactk.model2.v_mapping import VMapping, VMappingBase, VMappingInput, deep_merge
+from reactk.model2.prop_model.v_mapping import (
+    VMapping,
+    VMappingBase,
+    VMappingInput,
+    deep_merge,
+)
 
 
 type SomeProp = "Prop | PropBlock"
@@ -21,6 +26,7 @@ class PropLike:
     name: str
     repr: DiffMode
     metadata: dict[str, Any]
+    computed_name: str | None = None
 
     @property
     @abstractmethod
@@ -45,11 +51,13 @@ class PropBlock(VMappingBase[str, "SomeProp"], PropLike):
         name: str,
         props: "PropBlock.Input" = (),
         repr: DiffMode = "recursive",
+        computed_name: str | None = None,
         metadata: dict[str, Any] = {},
     ):
         self.path = path
         self.name = name
         self.repr = repr
+        self.computed_name = computed_name
         self.metadata = metadata
         self._props = self._to_dict(props)
 
@@ -105,12 +113,14 @@ class PropBlock(VMappingBase[str, "SomeProp"], PropLike):
 @dataclass(kw_only=True)
 class Prop[T](PropLike):
     converter: Converter[T] | None = field(default=None)
+    subsection: str | None = field(default=None)
     no_value: T | _IS_REQUIRED_TYPE = field(default=IS_REQUIRED)
     value_type: type[T]
     name: str
     repr: DiffMode = field(default="recursive")
     metadata: dict[str, Any] = field(default_factory=dict)
     path: tuple[str, ...] = field(default_factory=tuple)
+    computed_name: str | None = field(default=None)
 
     @property
     def is_required(self) -> bool:
@@ -159,6 +169,10 @@ class PropValue[T]:
     prop: Prop[T]
     value: T
     old: T | None = None
+
+    @property
+    def computed_name(self) -> str:
+        return self.prop.computed_name or self.prop.name
 
     def __repr__(self) -> str:
         match self.prop.repr:
@@ -213,15 +227,29 @@ class PropBlockValues(VMappingBase[str, "SomePropValue"]):
         self._old = old
         self.schema.assert_valid(values)
 
+    @property
+    def computed_name(self) -> str:
+        return self.schema.computed_name or self.schema.name
+
     def compute(self) -> Mapping[str, Any]:
         result = {}
+
+        def _get_or_create_section(name: str | None) -> dict[str, Any]:
+            if name is None:
+                return result
+            if name not in result:
+                result[name] = {}
+
+            return result[name]
+
         for pv in self:
             match pv:
                 case PropValue() as v:
                     v_ = v.compute()
-                    result[v.name] = v_
+                    section = _get_or_create_section(v.prop.subsection)
+                    section[v.computed_name] = v_
                 case PropBlockValues() as bv:
-                    result.update(bv.compute())
+                    result.update({bv.computed_name: bv.compute()})
         return result
 
     def get_pv(self, key: str) -> PropValue[Any]:

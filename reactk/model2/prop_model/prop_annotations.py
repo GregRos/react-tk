@@ -13,7 +13,7 @@ from reactk.model2.annotationss.key_accessor import KeyAccessor
 from reactk.model2.prop_model.c_meta import prop_meta, schema_meta, some_meta
 from reactk.model2.prop_model.common import IS_REQUIRED
 from reactk.model2.prop_model.prop import SomeProp
-from reactk.model2.v_mapping import VMapping
+from reactk.model2.prop_model.v_mapping import VMapping
 import funcy
 
 if TYPE_CHECKING:
@@ -36,6 +36,8 @@ def _create_prop(
         repr=meta.repr,
         no_value=meta.no_value,
         converter=meta.converter,
+        computed_name=meta.name,
+        subsection=meta.subsection,
         metadata=meta.metadata,
         value_type=annotation.inner_type or Any,
         path=(
@@ -53,6 +55,7 @@ def _create_schema(
     return PropBlock(
         path=path,
         name=name,
+        computed_name=meta.name,
         props=_read_props_from_class(path + (name,), annotation.inner_type),
         repr=meta.repr,
         metadata=meta.metadata,
