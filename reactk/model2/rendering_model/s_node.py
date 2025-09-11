@@ -20,6 +20,7 @@ from reactk.model2.prop_annotations.c_meta import HasChildren, prop_getter, prop
 from reactk.model2.prop_annotations.prop_annotations import (
     read_props_from_top_class,
 )
+from reactk.model2.prop_model.common import KeyedValues
 from reactk.model2.prop_model.prop import PropBlock, PropBlockValues
 from reactk.model2.prop_model.v_mapping import deep_merge
 
@@ -43,7 +44,7 @@ class HasPropsSchema:
         props_block = props_block.update(has_trace)
         cls.__PROPS__ = props_block
 
-    def __merge__(self, other: Mapping[str, Any]) -> Self:
+    def __merge__(self, other: KeyedValues) -> Self:
         values = self.__PROP_VALUES__
         schema = self.__PROPS__
         if not values:
@@ -59,9 +60,12 @@ class InitPropsBase(TypedDict):
     key: Annotated[NotRequired[str], prop_meta(no_value=None)]
 
 
-class ShNode[Kids = Never](HasPropsSchema, HasChildren[Kids], ABC):
+class ShadowNode[Kids = Never](HasPropsSchema, HasChildren[Kids], ABC):
     @prop_getter()
     def __TRACE__(self) -> RenderTrace: ...
+    @classmethod
+    def node_name(cls) -> str:
+        return cls.__name__
 
     @prop_getter()
     def key(self) -> str: ...

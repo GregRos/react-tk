@@ -14,7 +14,12 @@ from typing import (
 )
 
 from reactk.model2.annotationss.annotations import OrigAccessor
-from reactk.model2.prop_model.common import IS_REQUIRED, Converter, DiffMode
+from reactk.model2.prop_model.common import (
+    IS_REQUIRED,
+    Converter,
+    DiffMode,
+    KeyedValues,
+)
 from reactk.model2.prop_annotations.prop_annotations import MetaAccessor
 
 if TYPE_CHECKING:
@@ -50,7 +55,7 @@ class _HasMerge(Protocol):
     __PROPS__: ClassVar["PropBlock"]
     __PROP_VALUES__: "PropBlockValues"
 
-    def __merge__(self, other: Mapping[str, Any]) -> Self: ...
+    def __merge__(self, other: KeyedValues) -> Self: ...
 
 
 @dataclass
@@ -60,7 +65,7 @@ class MethodSetterTransformer:
     def self_meta(self) -> "some_meta": ...
 
     def _transform(self, f: Callable) -> Callable:
-        def wrapper(self: _HasMerge, input: Mapping[str, Any]) -> Self:
+        def wrapper(self: _HasMerge, input: KeyedValues) -> Self:
             if not isinstance(input, Mapping):
                 raise TypeError(
                     f"Schema setter method {f.__name__} must return a Mapping, got {type(input)}"

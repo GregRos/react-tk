@@ -10,7 +10,12 @@ from typeguard import TypeCheckError, check_type
 from reactk.model.props.prop import DiffMode
 from reactk.model.trace.key_tools import Display
 from reactk.model.trace.render_trace import RenderTrace
-from reactk.model2.prop_model.common import _IS_REQUIRED_TYPE, IS_REQUIRED, Converter
+from reactk.model2.prop_model.common import (
+    _IS_REQUIRED_TYPE,
+    IS_REQUIRED,
+    Converter,
+    KeyedValues,
+)
 from reactk.model2.prop_model.v_mapping import (
     VMappingBase,
     deep_merge,
@@ -217,8 +222,8 @@ class PropBlockValues(VMappingBase[str, "SomePropValue"]):
     def __init__(
         self,
         schema: PropBlock,
-        values: Mapping[str, Any],
-        old: Mapping[str, Any] | None = None,
+        values: KeyedValues,
+        old: KeyedValues | None = None,
     ):
         self.schema = schema
         self._values = values
@@ -229,7 +234,7 @@ class PropBlockValues(VMappingBase[str, "SomePropValue"]):
     def computed_name(self) -> str:
         return self.schema.computed_name or self.schema.name
 
-    def compute(self) -> Mapping[str, Any]:
+    def compute(self) -> KeyedValues:
         result = {}
 
         def _get_or_create_section(name: str | None) -> dict[str, Any]:
@@ -292,7 +297,7 @@ class PropBlockValues(VMappingBase[str, "SomePropValue"]):
     def _get_key(self, value: "SomePropValue") -> str:
         return value.name
 
-    def update(self, overrides: Mapping[str, Any]) -> "PropBlockValues":
+    def update(self, overrides: KeyedValues) -> "PropBlockValues":
         new_values = self._to_dict(self)
         for x in self:
             other = overrides.get(x.name)
