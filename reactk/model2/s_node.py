@@ -3,10 +3,19 @@ from collections.abc import Mapping
 from copy import copy
 from dataclasses import is_dataclass
 from inspect import isabstract
-from typing import Annotated, Any, ClassVar, Protocol, Required, Self, TypedDict
+from typing import (
+    Annotated,
+    Any,
+    ClassVar,
+    Iterable,
+    NotRequired,
+    Protocol,
+    Required,
+    Self,
+    TypedDict,
+)
 from reactk.model.trace.render_trace import RenderTrace
-from reactk.model2.key_accessor import KeyAccessor
-from reactk.model2.prop_model.c_meta import prop_meta
+from reactk.model2.prop_model.c_meta import HasChildren, prop_getter, prop_meta
 from reactk.model2.prop_model.prop_annotations import (
     read_props_from_top_class,
 )
@@ -14,8 +23,9 @@ from reactk.model2.prop_model.prop import PropBlock, PropBlockValues
 from reactk.model2.v_mapping import deep_merge
 
 
-class _WithTrace(TypedDict):
+class _WithDefaults(TypedDict):
     __TRACE__: Annotated[Required[RenderTrace], prop_meta(repr="simple")]
+    __CHILDREN__: Annotated[NotRequired[Iterable[Any]], prop_meta(no_value=())]
 
 
 class HasPropsSchema:
@@ -28,7 +38,7 @@ class HasPropsSchema:
         if not is_dataclass(cls):
             raise TypeError(f"Class {cls.__name__} must be a dataclass to use props")
         props_block = read_props_from_top_class(cls)
-        has_trace = read_props_from_top_class(_WithTrace)
+        has_trace = read_props_from_top_class(_WithDefaults)
         props_block = props_block.update(has_trace)
         cls.__PROPS__ = props_block
 
@@ -45,8 +55,15 @@ class HasPropsSchema:
 
 
 class ShNode(HasPropsSchema, ABC):
-    pass
+    @prop_getter()
+    def __TRACE__(self) -> RenderTrace: ...
+    @prop_getter()
+    def key(self) -> str: ...
+
+    @property
+    def uid(self):
+        return self.__TRACE__.to_string("id")
 
 
-class A(ShNode):
+class A(ShNode, HasChildren[ShNode]):
     pass

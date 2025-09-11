@@ -6,13 +6,14 @@ from typing import (
     Callable,
     ClassVar,
     Concatenate,
+    Iterable,
     Mapping,
     Protocol,
     Self,
     overload,
 )
 
-from reactk.model2.annotations import OrigAccessor
+from reactk.model2.annotationss.annotations import OrigAccessor
 from reactk.model2.prop_model.common import IS_REQUIRED, Converter, DiffMode
 
 if TYPE_CHECKING:
@@ -44,9 +45,9 @@ class schema_meta(common_meta):
 
 class _HasMerge(Protocol):
     __PROPS__: ClassVar["PropBlock"]
-    __VALUES__: "PropBlockValues"
+    __PROP_VALUES__: "PropBlockValues"
 
-    def __merge__(self, other: Mapping[str, Any]) -> Any: ...
+    def __merge__(self, other: Mapping[str, Any]) -> Self: ...
 
 
 class MethodSetterTransformer:
@@ -56,7 +57,7 @@ class MethodSetterTransformer:
                 raise TypeError(
                     f"Schema setter method {f.__name__} must return a Mapping, got {type(input)}"
                 )
-            return self.__merge__({f.__name__: input})
+            return self.__merge__({f.__name__: input})  # type: ignore
 
         return wrapper
 
@@ -93,17 +94,29 @@ class prop_setter(prop_meta, MethodSetterTransformer):
 
 
 @dataclass
-class prop_value_getter:
+class _getter[X]:
+    prop_name: str
+
+    def __get__(self, instance: Any, owner) -> X:
+        if instance is None:
+            return self  # type: ignore
+        v = instance.__PROP_VALUES__[self.prop_name].compute()
+        return v  # type: ignore
+
+
+@dataclass
+class prop_getter:
     name: str | None = field(default=None)
 
-    def __call__[F: Callable[[_HasProps], Any]](self, f: F) -> F:
+    def __call__[R](self, f: Callable[[Any], R]):
         prop_name = self.name or f.__name__
 
-        def get_prop_value(self: _HasProps) -> Any:
-
-            return
-
-        return f
+        return _getter[R](prop_name)
 
 
 type some_meta = prop_meta | schema_meta
+
+
+class HasChildren[Child](_HasMerge):
+    def __getitem__(self, children: Iterable[Child]) -> Self:
+        return self.__merge__({"__CHILDREN__": children})

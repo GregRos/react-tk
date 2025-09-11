@@ -80,7 +80,7 @@ class AnnotationReader:
         self._refresh_annotations()
 
     def get_method(self, key: str):
-        return AnnotationReader(self._methods[key])                    
+        return AnnotationReader(self._methods[key])
 
     def get_annotation(self, key: str) -> AnnotationWrapper[Any]:
         return AnnotationWrapper(self._annotations.get(key))
@@ -92,7 +92,7 @@ class AnnotationReader:
     def _refresh_annotations(self) -> None:
         self._annotations = get_type_hints(
             self._target, include_extras=True, localns={"Node": "object"}
-        )``
+        )
         if not isinstance(self._target, type):
             self._methods = {}
             return

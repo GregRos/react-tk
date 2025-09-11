@@ -4,8 +4,12 @@ from reactk.annotations.get_methods import get_attrs_downto
 from reactk.model.annotation_reader import read_annotations
 from reactk.model.props import prop
 from reactk.model.trace.render_trace import RenderTrace
-from reactk.model2.annotations import AnnotationWrapper2, ClassReader, MethodReader
-from reactk.model2.key_accessor import KeyAccessor
+from reactk.model2.annotationss.annotations import (
+    AnnotationWrapper2,
+    ClassReader,
+    MethodReader,
+)
+from reactk.model2.annotationss.key_accessor import KeyAccessor
 from reactk.model2.prop_model.c_meta import prop_meta, schema_meta, some_meta
 from reactk.model2.prop_model.common import IS_REQUIRED
 from reactk.model2.prop_model.prop import SomeProp
