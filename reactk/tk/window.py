@@ -12,7 +12,7 @@ from typing import (
 )
 
 
-from reactk.model.props.prop_section import PropSection
+from reactk.model.props.prop_section import PropSection, section_setter
 from reactk.model.props.prop import Prop
 from reactk.model.component import Component
 from reactk.model.shadow_node import (
@@ -38,12 +38,15 @@ class Window(ShadowNode, Component[Widget]):  # type: ignore
 
     @Prop(repr="simple")
     def child(
-        self,
-        child: Widget | Component[Widget],
+        self, child: Annotated[Widget | Component[Widget], Prop(repr="simple")]
     ): ...
 
-    @PropSection(recurse=True)
-    def __init__(self, **props: Unpack[WindowProps]): ...
+    @section_setter
+    def __init__(
+        self, **props: Unpack[Annotated[WindowProps, PropSection(recurse=True)]]
+    ): ...
 
-    @PropSection(recurse=False)
-    def Geometry(self, **props: Unpack[Geometry]): ...
+    @section_setter
+    def Geometry(
+        self, **props: Unpack[Annotated[Geometry, PropSection(recurse=True)]]
+    ): ...

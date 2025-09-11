@@ -8,6 +8,9 @@ from typing import Any, Callable, Self
 logger = getLogger("ui")
 
 
+x.state = q
+
+
 # FIXME: Multiple issues, including:
 # - Weird mutability
 # - No type hints (can it be fixed?)

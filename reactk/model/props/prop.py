@@ -26,37 +26,28 @@ from reactk.annotations.get_metadata import (
     get_metadata_of_type,
     get_props_type_from_callable,
 )
-from reactk.model.annotation_reader import AnnotationReader
+from reactk.model.annotation_reader import AnnotationReader, read_annotations
 
 
-DiffMode = Literal["simple", "recursive", "never"]
+MISSING = object()
+type DiffMode = Literal["simple", "recursive", "never"]
 if TYPE_CHECKING:
     from reactk.model.props.prop_value import PropValue
 
 
 @dataclass(kw_only=True)
-class Prop:
+class Prop[T]:
     subsection: str | None = field(default=None)
     # FIXME: name behaves weirdly because it's inconsistent... should be fixed
-    name: str | None = field(default=None)
+    name: str = field(default="")
     no_value: Any | None = field(default=None)
     converter: Callable[[Any], Any] | None = field(default=None)
-    value_type: type[Any] | None = field(default=None)
+    value_type: type[T] | None = field(default=None)
     repr: Literal["simple", "recursive", "none"] = field(default="recursive")
-
-    @property
-    def prop(self) -> "Prop":
-        return self
 
     @property
     def has_default(self) -> bool:
         return self.no_value is not None
-
-    @property
-    def is_dict(self) -> bool:
-        from reactk.model.props.prop_dict import PropDict
-
-        return self.value_type is PropDict
 
     def is_valid(self, input: Any):
         try:
@@ -74,11 +65,6 @@ class Prop:
     def assert_valid_value(self, value: Any):
         if not self.is_valid(value):
             raise ValueError(f"Invalid value {value} for {self}")
-
-    @property
-    def value(self) -> Any:
-
-        return self.no_value
 
     def update(self, source_prop: "Prop") -> "Prop":
         return update(
@@ -100,27 +86,25 @@ class Prop:
         )
 
     def merge_setter(self, prop_setter: Callable) -> "Prop":
-        prop_type = get_props_type_from_callable(prop_setter)
-        prop_meta = self.defaults(Prop(value_type=prop_type, name=prop_setter.__name__))
+        first_arg = read_annotations(prop_setter).arg(1)
+        prop_meta = self.defaults(
+            Prop(value_type=first_arg.inner_type, name=prop_setter.__name__)
+        )
         return prop_meta
 
     @overload
-    def __call__[
-        **P, R
-    ](self, f: Callable[Concatenate[R, P], Any]) -> Callable[Concatenate[R, P], R]: ...
+    def __call__[**P, R](
+        self, f: Callable[Concatenate[R, P], Any]
+    ) -> Callable[Concatenate[R, P], R]: ...
 
     @overload
-    def __call__[
-        **P, R
-    ](self) -> Callable[
+    def __call__[**P, R](
+        self,
+    ) -> Callable[
         [Callable[Concatenate[R, P], Any]], Callable[Concatenate[R, P], R]
     ]: ...
 
     def __call__[**P, R](self, f: Any | None = None) -> Any:
-        def get_or_init_prop_values(self):
-            if not getattr(self, "_props", None):
-                self._props = AnnotationReader(self.__class__).section.with_values({})
-            return self._props
 
         def apply(f):
             merged_prop = self.merge_setter(f)
@@ -128,8 +112,25 @@ class Prop:
             def set_prop(self, arg: Any):
                 return self._copy(**{merged_prop.name: arg})
 
-            AnnotationReader(set_prop).prop = merged_prop
+            AnnotationReader(set_prop).custom = merged_prop
 
             return set_prop
 
         return apply(f) if f else apply
+
+
+def prop_setter[**P, R](
+    f: Callable[Concatenate[R, P], Any],
+) -> Callable[Concatenate[R, P], R]:
+
+    def apply(f):
+        merged_prop = self.merge_setter(f)
+
+        def set_prop(self, arg: Any):
+            return self._copy(**{merged_prop.name: arg})
+
+        AnnotationReader(set_prop).custom = merged_prop
+
+        return set_prop
+
+    return apply(f)

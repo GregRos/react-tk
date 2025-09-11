@@ -21,7 +21,7 @@ from reactk.model.context import Ctx
 from reactk.rendering.renderer import ComponentMount
 from reactk.rendering.stateful_reconciler import StatefulReconciler
 from reactk.model.component import Component
-from reactk.model.props.prop_section import PropSection
+from reactk.model.props.prop_section import PropSection, section_setter
 from reactk.tk.font import Font
 from reactk.tk.make_clickthrough import make_clickthrough
 import tkinter as tk
@@ -65,12 +65,15 @@ class PackProps(ShadowProps):
 
 class Widget(ShadowNode):
 
-    @PropSection(recurse=True)
-    def __init__(self, **props: Unpack[WidgetProps]): ...
+    @section_setter
+    def __init__(
+        self, **props: Unpack[Annotated[WidgetProps, PropSection(recurse=True)]]
+    ) -> Annotated[None, PropSection(recurse=True)]: ...
 
-    @PropSection(recurse=False)
-    def Pack(self, **props: Unpack[PackProps]) -> None:
-        pass
+    @section_setter
+    def Pack(
+        self, **props: Unpack[Annotated[PackProps, PropSection(recurse=False)]]
+    ) -> None: ...
 
 
 class Label(Widget):

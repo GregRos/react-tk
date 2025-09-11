@@ -1,10 +1,11 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 import sys
 from time import sleep
 
 
 from reactk import Ctx, WindowMount, Window, Label, Widget, Component
+from reactk.tk.font import Font
 
 
 @dataclass(kw_only=True)
@@ -13,15 +14,17 @@ class StuffComponent(Component[Widget]):
 
     def render(self, yld, _):
         yld(
-            Label(text=self.text, background="#000001", foreground="#ffffff").Pack(
-                ipadx=20, ipady=15, fill="both"
-            )
+            Label(
+                text=self.text,
+                background="#000001",
+                foreground="#ffffff",
+                font=Font(family="Arial", size=20, style="bold"),
+            ).Pack(ipadx=20, ipady=15, fill="both")
         )
 
 
 @dataclass(kw_only=True)
 class WindowComponent(Component[Window]):
-
     def render(self, yld, ctx: Ctx):
         yld(
             Window(topmost=True, background="black", alpha=85)

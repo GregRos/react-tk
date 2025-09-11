@@ -7,7 +7,7 @@ from reactk.annotations.get_metadata import (
 from reactk.annotations.get_methods import get_attrs_downto
 from reactk.model.props.prop_dict import PropDict
 
-from reactk.model.annotation_reader import AnnotationReader
+from reactk.model.annotation_reader import AnnotationReader, CustomReader
 from reactk.model.props.prop import Prop
 
 
@@ -30,25 +30,6 @@ if TYPE_CHECKING:
     from reactk.model.props.prop_values import PValues
 
 type SomeProp = Prop | PropSection
-
-
-def get_props(section_type: type):
-
-    type_metadata = get_type_hints(
-        section_type, include_extras=True, localns={"Node": "object"}
-    )
-    for k, v in type_metadata.items():
-        inner_type = get_inner_type_value(v) or v
-        prop = get_metadata_of_type(v, Prop, PropSection)
-        match prop:
-            case None if (x := get_origin(inner_type)) and issubclass(x, Mapping):
-                yield k, PropSection(name=k).merge_class(inner_type)
-            case None:
-                yield k, Prop(value_type=inner_type, name=k)
-            case Prop():
-                yield k, prop.defaults(Prop(value_type=inner_type, name=k))
-            case PropSection():
-                yield k, prop.defaults(PropSection(name=k)).merge_class(inner_type)
 
 
 @dataclass
@@ -105,29 +86,31 @@ class PropSection(Mapping[str, SomeProp]):
     def merge_setter(self, section_setter: Callable) -> "PropSection":
         section_props_type = get_props_type_from_callable(section_setter)
         section_meta = self.defaults(PropSection(name=section_setter.__name__))
-        props = PropDict()
-        all_props = get_props(section_props_type)
-        for k, v in all_props:
-            props = props.merge({k: v})
+        props = PropDict.from_type(section_props_type)
+
         return section_meta.merge_props(props)
 
     def merge_class(self, obj: type):
         props = PropDict()
-        attrs = get_attrs_downto(obj, stop_class=object)
+        attrs = get_attrs_downto(
+            obj, stop_classes={object, PropSection, PropDict, dict}
+        )
         for k, f in attrs.items():
             if not isfunction(f):
                 continue
-            match AnnotationReader(f).metadata:
-                case None:
-                    continue
-                case PropSection() as section:
-                    if k == "__init__":
-                        props = props.merge(section.props)
-                    else:
-                        props = props.merge({k: section})
-                case Prop() as prop:
-                    props = props.merge({k: prop})
-        props = props.merge(x for x in get_props(obj) if x[0] not in props)
+            reader = AnnotationReader(f)
+
+            if section := reader.get_section():
+                if k == "__init__":
+                    props = props.merge(section.value.props)
+                else:
+                    props = props.merge({k: section})
+            elif prop := reader.get_prop():
+                props = props.merge({k: prop})
+
+        props = props.merge(
+            x for x in PropDict.from_type(obj).items() if x[0] not in props
+        )
         return self.merge_props(props)
 
     @overload
@@ -143,22 +126,48 @@ class PropSection(Mapping[str, SomeProp]):
     ]: ...
 
     def __call__[**P, R](self, f: Any | None = None) -> Any:
-        def get_or_init_prop_values(self):
+        def get_or_init_prop_values(self, f: Callable) -> "PValues":
             if not getattr(self, "_props", None):
-                self._props = AnnotationReader(self.__class__).section.with_values({})
+                custom_section = AnnotationReader(f).custom
+                if not isinstance(custom_section, PropSection):
+                    raise ValueError("PropSection missing custom annotation")
+                self._props = custom_section.with_values({})
             return self._props
 
-        def apply(f):
+        def apply(f: Callable) -> Any:
             sect = self.merge_setter(f)
 
             def set_section(self, **args: Any):
                 if f.__name__ == "__init__":
-                    self._props = get_or_init_prop_values(self).merge(args)
+                    self._props = get_or_init_prop_values(self, f).merge(args)
                     return
                 return self._copy(**{f.__name__: args})
 
-            AnnotationReader(set_section).section = sect
+            CustomReader(set_section).custom = sect
 
             return set_section
 
         return apply(f) if f else apply
+
+
+def section_setter[**P, R](
+    f: Callable[Concatenate[R, P], None],
+) -> Callable[Concatenate[R, P], R]:
+    def get_or_init_prop_values(target: object, f: Callable) -> "PValues":
+        if not getattr(target, "_props", None):
+            annotations = AnnotationReader(target.__class__)
+            ctor_annotation = annotations["__init__"].value  # type: PropSection
+            setattr(target, "_props", ctor_annotation.with_values({}))
+        return target._props  # type: ignore
+
+    def apply(f: Callable) -> Any:
+
+        def set_section(self, **args: Any):
+            if f.__name__ == "__init__":
+                self._props = get_or_init_prop_values(self, f).merge(args)
+                return
+            return self._copy(**{f.__name__: args})
+
+        return set_section
+
+    return apply(f) if f else apply
