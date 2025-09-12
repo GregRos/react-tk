@@ -4,12 +4,14 @@ from typing import Any, Callable, Literal, Self
 
 
 from reactk.model2.prop_model import PropSection, PValues
-from reactk.model.shadow_node import ShadowNode, ShadowProps
+from reactk.model.shadow_node import ShadowNode
+from reactk.model2.prop_model.common import KeyedValues
 
 type Compat = Literal["update", "replace", "recreate"]
 
 
 class Resource[Node: ShadowNode](ABC):
+    resource: Any
 
     def __repr__(self) -> str:
         node_type_name = self.__class__.node_type().__name__
@@ -28,12 +30,6 @@ class Resource[Node: ShadowNode](ABC):
             and self.is_same_resource(value)
         )
 
-    def props(self, other: Node | None = None) -> PValues:
-        a = self.node._props
-        if not other:
-            return a
-        return a.diff(other._props)
-
     def __init__(self, node: Node):
         self.node = node
 
@@ -45,7 +41,7 @@ class Resource[Node: ShadowNode](ABC):
 
     @property
     def uid(self) -> str:
-        return self.node.to_string_marker("id")
+        return self.node.uid
 
     @abstractmethod
     def update(self, props: PValues) -> None: ...

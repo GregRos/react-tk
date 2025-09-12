@@ -3,7 +3,7 @@ from typing import Any
 
 from reactk.model2.prop_model.common import KeyedValues
 
-from ..model.props.prop_values import PValues
+from reactk.model2.prop_model import PValues
 
 from ..model import Resource, ShadowNode
 
@@ -24,7 +24,7 @@ class Create:
 class Update:
     existing: Resource
     next: ShadowNode
-    diff: KeyedValues
+    diff: PValues
 
     def __bool__(self):
         return bool(self.diff)

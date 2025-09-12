@@ -23,7 +23,6 @@ from reactk.model.resource import (
     Compat,
     Resource,
 )
-from reactk.model.shadow_node import ShadowProps
 from reactk.rendering.stateful_reconciler import StatefulReconciler
 from reactk.rendering.renderer import ComponentMount
 from reactk.model.context import Ctx
@@ -62,7 +61,7 @@ class WindowWrapper(Resource[Window]):
         self._component_mount = mount
 
     @override
-    def is_same_resource(self, other: Self) -> bool:
+    def is_same_resource(self, other: Resource) -> bool:
         return self.resource is other.resource
 
     def to_string_marker(self, display: Display) -> str:
@@ -82,8 +81,8 @@ class WindowWrapper(Resource[Window]):
         thread = threading.Thread(target=ui_thread)
         thread.start()
         waiter.wait()
-        root = node._props.compute()[1]["child"]  # type: Any
-
+        root = node.__PROP_VALUES__.compute()
+        assert False, "handle children!"
         wrapper = WindowWrapper(node, tk, context, root=root)
 
         return wrapper
@@ -127,7 +126,7 @@ class WindowWrapper(Resource[Window]):
         self.run_in_owner(self.resource.destroy)
 
     @override
-    def replace(self, other: "WindowWrapper") -> None:
+    def replace(self, other: Resource) -> None:
         def do_replace():
 
             self.resource.withdraw()

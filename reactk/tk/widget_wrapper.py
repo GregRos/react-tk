@@ -41,7 +41,7 @@ class WidgetWrapper(Resource[Widget]):
     def get_compatibility(self, other: Widget) -> Compat:
         if self.node.type_name != other.type_name:
             return "recreate"
-        elif self.node._props["Pack"] != other._props["Pack"]:
+        elif self.node.__PROP_VALUES__["Pack"] != other.__PROP_VALUES__["Pack"]:
             return "replace"
         else:
             return "update"
@@ -55,7 +55,7 @@ class WidgetWrapper(Resource[Widget]):
         return WidgetWrapper(node, resource)
 
     @override
-    def is_same_resource(self, other: Self) -> bool:
+    def is_same_resource(self, other: Resource) -> bool:
         return self.resource == other.resource
 
     @override
@@ -65,7 +65,7 @@ class WidgetWrapper(Resource[Widget]):
     @override
     def update(self, props: PValues) -> None:
 
-        _, diff = props.compute()
+        diff = props.compute()
         configure = diff.get("configure", {})
         if "font" in diff:
             configure["font"] = to_tk_font(diff["font"])
@@ -77,7 +77,7 @@ class WidgetWrapper(Resource[Widget]):
     @override
     def place(self) -> None:
         logger.debug(f"Calling place for {self.node}")
-        _, d = self.node._props.compute()
+        d = self.node.__PROP_VALUES__.compute()
         pack = d.get("Pack", {})
         if not pack:  # pragma: no cover
             return
@@ -92,8 +92,8 @@ class WidgetWrapper(Resource[Widget]):
         self.resource.pack_forget()
 
     @override
-    def replace(self, other: Self) -> None:
-        _, p = other.node._props.compute()
+    def replace(self, other: Resource) -> None:
+        p = other.node.__PROP_VALUES__.compute()
         other.resource.pack(after=self.resource, **p.get("Pack", {}))
 
         self.resource.pack_forget()

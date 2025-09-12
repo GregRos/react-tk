@@ -64,9 +64,10 @@ class InitPropsBase(TypedDict):
 class ShadowNode[Kids = Never](HasPropsSchema, HasChildren[Kids], ABC):
     @prop_getter()
     def __TRACE__(self) -> RenderTrace: ...
-    @classmethod
-    def node_name(cls) -> str:
-        return cls.__name__
+
+    @property
+    def type_name(self) -> str:
+        return self.__class__.__name__
 
     @prop_getter()
     def key(self) -> str: ...

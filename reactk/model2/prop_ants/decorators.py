@@ -15,6 +15,9 @@ from typing import (
     overload,
 )
 
+from reactk.model2.prop_ants import prop_meta
+from reactk.model2.prop_ants.prop_meta import schema_meta
+
 if TYPE_CHECKING:
     from reactk.model2.prop_model.prop import PropSection, PValues
     from reactk.model2.prop_model.common import KeyedValues
@@ -72,14 +75,14 @@ class MethodSetterTransformer:
 
 
 @dataclass(kw_only=True)
-class schema_setter:
+class schema_setter(MethodSetterTransformer, schema_meta):
     @property
     def self_meta(self) -> Any:
         return self
 
 
 @dataclass(kw_only=True)
-class prop_setter:
+class prop_setter(MethodSetterTransformer, prop_meta):
     @property
     def self_meta(self) -> Any:
         return self

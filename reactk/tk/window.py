@@ -12,41 +12,33 @@ from typing import (
 )
 
 
-from reactk.model.props.prop_section import PropSection, section_setter
-from reactk.model.props.prop import Prop
+from reactk.model2.prop_ants import prop_meta, schema_meta, schema_setter, prop_setter
 from reactk.model.component import Component
 from reactk.model.shadow_node import (
     InitPropsBase,
     ShadowNode,
-    ShadowProps,
 )
 from reactk.tk.widget import Widget
 from reactk.tk.geometry import Geometry
 
 
-class WindowProps(ShadowProps):
-    topmost: Annotated[NotRequired[bool], Prop(subsection="attributes")]
-    background: Annotated[NotRequired[str], Prop(subsection="configure")]
+class WindowProps(InitPropsBase):
+    topmost: Annotated[NotRequired[bool], prop_meta(subsection="attributes")]
+    background: Annotated[NotRequired[str], prop_meta(subsection="configure")]
     transparent_color: Annotated[
-        NotRequired[str], Prop(subsection="attributes", name="transparentcolor")
+        NotRequired[str], prop_meta(subsection="attributes", name="transparentcolor")
     ]
-    override_redirect: Annotated[NotRequired[bool], Prop()]
-    alpha: Annotated[NotRequired[float], Prop(subsection="attributes")]
+    override_redirect: Annotated[NotRequired[bool], prop_meta()]
+    alpha: Annotated[NotRequired[float], prop_meta(subsection="attributes")]
 
 
 class Window(ShadowNode, Component[Widget]):  # type: ignore
 
-    @Prop(repr="simple")
-    def child(
-        self, child: Annotated[Widget | Component[Widget], Prop(repr="simple")]
-    ): ...
+    @prop_setter()
+    def child(self, child: Annotated[Widget | Component[Widget], prop_meta()]): ...
 
-    @section_setter
-    def __init__(
-        self, **props: Unpack[Annotated[WindowProps, PropSection(recurse=True)]]
-    ): ...
+    @schema_setter()
+    def __init__(self, **props: Unpack[WindowProps]) -> None: ...
 
-    @section_setter
-    def Geometry(
-        self, **props: Unpack[Annotated[Geometry, PropSection(recurse=True)]]
-    ): ...
+    @schema_setter()
+    def Geometry(self, **props: Unpack[Geometry]) -> None: ...

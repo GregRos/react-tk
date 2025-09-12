@@ -1,7 +1,6 @@
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Annotated, Any, Required, TypedDict, is_typeddict
 from reactk.model2.util.get_methods import get_attrs_downto
-from reactk.model.props import prop
 from reactk.model.trace.render_trace import RenderTrace
 from reactk.model2.ants.readers import (
     AnnotationReader,
