@@ -1,13 +1,21 @@
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Iterable, Mapping
 from types import MethodType
-from typing import TYPE_CHECKING, Any, Callable, TypedDict, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Literal,
+    TypedDict,
+    get_origin,
+    get_type_hints,
+)
 
 from reactk.model2.util.get_methods import get_attrs_downto
 from reactk.model2.ants.key_accessor import KeyAccessor
 from reactk.model2.util.str import format_signature
 
 if TYPE_CHECKING:
-    from reactk.model2.prop_ants.prop_meta import some_meta
+    from reactk.model2.ants.generic_reader import SomeTypeVarReader, Reader_Generic
 
 
 class AnnotationReader:
@@ -18,6 +26,9 @@ class AnnotationReader:
     module-level wrappers (kept for backward compatibility) or call
     these methods directly from the class.
     """
+
+    def generic(self) -> "Reader_Generic":
+        return Reader_Generic(self._target)
 
     def __init__(self, target: Any) -> None:
         self._target = target
@@ -39,6 +50,10 @@ class AnnotationReader:
             case _:
                 return True
 
+    @property
+    def origin(self) -> Any:
+        return get_origin(self._target)
+
     # ---- Getters -------------------------------------------------
     @property
     def name(self) -> str | None:
@@ -49,10 +64,13 @@ class AnnotationReader:
         t = self._target
         if name := getattr(t, "_name", None):
             return name
-        origin = getattr(t, "__origin__", None)
+        origin = self.origin
         if origin is not None:
             return origin.__name__
         return None
+
+    def __str__(self) -> str:
+        return str(self.target)
 
     @property
     def args(self) -> tuple[Any, ...]:
@@ -106,14 +124,6 @@ class OrigAccessor(KeyAccessor[Callable[..., Any]]):
     def key(self) -> str:
         return "__reactk_original__"
 
-    def get(self) -> "OrigAccessor.Value":
-        if not self.has_key:
-            return self.target
-        cur = self
-        while cur.has_key:
-            cur = OrigAccessor(cur._get())
-        return cur.target
-
 
 class MethodReader:
     _annotations: dict[str, Any]
@@ -121,7 +131,7 @@ class MethodReader:
 
     def __init__(self, target: Any) -> None:
         orig_accessor = OrigAccessor(target)
-        self.target = orig_accessor.get()
+        self.target = orig_accessor.get(target)
         self._refresh_annotations()
 
     @property
@@ -183,7 +193,11 @@ class ClassReader:
         self.target = target
 
     def __str__(self) -> str:
-        return f"【 ClassReader: {self.target.__name__} 】"
+        return str(self.target)
+
+    @property
+    def name(self) -> str:
+        return self.target.__name__
 
     def _refresh_annotations(self) -> None:
         self._annotations = get_type_hints(
@@ -198,17 +212,15 @@ class ClassReader:
         return {k: self.get_annotation(k) for k in self._annotation_names}
 
     @property
+    def origin(self) -> type:
+        return get_origin(self.target) or self.target
+
+    @property
     def methods(self) -> Mapping[str, MethodReader]:
         return self._methods
 
     def get_annotation(self, key: str) -> AnnotationReader:
-        try:
-            return AnnotationReader(self._annotations[key])
-        except KeyError:
-            raise KeyError(key) from None
+        return AnnotationReader(self._annotations[key])
 
     def get_method(self, key: str) -> MethodReader:
-        try:
-            return MethodReader(self._methods[key])
-        except KeyError:
-            raise KeyError(key) from None
+        return MethodReader(self._methods[key])

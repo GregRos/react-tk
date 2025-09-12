@@ -30,7 +30,7 @@ def _create_prop(
 ):
     from reactk.model2.prop_model.prop import Prop
 
-    return Prop(
+    return Prop[annotation.inner_type](
         name=name,
         repr=meta.repr,
         no_value=meta.no_value,

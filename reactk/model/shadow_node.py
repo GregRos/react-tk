@@ -15,6 +15,7 @@ from typing import (
     Self,
     TypedDict,
 )
+from reactk.model.trace.key_tools import Display
 from reactk.model.trace.render_trace import RenderTrace
 from reactk.model2.prop_ants.prop_meta import prop_meta
 from reactk.model2.prop_ants.decorators import HasChildren, prop_getter
@@ -64,6 +65,8 @@ class InitPropsBase(TypedDict):
 class ShadowNode[Kids = Never](HasPropsSchema, HasChildren[Kids], ABC):
     @prop_getter()
     def __TRACE__(self) -> RenderTrace: ...
+    def to_string_marker(self, display: Display) -> str:
+        return self.__TRACE__.to_string(display)
 
     @property
     def type_name(self) -> str:

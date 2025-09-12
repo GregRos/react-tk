@@ -1,22 +1,28 @@
 from abc import abstractmethod
-from typing import Any, Self
+from typing import Any, Self, overload
+
+
+class _MISSING_TYPE:
+    pass
+
+
+MISSING = _MISSING_TYPE()
 
 
 class KeyAccessor[T]:
     type Value = T
 
-    @classmethod
-    def create(cls, target: Any) -> Self:
-        return cls(target)
-
     def __str__(self) -> str:
         return f"（ Attribute: {self.key} ）"
+
+    def __bool__(self) -> bool:
+        return self.has_key
 
     @property
     @abstractmethod
     def key(self) -> str: ...
 
-    def __init__(self, target: Any) -> None:
+    def __init__(self, target: object) -> None:
         self.target = target
 
     def set(self, value: T) -> None:
@@ -30,8 +36,18 @@ class KeyAccessor[T]:
         return hasattr(self.target, self.key)
 
     def _get(self) -> T:
-
         return getattr(self.target, self.key)
 
-    def get(self) -> T:
+    @overload
+    def get(self, /) -> T: ...
+
+    @overload
+    def get[R](self, other: R, /) -> T | R: ...
+    def get(self, other: Any = MISSING, /) -> Any:
+        if not self.has_key:
+            if other is MISSING:
+                raise AttributeError(
+                    f"{self.target.__class__.__name__} has no {self.key} attribute"
+                )
+            return other
         return self._get()
