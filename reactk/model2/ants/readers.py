@@ -2,8 +2,9 @@ from collections.abc import Iterable, Iterator, Mapping
 from types import MethodType
 from typing import TYPE_CHECKING, Any, Callable, TypedDict, get_type_hints
 
-from reactk.model2.ants._get_methods import get_attrs_downto
+from reactk.model2.util.get_methods import get_attrs_downto
 from reactk.model2.ants.key_accessor import KeyAccessor
+from reactk.model2.util.str import format_signature
 
 if TYPE_CHECKING:
     from reactk.model2.prop_ants.prop_meta import some_meta
@@ -141,6 +142,13 @@ class MethodReader:
         except KeyError:
             raise KeyError("return") from None
 
+    @property
+    def _debug_signature(self) -> str:
+        return format_signature(self.target)
+
+    def __str__(self) -> str:
+        return f"【 MethodReader: {self._debug_signature} 】"
+
     def __getitem__[X](self, accessor: type[KeyAccessor[X]]) -> X | None:
         ma = accessor(self.target)
         return ma.get() if ma.has_key else None
@@ -173,6 +181,9 @@ class ClassReader:
         if issubclass(target, MethodType):
             raise ValueError("Target cannot be a method")
         self.target = target
+
+    def __str__(self) -> str:
+        return f"【 ClassReader: {self.target.__name__} 】"
 
     def _refresh_annotations(self) -> None:
         self._annotations = get_type_hints(

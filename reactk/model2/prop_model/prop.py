@@ -3,6 +3,7 @@ from collections.abc import Callable, Iterator, Mapping
 from copy import copy, deepcopy
 from dataclasses import dataclass, field
 from functools import cached_property
+from os import truncate
 from typing import Any, Iterable, Literal, Self
 
 from typeguard import TypeCheckError, check_type
@@ -20,6 +21,7 @@ from reactk.model2.prop_model.v_mapping import (
     VMappingBase,
     deep_merge,
 )
+from reactk.model2.util.str import join_truncate
 
 
 type SomeProp = "Prop | PropBlock"
@@ -30,6 +32,11 @@ class PropLike:
     repr: DiffMode
     metadata: dict[str, Any]
     computed_name: str | None = None
+    path: tuple[str, ...]
+
+    @property
+    def fqn(self) -> str:
+        return ".".join(self.path + (self.name,)) if self.path else self.name
 
     @property
     @abstractmethod
@@ -44,6 +51,9 @@ class PropLike:
             return True
         except ValueError as e:
             return False
+
+    def __hash__(self) -> int:
+        return super().__hash__()
 
 
 class PropBlock(VMappingBase[str, "SomeProp"], PropLike):
@@ -71,15 +81,15 @@ class PropBlock(VMappingBase[str, "SomeProp"], PropLike):
     def is_required(self) -> bool:
         return all(prop.is_required for prop in self)
 
+    @property
+    def _debug(self):
+        return [str(x) if isinstance(x, Prop) else x._debug for x in self]
+
     def _with_props(self, new_props: "PropBlock.Input") -> Self:
         """Return a new instance of the same concrete class with the given values."""
-        return type(self)(
-            path=self.path,
-            name=self.name,
-            props=new_props,
-            repr=self.repr,
-            metadata=self.metadata,
-        )
+        copyed = copy(self)
+        copyed._props = self._to_dict(new_props)
+        return copyed
 
     def __iter__(self) -> Iterator["SomeProp"]:
         return iter(self._props.values())
@@ -112,6 +122,9 @@ class PropBlock(VMappingBase[str, "SomeProp"], PropLike):
         merged_props = deep_merge(self._props, self._to_dict(other))
         return self._with_props(merged_props)
 
+    def __str__(self) -> str:
+        return f"⟦{self.fqn}: {join_truncate(self, 5)}⟧"
+
 
 @dataclass(kw_only=True)
 class Prop[T](PropLike):
@@ -122,23 +135,15 @@ class Prop[T](PropLike):
     name: str
     repr: DiffMode = field(default="recursive")
     metadata: dict[str, Any] = field(default_factory=dict)
-    path: tuple[str, ...] = field(default_factory=tuple)
     computed_name: str | None = field(default=None)
+    path: tuple[str, ...]
 
     @property
     def is_required(self) -> bool:
         return self.no_value is _IS_REQUIRED_TYPE
 
-    def is_valid(self, input: Any):
-        try:
-            self.assert_valid(input)
-            return True
-        except ValueError as e:
-            return False
-
-    @property
-    def fqn(self) -> str:
-        return ".".join(self.path + (self.name,)) if self.path else self.name
+    def __str__(self) -> str:
+        return f"（{self.fqn} :: {self.value_type}）"
 
     def assert_valid(self, input: Any):
         try:
@@ -153,17 +158,11 @@ class Prop[T](PropLike):
         except TypeCheckError as e:
             raise ValueError(f"Typecheck failed in {self.fqn}: {e.args[0]}") from e
 
-    def __hash__(self) -> int:
-        return super().__hash__()
-
 
 def format_value(value: Any) -> str:
     if isinstance(value, str):
         return f'"{value}"'
     return str(value)
-
-
-type SomePropValue = "PropValue | PropBlockValues"
 
 
 @dataclass
@@ -174,19 +173,15 @@ class PropValue[T]:
     old: T | None = None
 
     @property
+    def fqn(self) -> str:
+        return self.prop.fqn
+
+    @property
     def computed_name(self) -> str:
         return self.prop.computed_name or self.prop.name
 
-    def __repr__(self) -> str:
-        match self.prop.repr:
-            case "none":
-                return ""
-            case "simple":
-                return f"{self.prop.name}={self.value.__class__.__name__}"
-            case "recursive":
-                return f"{self.prop.name}={format_value(self.value)}"
-            case _:
-                raise ValueError(f"Invalid repr mode: {self.prop.repr}")
+    def __str__(self) -> str:
+        return f"（{self.fqn} :: {self.prop.value_type} ➔ {str(self.value)}）"
 
     def compute(self) -> T:
         v = self.value or self.prop.no_value
@@ -229,6 +224,10 @@ class PropBlockValues(VMappingBase[str, "SomePropValue"]):
         self._values = values
         self._old = old
         self.schema.assert_valid(values)
+
+    @property
+    def fqn(self) -> str:
+        return self.schema.fqn
 
     @property
     def computed_name(self) -> str:
@@ -276,7 +275,7 @@ class PropBlockValues(VMappingBase[str, "SomePropValue"]):
     def __len__(self) -> int:
         return len(self.schema)
 
-    def _wrap(self, prop: SomeProp) -> SomePropValue:
+    def _wrap(self, prop: SomeProp) -> "SomePropValue":
         old_value = self._old.get(prop.name) if self._old else None
         match prop:
             case Prop() as p:
@@ -294,6 +293,13 @@ class PropBlockValues(VMappingBase[str, "SomePropValue"]):
         schema = self.schema[key]
         return self._wrap(schema)
 
+    def __str__(self) -> str:
+        return f"⟪{self.fqn}: {join_truncate(self, 5)}⟫"
+
+    @property
+    def _debug(self):
+        return [str(x) if isinstance(x, PropValue) else x._debug for x in self]
+
     def _get_key(self, value: "SomePropValue") -> str:
         return value.name
 
@@ -307,3 +313,37 @@ class PropBlockValues(VMappingBase[str, "SomePropValue"]):
             cur = cur.update(other)
             new_values[x.name] = cur
         return PropBlockValues(schema=self.schema, values=new_values, old=self._values)
+
+    def diff(self, other: "PropBlockValues | KeyedValues") -> "KeyedValues":
+        if not isinstance(other, PropBlockValues):
+            other = PropBlockValues(schema=self.schema, values=other)
+        self.schema.assert_valid(other._values)
+        out = {}
+        for k in {*self.keys(), *other.keys()}:
+            if k not in self:
+                out[k] = other[k]
+            elif k not in other:
+                continue
+            my_prop = self[k]
+            match my_prop:
+                case PropValue():
+                    if my_prop != other[k]:
+                        out[k] = other[k]
+                case PropBlockValues():
+                    other_prop = other[k]
+                    if not isinstance(other_prop, PropBlockValues):
+                        raise ValueError(
+                            f"Cannot diff mapping with non-mapping at {my_prop}"
+                        )
+                    if my_prop.schema.repr == "recursive":
+                        result = my_prop.diff(other_prop)
+                        if result:
+                            out[k] = result
+                    else:
+                        if my_prop != other[k]:
+                            out[k] = other[k]
+
+        return out
+
+
+type SomePropValue = "PropValue | PropBlockValues"

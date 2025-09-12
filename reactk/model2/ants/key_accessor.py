@@ -9,9 +9,13 @@ class KeyAccessor[T]:
     def create(cls, target: Any) -> Self:
         return cls(target)
 
+    def __str__(self) -> str:
+        return f"（ Attribute: {self.key} ）"
+
     @property
     @abstractmethod
     def key(self) -> str: ...
+
     def __init__(self, target: Any) -> None:
         self.target = target
 

@@ -4,7 +4,7 @@ from reactk.annotations.get_metadata import (
     get_metadata_of_type,
     get_props_type_from_callable,
 )
-from reactk.model2.ants._get_methods import get_attrs_downto
+from reactk.model2.util.get_methods import get_attrs_downto
 from reactk.model.props.prop_dict import PropDict
 
 from reactk.model.annotation_reader import AnnotationReader, CustomReader

@@ -1,91 +1,76 @@
-from abc import ABC, abstractmethod
+from abc import ABC
+from collections.abc import Mapping
 from copy import copy
+from dataclasses import is_dataclass
+from inspect import isabstract
 from typing import (
-    TYPE_CHECKING,
     Annotated,
     Any,
     ClassVar,
-    Literal,
+    Iterable,
+    Never,
     NotRequired,
+    Protocol,
+    Required,
     Self,
     TypedDict,
-    override,
 )
-
-
-from reactk.model.props.prop_dict import PropDict
-from reactk.model.props.prop_section import PropSection
-from reactk.model.annotation_reader import AnnotationReader
-from reactk.model.props.prop import Prop
-from reactk.model.props.prop_values import (
-    PValues,
+from reactk.model.trace.render_trace import RenderTrace
+from reactk.model2.prop_ants.prop_meta import prop_meta
+from reactk.model2.prop_ants.decorators import HasChildren, prop_getter
+from reactk.model2.prop_ants.create_props import (
+    read_props_from_top_class,
 )
+from reactk.model2.prop_model.common import KeyedValues
+from reactk.model2.prop_model.prop import PropBlock, PropBlockValues
+from reactk.model2.prop_model.v_mapping import deep_merge
 
-from reactk.model.props.prop_value import PropValue
-from reactk.model.trace.render_trace import Display, RenderTrace
+
+class _WithDefaults(TypedDict):
+    __TRACE__: Annotated[Required[RenderTrace], prop_meta(repr="simple")]
+    __CHILDREN__: Annotated[NotRequired[Iterable[Any]], prop_meta(no_value=())]
+
+
+class HasPropsSchema:
+    __PROPS__: ClassVar[PropBlock]
+    __PROP_VALUES__: PropBlockValues
+
+    def __init_subclass__(cls) -> None:
+        if isabstract(cls):
+            return
+        if not is_dataclass(cls):
+            raise TypeError(f"Class {cls.__name__} must be a dataclass to use props")
+        props_block = read_props_from_top_class(cls)
+        has_trace = read_props_from_top_class(_WithDefaults)
+        props_block = props_block.update(has_trace)
+        cls.__PROPS__ = props_block
+
+    def __merge__(self, other: KeyedValues) -> Self:
+        values = self.__PROP_VALUES__
+        schema = self.__PROPS__
+        if not values:
+            pbv = PropBlockValues(schema=schema, values={}, old=None)
+            self.__PROP_VALUES__ = pbv
+        new_pbv = values.update(other)
+        clone = copy(self)
+        clone.__PROP_VALUES__ = new_pbv
+        return clone
 
 
 class InitPropsBase(TypedDict):
-    key: Annotated[NotRequired[str], Prop(no_value=None)]
+    key: Annotated[NotRequired[str], prop_meta(no_value=None)]
 
 
-class ShadowProps(InitPropsBase):
-    children: Annotated[NotRequired[tuple[Self, ...]], Prop(no_value=())]
-    trace: Annotated[NotRequired[RenderTrace], Prop(no_value=None)]
-
-
-class ShadowNode:
-    _props: PValues
-
-    @property
-    def trace(self) -> RenderTrace:
-        x = self._props.get("trace")
-        assert x, "Trace must exist before calling trace."
-        v = x.value
-        assert isinstance(v, RenderTrace), "Trace must be RenderTrace object"
-        return v
-
+class ShadowNode[Kids = Never](HasPropsSchema, HasChildren[Kids], ABC):
+    @prop_getter()
+    def __TRACE__(self) -> RenderTrace: ...
     @classmethod
     def node_name(cls) -> str:
         return cls.__name__
 
-    @property
-    def type_name(self) -> str:
-        return self.__class__.node_name()
-
-    def __init_subclass__(cls) -> None:
-        props = AnnotationReader(cls).section = PropSection(
-            recurse=True, name=cls.node_name()
-        ).merge_class(cls)
-        original_post_init = getattr(cls, "__post_init__", None)
-
-        def init_props(self):
-            original_post_init(self) if original_post_init else None
-            self.props = props.with_values({})
-
-        setattr(cls, "__post_init__", init_props)
-
-    def __repr__(self) -> str:
-        return self._props.__repr__()
+    @prop_getter()
+    def key(self) -> str: ...
 
     @property
-    def key(self) -> str | None:
-        x = self._props.get("key")
-        assert not isinstance(x, PValues), "Key should not be a PValues."
-        return x.value if x else None
-
-    def to_string_marker(self, display: Display) -> str:
-        return self.trace.to_string(display)
-
-    @property
-    def uid(self) -> str:
-        assert self.trace, "Trace must exist before calling u_key."
-        return self.trace.to_string("id")
-
-    def _copy(self, **overrides: Any) -> Self:
-        clone = copy(self)
-        # FIXME: This is a hack that shouldn't exist.
-        # trace and key should not be props at all
-        clone._props = self._props.merge(overrides)
-
-        return clone
+    def uid(self):
+        return self.__TRACE__.to_string("id")

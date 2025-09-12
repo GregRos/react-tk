@@ -82,7 +82,9 @@ class StatefulReconciler[Node: ShadowNode]:
             )
 
         assert old_next_placement
-        upd = Update(old_next_placement, next, diff=prev._props.diff(next._props))
+        upd = Update(
+            old_next_placement, next, diff=prev.__PROP_VALUES__.diff(next._props)
+        )
         match old_prev_placement.get_compatibility(next):
             case "update":
                 return upd
