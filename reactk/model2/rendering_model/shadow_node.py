@@ -16,9 +16,9 @@ from typing import (
     TypedDict,
 )
 from reactk.model.trace.render_trace import RenderTrace
-from reactk.model2.prop_ants.c_meta import prop_meta
+from reactk.model2.prop_ants.prop_meta import prop_meta
 from reactk.model2.prop_ants.decorators import HasChildren, prop_getter
-from reactk.model2.prop_ants.prop_ants import (
+from reactk.model2.prop_ants.create_props import (
     read_props_from_top_class,
 )
 from reactk.model2.prop_model.common import KeyedValues

@@ -6,7 +6,7 @@ from reactk.model2.ants.get_methods import get_attrs_downto
 from reactk.model2.ants.key_accessor import KeyAccessor
 
 if TYPE_CHECKING:
-    from reactk.model2.prop_ants.c_meta import some_meta
+    from reactk.model2.prop_ants.prop_meta import some_meta
 
 
 class AnnotationWrapper:

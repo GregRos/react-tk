@@ -9,7 +9,7 @@ from reactk.model2.ants.annotations import (
     MethodReader,
 )
 from reactk.model2.ants.key_accessor import KeyAccessor
-from reactk.model2.prop_ants.c_meta import prop_meta, schema_meta, some_meta
+from reactk.model2.prop_ants.prop_meta import prop_meta, schema_meta, some_meta
 from reactk.model2.prop_model.common import IS_REQUIRED
 from reactk.model2.prop_model.prop import SomeProp
 import funcy

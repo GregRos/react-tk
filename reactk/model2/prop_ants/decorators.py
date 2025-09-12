@@ -18,7 +18,7 @@ from typing import (
 if TYPE_CHECKING:
     from reactk.model2.prop_model.prop import PropBlock, PropBlockValues
     from reactk.model2.prop_model.common import KeyedValues
-    from reactk.model2.prop_ants.c_meta import some_meta
+    from reactk.model2.prop_ants.prop_meta import some_meta
 
 
 class _HasMerge(Protocol):
@@ -62,7 +62,7 @@ class MethodSetterTransformer:
             transformed = self._transform(f)
             # perform runtime imports here to avoid circular imports at module import time
             from reactk.model2.ants.annotations import OrigAccessor
-            from reactk.model2.prop_ants.prop_ants import MetaAccessor
+            from reactk.model2.prop_ants.create_props import MetaAccessor
 
             OrigAccessor(transformed).set(f)
             MetaAccessor(f).set(self.self_meta)

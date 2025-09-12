@@ -20,7 +20,7 @@ from reactk.model2.prop_model.common import (
     DiffMode,
     KeyedValues,
 )
-from reactk.model2.prop_ants.prop_ants import MetaAccessor
+from reactk.model2.prop_ants.create_props import MetaAccessor
 from reactk.model2.prop_ants.decorators import (
     _HasMerge,
     MethodSetterTransformer,
