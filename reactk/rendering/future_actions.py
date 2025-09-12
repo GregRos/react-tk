@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Any
 
+from reactk.model2.prop_model.common import KeyedValues
+
 from ..model.props.prop_values import PValues
 
 from ..model import Resource, ShadowNode
@@ -22,14 +24,10 @@ class Create:
 class Update:
     existing: Resource
     next: ShadowNode
-    diff: PValues
+    diff: KeyedValues
 
     def __bool__(self):
-        return bool(self.diff.value)
-
-    @property
-    def props(self):
-        return self.existing.props(self.next._props)
+        return bool(self.diff)
 
     def __repr__(self) -> str:
         return f"📝 {self.diff.__repr__()}"

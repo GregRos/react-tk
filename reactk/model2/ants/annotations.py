@@ -2,14 +2,14 @@ from collections.abc import Iterable, Iterator, Mapping
 from types import MethodType
 from typing import TYPE_CHECKING, Any, Callable, TypedDict, get_type_hints
 
-from reactk.model2.annotationss.get_methods import get_attrs_downto
-from reactk.model2.annotationss.key_accessor import KeyAccessor
+from reactk.model2.ants.get_methods import get_attrs_downto
+from reactk.model2.ants.key_accessor import KeyAccessor
 
 if TYPE_CHECKING:
-    from reactk.model2.prop_annotations.c_meta import some_meta
+    from reactk.model2.prop_ants.c_meta import some_meta
 
 
-class AnnotationWrapper2:
+class AnnotationWrapper:
     """Wrap an annotation object and expose convenience getters.
 
     This class contains the implementations of the commonly used
@@ -34,7 +34,7 @@ class AnnotationWrapper2:
             case "Optional":
                 return True
             case "Annotated" | "Unpack":
-                return AnnotationWrapper2(t.args[0]).is_required
+                return AnnotationWrapper(t.args[0]).is_required
             case _:
                 return True
 
@@ -57,13 +57,13 @@ class AnnotationWrapper2:
     def args(self) -> tuple[Any, ...]:
         """Return the annotation's __args__ tuple, or None."""
         return tuple(
-            AnnotationWrapper2(x) for x in getattr(self._target, "__args__", [])
+            AnnotationWrapper(x) for x in getattr(self._target, "__args__", [])
         )
 
-    def metadata_of_type[X](self, *type: type[X]) -> Iterable["AnnotationWrapper2"]:
+    def metadata_of_type[X](self, *type: type[X]) -> Iterable["AnnotationWrapper"]:
         for x in self.metadata:
             if isinstance(x, type):
-                yield AnnotationWrapper2(x)
+                yield AnnotationWrapper(x)
 
     @property
     def metadata(self):
@@ -71,9 +71,9 @@ class AnnotationWrapper2:
         match t.name:
             case "Annotated":
                 for x in t.args[1:]:
-                    yield from AnnotationWrapper2(x).metadata
+                    yield from AnnotationWrapper(x).metadata
             case "NotRequired" | "Unpack":
-                yield from AnnotationWrapper2(t.args[0]).metadata
+                yield from AnnotationWrapper(t.args[0]).metadata
             case _ if not isinstance(t.target, type):
                 yield t
 
@@ -81,7 +81,7 @@ class AnnotationWrapper2:
         t = self
         match t.name:
             case "Annotated" | "NotRequired" | "Unpack":
-                return AnnotationWrapper2(t.args[0])._get_inner_type()
+                return AnnotationWrapper(t.args[0])._get_inner_type()
             case type() as t:
                 return t
             case _:
@@ -137,9 +137,9 @@ class MethodReader:
             x for x in self._annotations.keys() if x != "return"
         )
 
-    def get_return(self) -> AnnotationWrapper2:
+    def get_return(self) -> AnnotationWrapper:
         try:
-            return AnnotationWrapper2(self._annotations["return"])
+            return AnnotationWrapper(self._annotations["return"])
         except KeyError:
             raise KeyError("return") from None
 
@@ -151,7 +151,7 @@ class MethodReader:
         ma = accessor(self.target)
         ma.set(value)
 
-    def get_arg(self, pos: int | str) -> AnnotationWrapper2:
+    def get_arg(self, pos: int | str) -> AnnotationWrapper:
         if pos == "return":
             return self.get_return()
         try:
@@ -159,7 +159,7 @@ class MethodReader:
                 name = self._annotation_names[pos]
             else:
                 name = pos
-            return AnnotationWrapper2(self._annotations[name])
+            return AnnotationWrapper(self._annotations[name])
         except (IndexError, KeyError):
             raise KeyError(pos) from None
 
@@ -185,16 +185,16 @@ class ClassReader:
         self._methods = {k: v for k, v in attrs.items() if callable(v)}
 
     @property
-    def annotations(self) -> Mapping[str, AnnotationWrapper2]:
+    def annotations(self) -> Mapping[str, AnnotationWrapper]:
         return {k: self.get_annotation(k) for k in self._annotation_names}
 
     @property
     def methods(self) -> Mapping[str, MethodReader]:
         return self._methods
 
-    def get_annotation(self, key: str) -> AnnotationWrapper2:
+    def get_annotation(self, key: str) -> AnnotationWrapper:
         try:
-            return AnnotationWrapper2(self._annotations[key])
+            return AnnotationWrapper(self._annotations[key])
         except KeyError:
             raise KeyError(key) from None
 

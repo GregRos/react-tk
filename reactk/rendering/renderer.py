@@ -28,10 +28,3 @@ class ComponentMount[X: ShadowNode]:
     def __call__(self, **ctx_args: Any):
         self.context(**ctx_args)
         return self.context
-
-    def remount(self, root: Component[X]):
-        self._mounted = root
-        self.force_rerender()
-
-    def force_rerender(self):
-        self._reconciler.reconcile(self._compute_render())

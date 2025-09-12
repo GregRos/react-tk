@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 from dataclasses import dataclass, field
 from typing import (
@@ -13,49 +15,17 @@ from typing import (
     overload,
 )
 
-from reactk.model2.annotationss.annotations import OrigAccessor
-from reactk.model2.prop_model.common import (
-    IS_REQUIRED,
-    Converter,
-    DiffMode,
-    KeyedValues,
-)
-from reactk.model2.prop_annotations.prop_annotations import MetaAccessor
-
 if TYPE_CHECKING:
-    from reactk.model2.prop_model.prop import (
-        Prop,
-        PropBlock,
-        SomeProp,
-        PropBlockValues,
-        SomePropValue,
-    )
-
-
-@dataclass(kw_only=True)
-class common_meta:
-    metadata: dict[str, Any] = {}
-    repr: DiffMode = "recursive"
-    name: str | None = None
-
-
-@dataclass(kw_only=True)
-class prop_meta(common_meta):
-    subsection: str | None = None
-    no_value: Any = IS_REQUIRED
-    converter: Converter[Any] | None = None
-
-
-@dataclass(kw_only=True)
-class schema_meta(common_meta):
-    pass
+    from reactk.model2.prop_model.prop import PropBlock, PropBlockValues
+    from reactk.model2.prop_model.common import KeyedValues
+    from reactk.model2.prop_ants.c_meta import some_meta
 
 
 class _HasMerge(Protocol):
     __PROPS__: ClassVar["PropBlock"]
     __PROP_VALUES__: "PropBlockValues"
 
-    def __merge__(self, other: KeyedValues) -> Self: ...
+    def __merge__(self, other: "KeyedValues") -> Self: ...
 
 
 @dataclass
@@ -65,7 +35,7 @@ class MethodSetterTransformer:
     def self_meta(self) -> "some_meta": ...
 
     def _transform(self, f: Callable) -> Callable:
-        def wrapper(self: _HasMerge, input: KeyedValues) -> Self:
+        def wrapper(self: _HasMerge, input: "KeyedValues") -> Self:
             if not isinstance(input, Mapping):
                 raise TypeError(
                     f"Schema setter method {f.__name__} must return a Mapping, got {type(input)}"
@@ -90,6 +60,10 @@ class MethodSetterTransformer:
 
         def apply(f: Callable) -> Any:
             transformed = self._transform(f)
+            # perform runtime imports here to avoid circular imports at module import time
+            from reactk.model2.ants.annotations import OrigAccessor
+            from reactk.model2.prop_ants.prop_ants import MetaAccessor
+
             OrigAccessor(transformed).set(f)
             MetaAccessor(f).set(self.self_meta)
             return transformed
@@ -98,16 +72,16 @@ class MethodSetterTransformer:
 
 
 @dataclass(kw_only=True)
-class schema_setter(schema_meta, MethodSetterTransformer):
+class schema_setter:
     @property
-    def self_meta(self) -> "some_meta":
+    def self_meta(self) -> Any:
         return self
 
 
 @dataclass(kw_only=True)
-class prop_setter(prop_meta, MethodSetterTransformer):
+class prop_setter:
     @property
-    def self_meta(self) -> "some_meta":
+    def self_meta(self) -> Any:
         return self
 
 
@@ -130,9 +104,6 @@ class prop_getter:
         prop_name = self.name or f.__name__
 
         return _getter[R](prop_name)
-
-
-type some_meta = prop_meta | schema_meta
 
 
 class HasChildren[Child](_HasMerge):

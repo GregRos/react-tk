@@ -1,15 +1,15 @@
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Annotated, Any, Required, TypedDict, is_typeddict
-from reactk.model2.annotationss.get_methods import get_attrs_downto
+from reactk.model2.ants.get_methods import get_attrs_downto
 from reactk.model.props import prop
 from reactk.model.trace.render_trace import RenderTrace
-from reactk.model2.annotationss.annotations import (
-    AnnotationWrapper2,
+from reactk.model2.ants.annotations import (
+    AnnotationWrapper,
     ClassReader,
     MethodReader,
 )
-from reactk.model2.annotationss.key_accessor import KeyAccessor
-from reactk.model2.prop_annotations.c_meta import prop_meta, schema_meta, some_meta
+from reactk.model2.ants.key_accessor import KeyAccessor
+from reactk.model2.prop_ants.c_meta import prop_meta, schema_meta, some_meta
 from reactk.model2.prop_model.common import IS_REQUIRED
 from reactk.model2.prop_model.prop import SomeProp
 import funcy
@@ -27,7 +27,7 @@ class MetaAccessor(KeyAccessor[some_meta]):
 
 
 def _create_prop(
-    path: tuple[str, ...], name: str, annotation: AnnotationWrapper2, meta: prop_meta
+    path: tuple[str, ...], name: str, annotation: AnnotationWrapper, meta: prop_meta
 ):
     from reactk.model2.prop_model.prop import Prop
 
@@ -48,7 +48,7 @@ def _create_prop(
 
 
 def _create_schema(
-    path: tuple[str, ...], name: str, annotation: AnnotationWrapper2, meta: schema_meta
+    path: tuple[str, ...], name: str, annotation: AnnotationWrapper, meta: schema_meta
 ):
     from reactk.model2.prop_model.prop import PropBlock
 
@@ -63,7 +63,7 @@ def _create_schema(
 
 
 def _create(
-    path: tuple[str, ...], name: str, annotation: AnnotationWrapper2, meta: some_meta
+    path: tuple[str, ...], name: str, annotation: AnnotationWrapper, meta: some_meta
 ) -> SomeProp:
     match meta:
         case prop_meta() as p_m:
@@ -75,7 +75,7 @@ def _create(
 
 
 def _get_default_meta_for_prop(
-    annotation: AnnotationWrapper2,
+    annotation: AnnotationWrapper,
 ) -> some_meta:
     match annotation.target:
         case _ if issubclass(
@@ -89,7 +89,7 @@ def _get_default_meta_for_prop(
 
 
 def _attrs_to_props(
-    path: tuple[str, ...], meta: Mapping[str, AnnotationWrapper2]
+    path: tuple[str, ...], meta: Mapping[str, AnnotationWrapper]
 ) -> "Iterable[SomeProp]":
     for k, v in meta.items():
         if k.startswith("_"):

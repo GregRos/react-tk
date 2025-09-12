@@ -24,14 +24,15 @@ class StatefulReconciler[Node: ShadowNode]:
 
     type ReconcileAction = Place | Replace | Unplace | Update
     type CreateAction = Create | Recreate | Update
-
+    type ThisResource = Resource[Node]
+    type Construct = Callable[[Node], ThisResource]
     _placement: tuple[Node, ...]
-    _key_to_resource: dict[str, Resource[Node]]
+    _key_to_resource: dict[str, ThisResource]
 
     def __init__(
         self,
-        resource_type: type[Resource[Node]],
-        create: Callable[[Node], Resource[Node]],
+        resource_type: type[ThisResource],
+        create: Construct,
     ):
         self._placement = ()
         self._key_to_resource = {}
