@@ -30,11 +30,6 @@ from .shadow_node import (
 from .context import Ctx, Ctx
 
 
-class ComponentProps(InitPropsBase):
-    key: Annotated[NotRequired[str], Prop(no_value="")]
-    children: Annotated[NotRequired[Tuple[Self, ...]], Prop(no_value=())]
-
-
 type RenderResult[Node: ShadowNode] = Component[Node] | Node
 
 
