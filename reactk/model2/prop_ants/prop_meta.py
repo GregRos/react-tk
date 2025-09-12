@@ -13,32 +13,13 @@ from typing import (
     overload,
 )
 
-from reactk.model2.ants.annotations import OrigAccessor
+from reactk.model2.ants.readers import OrigAccessor
 from reactk.model2.prop_model.common import (
     IS_REQUIRED,
     Converter,
     DiffMode,
     KeyedValues,
 )
-from reactk.model2.prop_ants.create_props import MetaAccessor
-from reactk.model2.prop_ants.decorators import (
-    _HasMerge,
-    MethodSetterTransformer,
-    schema_setter,
-    prop_setter,
-    _getter,
-    prop_getter,
-    HasChildren,
-)
-
-if TYPE_CHECKING:
-    from reactk.model2.prop_model.prop import (
-        Prop,
-        PropBlock,
-        SomeProp,
-        PropBlockValues,
-        SomePropValue,
-    )
 
 
 @dataclass(kw_only=True)
@@ -58,9 +39,6 @@ class prop_meta(common_meta):
 @dataclass(kw_only=True)
 class schema_meta(common_meta):
     pass
-
-
-# moved decorator and helper types live in decorators.py
 
 
 type some_meta = prop_meta | schema_meta
