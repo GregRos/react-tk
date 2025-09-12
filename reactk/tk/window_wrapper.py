@@ -23,6 +23,8 @@ from reactk.model.resource import (
     Compat,
     Resource,
 )
+from reactk.model2.prop_model.prop import PDiff
+from reactk.rendering.future_actions import Create, Replace, Unplace, Update
 from reactk.rendering.stateful_reconciler import StatefulReconciler
 from reactk.rendering.renderer import ComponentMount
 from reactk.model.context import Ctx
@@ -126,11 +128,11 @@ class WindowWrapper(Resource[Window]):
         self.run_in_owner(self.resource.destroy)
 
     @override
-    def replace(self, other: Resource) -> None:
+    def replace(self, other: "WindowWrapper.ThisResource", diff: PDiff, /) -> None:
         def do_replace():
 
             self.resource.withdraw()
-            other.place()
+            other.resource.place()
             other.resource.deiconify()
 
         self.run_in_owner(do_replace)
@@ -159,10 +161,12 @@ class WindowWrapper(Resource[Window]):
         return f"{width}x{height}+{x}+{y}"
 
     @override
-    def place(self) -> None:
+    def place(self, diff: PDiff, /) -> None:
+        geo = diff["Geometry"]  # type: Geometry # type: ignore
+        normed = self.normalize_geo(geo)
+
         def do():
-            geo = self.node._props["Geometry"].value  # type: Geometry # type: ignore
-            normed = self.normalize_geo(geo)
+
             print(f"Setting {self.to_string_marker("log")} geometry to {normed}")
             self.resource.wm_geometry(normed)
             self.resource.deiconify()
@@ -174,9 +178,8 @@ class WindowWrapper(Resource[Window]):
         return "update"
 
     @override
-    def update(self, props: PValues) -> None:
-        x = props.compute()
-        _, computed = x
+    def update(self, props: PDiff, /) -> None:
+        computed = props.diff
         assert isinstance(computed, dict)
 
         def do():

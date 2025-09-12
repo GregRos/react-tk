@@ -3,6 +3,8 @@ from time import sleep
 from tkinter import Label, Tk, Widget as TkWidget
 from typing import Any, ClassVar, Self, final, override
 from reactk.model2.prop_model import PropSection, PValues
+from reactk.model2.prop_model import PDiff
+from reactk.rendering.future_actions import Create, Place, Replace, Unplace, Update
 from reactk.tk.font import to_tk_font
 from reactk.tk.make_clickthrough import make_clickthrough
 from reactk.model.resource import Compat, Resource
@@ -41,7 +43,7 @@ class WidgetWrapper(Resource[Widget]):
     def get_compatibility(self, other: Widget) -> Compat:
         if self.node.type_name != other.type_name:
             return "recreate"
-        elif self.node.__PROP_VALUES__["Pack"] != other.__PROP_VALUES__["Pack"]:
+        elif self.node.__PROP_VALUES__.diff(other.__PROP_VALUES__):
             return "replace"
         else:
             return "update"
@@ -63,21 +65,19 @@ class WidgetWrapper(Resource[Widget]):
         self.resource.destroy()
 
     @override
-    def update(self, props: PValues) -> None:
-
-        diff = props.compute()
+    def update(self, a: PDiff, /) -> None:
+        diff = a.diff
         configure = diff.get("configure", {})
         if "font" in diff:
             configure["font"] = to_tk_font(diff["font"])
         if not configure:
             return
         self.resource.configure(**diff.get("configure", {}))
-        x = 1
 
     @override
-    def place(self) -> None:
+    def place(self, a: PDiff, /) -> None:
         logger.debug(f"Calling place for {self.node}")
-        d = self.node.__PROP_VALUES__.compute()
+        d = a.diff
         pack = d.get("Pack", {})
         if not pack:  # pragma: no cover
             return
@@ -92,8 +92,7 @@ class WidgetWrapper(Resource[Widget]):
         self.resource.pack_forget()
 
     @override
-    def replace(self, other: Resource) -> None:
-        p = other.node.__PROP_VALUES__.compute()
-        other.resource.pack(after=self.resource, **p.get("Pack", {}))
+    def replace(self, other: "WidgetWrapper.ThisResource", a: PDiff, /) -> None:
+        self.resource.pack(after=self.resource, **a.diff.get("Pack", {}))
 
         self.resource.pack_forget()

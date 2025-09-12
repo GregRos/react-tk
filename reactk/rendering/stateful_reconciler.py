@@ -126,9 +126,9 @@ class StatefulReconciler[Node: ShadowNode]:
 
     def _do_create_action(self, action: Update | Create):
         match action:
-            case Create(next):
+            case Create(next) as c:
                 new_resource = self.create(next)  # type: ignore
-                new_resource.update(next.__PROP_VALUES__)
+                new_resource.update(c.diff)
                 self._key_to_resource[next.uid] = new_resource
                 return new_resource
             case Update(existing, next, diff):
@@ -150,22 +150,22 @@ class StatefulReconciler[Node: ShadowNode]:
                 self._do_create_action(action)
             case Unplace(existing):
                 existing.unplace()
-            case Place(Recreate(old, next)):
+            case Place(Recreate(old, next)) as x:
                 new_resource = self._do_create_action(Create(next))
                 old.destroy()
-                new_resource.place()
-            case Place(createAction) if not isinstance(createAction, Recreate):
+                new_resource.place(x.diff)
+            case Place(createAction) as x if not isinstance(createAction, Recreate):
                 resource = self._do_create_action(createAction)
-                resource.place()
-            case Replace(existing, Recreate(old, next)):
+                resource.place(x.diff)
+            case Replace(existing, Recreate(old, next)) as x:
                 resource = self._do_create_action(Create(next))
-                existing.replace(resource)
+                existing.replace(resource, x.diff)
                 old.destroy()
             case Replace(existing, createAction) if not isinstance(
                 createAction, Recreate
             ):
                 resource = self._do_create_action(createAction)
-                existing.replace(resource)
+                existing.replace(resource, createAction.diff)
             case _:
                 assert False, f"Unknown action: {action}"
 

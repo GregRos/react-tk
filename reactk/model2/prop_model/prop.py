@@ -233,7 +233,7 @@ class PValues(VMappingBase[str, "SomePropValue"]):
     def computed_name(self) -> str:
         return self.schema.computed_name or self.schema.name
 
-    def compute(self) -> KeyedValues:
+    def compute(self) -> "PDiff":
         result = {}
 
         def _get_or_create_section(name: str | None) -> dict[str, Any]:
@@ -252,7 +252,7 @@ class PValues(VMappingBase[str, "SomePropValue"]):
                     section[v.computed_name] = v_
                 case PValues() as bv:
                     result.update({bv.computed_name: bv.compute()})
-        return result
+        return PDiff(diff=result, source=self)
 
     def get_pv(self, key: str) -> PropValue[Any]:
         match self[key]:
@@ -314,7 +314,7 @@ class PValues(VMappingBase[str, "SomePropValue"]):
             new_values[x.name] = cur
         return PValues(schema=self.schema, values=new_values, old=self._values)
 
-    def diff(self, other: "PValues | KeyedValues") -> "KeyedValues":
+    def diff(self, other: "PValues | KeyedValues") -> "PDiff":
         if not isinstance(other, PValues):
             other = PValues(schema=self.schema, values=other)
         self.schema.assert_valid(other._values)
@@ -343,7 +343,16 @@ class PValues(VMappingBase[str, "SomePropValue"]):
                         if my_prop != other[k]:
                             out[k] = other[k]
 
-        return out
+        return PDiff(diff=out, source=other)
+
+
+@dataclass
+class PDiff:
+    diff: KeyedValues
+    source: PValues
+
+    def __bool__(self) -> bool:
+        return bool(self.diff)
 
 
 type SomePropValue = "PropValue | PValues"

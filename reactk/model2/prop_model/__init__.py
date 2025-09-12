@@ -6,5 +6,6 @@ from .prop import (
     PValues,
     PropLike,
     PropValue,
+    PDiff,
 )
 from .common import KeyedValues, IS_REQUIRED, DiffMode, Converter

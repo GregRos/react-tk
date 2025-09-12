@@ -6,15 +6,16 @@ from typing import Any, Callable, Literal, Self
 from reactk.model2.prop_model import PropSection, PValues
 from reactk.model.shadow_node import ShadowNode
 from reactk.model2.prop_model.common import KeyedValues
+from reactk.model2.prop_model.prop import PDiff
 
 type Compat = Literal["update", "replace", "recreate"]
 
 
 class Resource[Node: ShadowNode](ABC):
     resource: Any
+    type ThisResource = Resource[Node]
 
     def __repr__(self) -> str:
-        node_type_name = self.__class__.node_type().__name__
         return self.node.__repr__()
 
     @staticmethod
@@ -44,16 +45,16 @@ class Resource[Node: ShadowNode](ABC):
         return self.node.uid
 
     @abstractmethod
-    def update(self, props: PValues) -> None: ...
+    def update(self, props: PDiff, /) -> None: ...
 
     @abstractmethod
-    def place(self) -> None: ...
+    def place(self, props: PDiff, /) -> None: ...
 
     @abstractmethod
     def unplace(self) -> None: ...
 
     @abstractmethod
-    def replace(self, other: Self) -> None: ...
+    def replace(self, other: "ThisResource", diff: PDiff, /) -> None: ...
 
     @abstractmethod
     def get_compatibility(self, other: Node) -> Compat: ...
