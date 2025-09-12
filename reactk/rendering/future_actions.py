@@ -44,7 +44,7 @@ class Recreate:
 
     @property
     def props(self):
-        return f"{self.old.uid} ♻️ {self.next._props}"
+        return f"{self.old.uid} ♻️ {self.next.__PROP_VALUES__}"
 
     @property
     def key(self) -> Any:

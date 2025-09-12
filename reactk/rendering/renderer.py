@@ -11,7 +11,7 @@ from reactk.model.trace.render_trace import RenderTrace
 
 
 def with_trace(node: ShadowNode, trace: RenderTrace) -> ShadowNode:
-    return node._copy(trace=trace)
+    return node.__merge__(trace=trace)
 
 
 class ComponentMount[X: ShadowNode]:

@@ -61,7 +61,9 @@ class StatefulReconciler[Node: ShadowNode]:
                 Update(
                     old_next_placement,
                     next,
-                    diff=old_next_placement.node._props.diff(next._props),
+                    diff=old_next_placement.node.__PROP_VALUES__.diff(
+                        next.__PROP_VALUES__
+                    ),
                 )
             )
 
@@ -77,13 +79,17 @@ class StatefulReconciler[Node: ShadowNode]:
                 Update(
                     old_next_placement,
                     next,
-                    diff=old_next_placement.node._props.diff(next._props),
+                    diff=old_next_placement.node.__PROP_VALUES__.diff(
+                        next.__PROP_VALUES__
+                    ),
                 ),
             )
 
         assert old_next_placement
         upd = Update(
-            old_next_placement, next, diff=prev.__PROP_VALUES__.diff(next._props)
+            old_next_placement,
+            next,
+            diff=prev.__PROP_VALUES__.diff(next.__PROP_VALUES__),
         )
         match old_prev_placement.get_compatibility(next):
             case "update":
@@ -122,7 +128,7 @@ class StatefulReconciler[Node: ShadowNode]:
         match action:
             case Create(next):
                 new_resource = self.create(next)  # type: ignore
-                new_resource.update(next._props)
+                new_resource.update(next.__PROP_VALUES__)
                 self._key_to_resource[next.uid] = new_resource
                 return new_resource
             case Update(existing, next, diff):

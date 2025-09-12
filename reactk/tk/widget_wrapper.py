@@ -2,8 +2,7 @@ from logging import getLogger
 from time import sleep
 from tkinter import Label, Tk, Widget as TkWidget
 from typing import Any, ClassVar, Self, final, override
-from reactk.model.props.prop_dict import PropDict
-from reactk.model.props.prop_values import PValues
+from reactk.model2.prop_model import PropSection, PValues
 from reactk.tk.font import to_tk_font
 from reactk.tk.make_clickthrough import make_clickthrough
 from reactk.model.resource import Compat, Resource

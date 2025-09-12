@@ -2,8 +2,8 @@ from .prop import (
     SomeProp,
     SomePropValue,
     Prop,
-    PropBlock,
-    PropBlockValues,
+    PropSection,
+    PValues,
     PropLike,
     PropValue,
 )

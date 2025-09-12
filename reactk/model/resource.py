@@ -3,8 +3,7 @@ from datetime import datetime
 from typing import Any, Callable, Literal, Self
 
 
-from reactk.model.props.prop_dict import PropDict
-from reactk.model.props.prop_values import PValues
+from reactk.model2.prop_model import PropSection, PValues
 from reactk.model.shadow_node import ShadowNode, ShadowProps
 
 type Compat = Literal["update", "replace", "recreate"]

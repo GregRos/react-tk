@@ -16,14 +16,14 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from reactk.model2.prop_model.prop import PropBlock, PropBlockValues
+    from reactk.model2.prop_model.prop import PropSection, PValues
     from reactk.model2.prop_model.common import KeyedValues
     from reactk.model2.prop_ants.prop_meta import some_meta
 
 
 class _HasMerge(Protocol):
-    __PROPS__: ClassVar["PropBlock"]
-    __PROP_VALUES__: "PropBlockValues"
+    __PROPS__: ClassVar["PropSection"]
+    __PROP_VALUES__: "PValues"
 
     def __merge__(self, other: "KeyedValues") -> Self: ...
 

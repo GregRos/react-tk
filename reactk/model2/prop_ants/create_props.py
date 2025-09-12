@@ -17,7 +17,7 @@ import funcy
 from reactk.model2.prop_model.v_mapping import VMappingBase
 
 if TYPE_CHECKING:
-    from reactk.model2.prop_model.prop import Prop, PropBlock
+    from reactk.model2.prop_model.prop import Prop, PropSection
 
 
 class MetaAccessor(KeyAccessor[some_meta]):
@@ -50,9 +50,9 @@ def _create_prop(
 def _create_schema(
     path: tuple[str, ...], name: str, annotation: AnnotationReader, meta: schema_meta
 ):
-    from reactk.model2.prop_model.prop import PropBlock
+    from reactk.model2.prop_model.prop import PropSection
 
-    return PropBlock(
+    return PropSection(
         path=path,
         name=name,
         computed_name=meta.name,
@@ -133,7 +133,7 @@ def _read_props_from_class(path: tuple[str, ...], cls: type):
     return all_props
 
 
-def read_props_from_top_class(cls: type) -> "PropBlock":
+def read_props_from_top_class(cls: type) -> "PropSection":
     props = [*_read_props_from_class((), cls)]
     init_block = funcy.first(x for x in props if x.name == "__init__")
     repr = "recursive"
@@ -143,4 +143,4 @@ def read_props_from_top_class(cls: type) -> "PropBlock":
         repr = init_block.repr
         metadata = init_block.metadata
     name = cls.__name__
-    return PropBlock(path=(), name=name, props=props, repr=repr, metadata=metadata)
+    return PropSection(path=(), name=name, props=props, repr=repr, metadata=metadata)

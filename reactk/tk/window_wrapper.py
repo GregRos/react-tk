@@ -17,8 +17,7 @@ from typing import (
 
 
 import reactk
-from reactk.model.props.prop_dict import PropDict
-from reactk.model.props.prop_values import PValues
+from reactk.model2.prop_model import PropSection, PValues
 from reactk.model.component import Component
 from reactk.model.resource import (
     Compat,

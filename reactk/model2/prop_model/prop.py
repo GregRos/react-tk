@@ -8,7 +8,7 @@ from typing import Any, Iterable, Literal, Self
 
 from typeguard import TypeCheckError, check_type
 
-from reactk.model.props.prop import DiffMode
+from reactk.model2.prop_model.common import DiffMode
 from reactk.model.trace.key_tools import Display
 from reactk.model.trace.render_trace import RenderTrace
 from reactk.model2.prop_model.common import (
@@ -24,7 +24,7 @@ from reactk.model2.prop_model.v_mapping import (
 from reactk.model2.util.str import join_truncate
 
 
-type SomeProp = "Prop | PropBlock"
+type SomeProp = "Prop | PropSection"
 
 
 class PropLike:
@@ -56,13 +56,13 @@ class PropLike:
         return super().__hash__()
 
 
-class PropBlock(VMappingBase[str, "SomeProp"], PropLike):
+class PropSection(VMappingBase[str, "SomeProp"], PropLike):
 
     def __init__(
         self,
         path: tuple[str, ...],
         name: str,
-        props: "PropBlock.Input" = (),
+        props: "PropSection.Input" = (),
         repr: DiffMode = "recursive",
         computed_name: str | None = None,
         metadata: dict[str, Any] = {},
@@ -85,7 +85,7 @@ class PropBlock(VMappingBase[str, "SomeProp"], PropLike):
     def _debug(self):
         return [str(x) if isinstance(x, Prop) else x._debug for x in self]
 
-    def _with_props(self, new_props: "PropBlock.Input") -> Self:
+    def _with_props(self, new_props: "PropSection.Input") -> Self:
         """Return a new instance of the same concrete class with the given values."""
         copyed = copy(self)
         copyed._props = self._to_dict(new_props)
@@ -118,7 +118,7 @@ class PropBlock(VMappingBase[str, "SomeProp"], PropLike):
             joined = ", ".join(extra_props)
             raise ValueError(f"Extra props {joined} in {self.name}")
 
-    def update(self, other: "PropBlock.Input") -> "PropBlock":
+    def update(self, other: "PropSection.Input") -> "PropSection":
         merged_props = deep_merge(self._props, self._to_dict(other))
         return self._with_props(merged_props)
 
@@ -209,14 +209,14 @@ class PropValue[T]:
         return PropValue(prop=self.prop, value=value, old=self.value)
 
 
-class PropBlockValues(VMappingBase[str, "SomePropValue"]):
+class PValues(VMappingBase[str, "SomePropValue"]):
     @property
     def name(self) -> str:
         return self.schema.name
 
     def __init__(
         self,
-        schema: PropBlock,
+        schema: PropSection,
         values: KeyedValues,
         old: KeyedValues | None = None,
     ):
@@ -250,7 +250,7 @@ class PropBlockValues(VMappingBase[str, "SomePropValue"]):
                     v_ = v.compute()
                     section = _get_or_create_section(v.prop.subsection)
                     section[v.computed_name] = v_
-                case PropBlockValues() as bv:
+                case PValues() as bv:
                     result.update({bv.computed_name: bv.compute()})
         return result
 
@@ -261,14 +261,14 @@ class PropBlockValues(VMappingBase[str, "SomePropValue"]):
             case _:
                 raise ValueError(f"Key {key} is not a Prop")
 
-    def get_pbv(self, key: str) -> "PropBlockValues":
+    def get_pbv(self, key: str) -> "PValues":
         match self[key]:
-            case PropBlockValues() as pb:
+            case PValues() as pb:
                 return pb
             case _:
                 raise ValueError(f"Key {key} is not a PropBlock")
 
-    def __iter__(self) -> Iterator["PropValue | PropBlockValues"]:
+    def __iter__(self) -> Iterator["PropValue | PValues"]:
         for prop in self.schema:
             yield self._wrap(prop)
 
@@ -282,14 +282,14 @@ class PropBlockValues(VMappingBase[str, "SomePropValue"]):
                 return PropValue(
                     prop=p, value=self._values.get(p.name, p.no_value), old=old_value
                 )
-            case PropBlock() as pb:
-                return PropBlockValues(
+            case PropSection() as pb:
+                return PValues(
                     schema=pb, values=self._values.get(pb.name, {}), old=old_value
                 )
             case _:
                 raise ValueError(f"Invalid prop type: {type(prop)}")
 
-    def __getitem__(self, key: str) -> "PropValue | PropBlockValues":
+    def __getitem__(self, key: str) -> "PropValue | PValues":
         schema = self.schema[key]
         return self._wrap(schema)
 
@@ -303,7 +303,7 @@ class PropBlockValues(VMappingBase[str, "SomePropValue"]):
     def _get_key(self, value: "SomePropValue") -> str:
         return value.name
 
-    def update(self, overrides: KeyedValues) -> "PropBlockValues":
+    def update(self, overrides: KeyedValues) -> "PValues":
         new_values = self._to_dict(self)
         for x in self:
             other = overrides.get(x.name)
@@ -312,11 +312,11 @@ class PropBlockValues(VMappingBase[str, "SomePropValue"]):
             cur = new_values[x.name]
             cur = cur.update(other)
             new_values[x.name] = cur
-        return PropBlockValues(schema=self.schema, values=new_values, old=self._values)
+        return PValues(schema=self.schema, values=new_values, old=self._values)
 
-    def diff(self, other: "PropBlockValues | KeyedValues") -> "KeyedValues":
-        if not isinstance(other, PropBlockValues):
-            other = PropBlockValues(schema=self.schema, values=other)
+    def diff(self, other: "PValues | KeyedValues") -> "KeyedValues":
+        if not isinstance(other, PValues):
+            other = PValues(schema=self.schema, values=other)
         self.schema.assert_valid(other._values)
         out = {}
         for k in {*self.keys(), *other.keys()}:
@@ -329,9 +329,9 @@ class PropBlockValues(VMappingBase[str, "SomePropValue"]):
                 case PropValue():
                     if my_prop != other[k]:
                         out[k] = other[k]
-                case PropBlockValues():
+                case PValues():
                     other_prop = other[k]
-                    if not isinstance(other_prop, PropBlockValues):
+                    if not isinstance(other_prop, PValues):
                         raise ValueError(
                             f"Cannot diff mapping with non-mapping at {my_prop}"
                         )
@@ -346,4 +346,4 @@ class PropBlockValues(VMappingBase[str, "SomePropValue"]):
         return out
 
 
-type SomePropValue = "PropValue | PropBlockValues"
+type SomePropValue = "PropValue | PValues"

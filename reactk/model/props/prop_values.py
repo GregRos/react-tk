@@ -1,4 +1,4 @@
-from reactk.model.props.prop_section import PropSection
+from reactk.model2.prop_model import PropSection
 from reactk.model.props.prop_value import PropValue, format_value
 from reactk.model.trace.render_trace import RenderTrace
 from reactk.model.trace.render_trace import Display

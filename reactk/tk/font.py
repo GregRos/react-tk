@@ -1,6 +1,6 @@
 from typing import Annotated, NotRequired, TypedDict
 
-from reactk.model.props.prop import Prop
+from reactk.model2.prop_model import Prop
 
 
 class Font(TypedDict):

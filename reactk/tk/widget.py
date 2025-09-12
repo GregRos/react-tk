@@ -16,12 +16,13 @@ from typing import (
     Unpack,
     override,
 )
-from reactk.model.props.prop import Prop
+from reactk.model2.prop_model import Prop
 from reactk.model.context import Ctx
 from reactk.rendering.renderer import ComponentMount
 from reactk.rendering.stateful_reconciler import StatefulReconciler
 from reactk.model.component import Component
-from reactk.model.props.prop_section import PropSection, section_setter
+from reactk.model2.prop_model import PropSection
+from reactk.model.props.prop_section import section_setter
 from reactk.tk.font import Font
 from reactk.tk.make_clickthrough import make_clickthrough
 import tkinter as tk
