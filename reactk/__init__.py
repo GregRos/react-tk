@@ -1,8 +1,8 @@
-from reactk.tk.font import Font
-from reactk.tk.widget import Widget
-from reactk.tk.geometry import Geometry
-from reactk.tk.widget import Label
-from reactk.tk.window import Window
-from reactk.tk.window_mount import WindowMount
-from reactk.model.component import Component
-from reactk.model.context import Ctx
+"""reactk package initializer.
+
+Keep this module minimal to avoid import-time side-effects and circular
+imports. Import submodules directly (for example `from reactk.model import Component`) instead
+of importing them here.
+"""
+
+__all__ = []
