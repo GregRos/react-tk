@@ -1,6 +1,7 @@
 from collections.abc import Iterable, Mapping
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Annotated, Any, Required, TypedDict, is_typeddict
+from reactk.model2.ants.reflector import Reflector
 from reactk.model2.util.core_reflection import get_attrs_downto
 from typing import TYPE_CHECKING
 
@@ -18,9 +19,12 @@ from reactk.model2.prop_model.prop import SomeProp
 import funcy
 
 from reactk.model2.prop_model.v_mapping import VMappingBase
+from reactk.model2.ants.reflector import Reflector
 
-if TYPE_CHECKING:
-    from reactk.model2.prop_model.prop import Prop, PropSection
+from reactk.model2.prop_model.prop import Prop, PropSection
+
+
+reflector = Reflector(inspect_up_to=(Mapping, TypedDict, "ShadowNode", object))
 
 
 class MetaAccessor(KeyAccessor[some_meta]):
@@ -115,7 +119,7 @@ def _methods_to_props(path: tuple[str, ...], cls: type):
             continue
         if k.startswith("_"):
             continue
-        p = _method_to_prop(path, Reader_Method(v))
+        p = _method_to_prop(path, reflector.method(v))
         if k == "__init__":
             if not isinstance(p, schema_meta):
                 raise TypeError(
@@ -125,7 +129,9 @@ def _methods_to_props(path: tuple[str, ...], cls: type):
 
 
 def _read_props_from_class(path: tuple[str, ...], cls: type):
-    reader = Reader_Class(cls)
+    if not reflector.is_supported(cls):
+        return ()
+    reader = reflector.type(cls)
 
     normal_props = _attrs_to_props(path, reader.annotations)
     method_props = _methods_to_props(path, cls)

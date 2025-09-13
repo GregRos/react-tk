@@ -1,6 +1,6 @@
 import sys
 from typing import Callable, Mapping, get_type_hints
-from reactk.model2.util.core_reflection import get_mro_up_to
+from reactk.model2.util.core_reflection import get_mro_up_to, type_reference
 
 
 def _collect_raw_annotations(classes: list[type]) -> dict[str, object]:
@@ -44,14 +44,16 @@ def _get_fake(annotations: dict[str, object]) -> Callable[[], None]:
     return _fake
 
 
-def get_type_hints_up_to(cls: type, top: type, **defaults: type) -> dict[str, object]:
+def get_type_hints_up_to(
+    cls: type, tops: tuple[type_reference, ...], **defaults: object
+) -> dict[str, object]:
     """Collect and evaluate annotations declared on `cls` (optionally up to `top`).
 
     This function composes the smaller helpers above to assemble the raw
     annotations and namespaces before delegating to typing.get_type_hints for
     evaluation.
     """
-    classes = get_mro_up_to(cls, top)
+    classes = get_mro_up_to(cls, tops)
     collected_raw = _collect_raw_annotations(classes)
     if not collected_raw:
         return {}

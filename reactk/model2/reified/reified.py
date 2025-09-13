@@ -1,4 +1,7 @@
 from reactk.model2.ants.generic_reader import Reader_Generic
+from reactk.model2.ants.reflector import Reflector
+
+reflector = Reflector()
 
 
 class ParametricMeta(type):
@@ -12,7 +15,7 @@ class ParametricMeta(type):
 
     def __call__(cls, *a, **kw):
         # If this is a specialized subclass, it already has __args__
-        sig = Reader_Generic(cls)
+        sig = reflector.generic(cls)
 
         if not sig:
             args = ()

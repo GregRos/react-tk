@@ -7,6 +7,10 @@ from reactk.model2.ants.readers import (
     Reader_Method,
     Reader_Class,
 )
+from reactk.model2.ants.reflector import Reflector
+
+# module-level reflector used by the tests
+t_reflector = Reflector()
 from reactk.model2.ants.generic_reader import (
     Reader_Generic,
     Reader_TypeVar,
@@ -45,14 +49,14 @@ test_preserves_target: target is preserved
 
 
 def test_reader_annotation_basic():
-    ra = Reader_Annotation(int)
+    ra = t_reflector.annotation(int)
     assert ra.target is int
     # for builtin types the reader returns no base name
     assert ra.name is None
 
 
 def test_reader_annotation_annotated_and_metadata():
-    ra = Reader_Annotation(Annotated[int, "m1", 123])
+    ra = t_reflector.annotation(Annotated[int, "m1", 123])
     assert ra.name == "Annotated"
     # current typing stores metadata in __metadata__ which this reader
     # implementation doesn't surface via metadata(), so expect empty
@@ -61,17 +65,17 @@ def test_reader_annotation_annotated_and_metadata():
 
 
 def test_reader_annotation_optional_notrequired():
-    ra_opt = Reader_Annotation(Optional[int])
+    ra_opt = t_reflector.annotation(Optional[int])
     assert ra_opt.name == "Optional"
     assert ra_opt.is_required is True
 
-    ra_nr = Reader_Annotation(NotRequired[int])
+    ra_nr = t_reflector.annotation(NotRequired[int])
     assert ra_nr.is_required is False
 
 
 def test_reader_method_arg_and_return():
     # Reader_Method should expose argument and return annotations
-    rm = Reader_Method(Dummy.method)
+    rm = t_reflector.method(Dummy.method)
     # method has two args (self excluded) 'a' and 'b' and a return
     a0 = rm.get_arg(0)
     # for builtin types the reader returns the raw target
@@ -93,7 +97,7 @@ def test_reader_method_arg_and_return():
 def test_reader_annotation_inner_type_reader_errors_on_non_class():
     # If the inner type is not a class, inner_type_reader should raise
     # Use Annotated with a non-type inner value (e.g. a literal)
-    ra = Reader_Annotation(Annotated[123, "meta"])
+    ra = t_reflector.annotation(Annotated[123, "meta"])
     assert ra.name == "Annotated"
     with pytest.raises(TypeError):
         _ = ra.inner_type_reader

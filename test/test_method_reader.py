@@ -5,14 +5,18 @@ import pytest
 
 from reactk.model2.ants.key_accessor import KeyAccessor
 from reactk.model2.ants.readers import Reader_Method, Reader_Annotation
+from reactk.model2.ants.reflector import Reflector
 
 
 def sample_function(a: int, b: str) -> bool:
     return True
 
 
+t_reflector = Reflector()
+
+
 def test_reader_method_basic_annotations():
-    rm = Reader_Method(sample_function)
+    rm = t_reflector.method(sample_function)
     # name should match the function name
     assert rm.name == sample_function.__name__
 
@@ -29,7 +33,7 @@ def test_reader_method_basic_annotations():
 
 
 def test_get_arg_raises_on_invalid():
-    rm = Reader_Method(sample_function)
+    rm = t_reflector.method(sample_function)
     with pytest.raises(KeyError):
         rm.get_arg(99)
     with pytest.raises(KeyError):
@@ -47,7 +51,7 @@ def test_orig_accessor_uses_original_when_present():
     # attach the original attribute in the wrapper
     setattr(wrapper, "__reactk_original__", original)
 
-    rm = Reader_Method(wrapper)
+    rm = t_reflector.method(wrapper)
     # Reader_Method should expose the original for name/signature purposes
     assert rm.name == original.__name__
     # debug signature should reflect the original function's signature

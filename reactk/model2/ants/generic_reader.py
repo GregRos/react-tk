@@ -13,9 +13,8 @@ from typing import TYPE_CHECKING, Any, Literal, TypeIs, TypeVar
 # Import readers at module load time. `readers.py` only imports
 # from `generic_reader` under TYPE_CHECKING or lazily, so this
 # does not create a circular import at runtime.
-from reactk.model2.ants.readers import Reader_Annotation, Reader_Class
-
 if TYPE_CHECKING:
+    from reactk.model2.ants.readers import Reader_Annotation, Reader_Class
     from reactk.model2.ants.reflector import Reflector
 
 
@@ -37,17 +36,17 @@ class _Base_Reader_TypeVar(Reader_Base, ABC):
     def bound(self) -> Reader_Annotation | None:
         if self.target.__bound__ is None:
             return None
-        return Reader_Annotation(self.target.__bound__)
+        return self.reflector.annotation(self.target.__bound__)
 
     @property
     def constraints(self) -> tuple[Reader_Annotation, ...]:
-        return tuple(Reader_Annotation(x) for x in self.target.__constraints__)
+        return tuple(self.reflector.annotation(x) for x in self.target.__constraints__)
 
     @property
     def default(self) -> Reader_Annotation | None:
         if self.target.__default__ is None:
             return None
-        return Reader_Annotation(self.target.__default__)
+        return self.reflector.annotation(self.target.__default__)
 
     def __str__(self) -> str:
         # Format: {Name}: {Bound.Name} = {Default.Name}
@@ -103,7 +102,9 @@ class Reader_BoundTypeVar(_Base_Reader_TypeVar):
 SomeTypeVarReader = Reader_TypeVar | Reader_BoundTypeVar
 
 
-def _build_readers_for_origin_and_target(target: Any) -> list[SomeTypeVarReader]:
+def _build_readers_for_origin_and_target(
+    target: Any, reflector: "Reflector"
+) -> list[SomeTypeVarReader]:
     # declared type parameters on the origin
     params = TypeParamsAccessor(target).get(())
     # runtime args on the supplied target (may be absent)
@@ -115,23 +116,32 @@ def _build_readers_for_origin_and_target(target: Any) -> list[SomeTypeVarReader]
     readers: list[SomeTypeVarReader] = []
     for idx, (param, arg) in enumerate(zip_longest(params, args, fillvalue=None)):
         if param is None:
-            param_reader = _Base_Reader_TypeVar(TypeVar(f"_{idx}"), is_undeclared=True)
+            param_reader = reflector.type_var(TypeVar(f"_{idx}"), is_undeclared=True)
         else:
-            param_reader = _Base_Reader_TypeVar(param)
+            param_reader = reflector.type_var(param)
 
         # normal handling when a declared type-variable exists
         param_default = param_reader.default
 
         # supplied arg wins
         if arg is not None:
-            readers.append(Reader_BoundTypeVar(param_reader.target, arg))
+            readers.append(
+                reflector.type_arg(
+                    param_reader.target, arg, is_undeclared=param_reader.is_undeclared
+                )
+            )
         # fallback to TypeVar default if present
         elif param_default is not None:
             readers.append(
-                Reader_BoundTypeVar(param_reader.target, param_default.target)
+                reflector.type_arg(
+                    param_reader.target,
+                    param_default.target,
+                    is_undeclared=param_reader.is_undeclared,
+                )
             )
         else:
-            readers.append(Reader_TypeVar(param_reader.target))
+            # param_reader is already an unbound TypeVar reader
+            readers.append(param_reader)
 
     return readers
 
@@ -150,7 +160,7 @@ class Reader_Generic(Reader_Base, Iterable[SomeTypeVarReader]):
     def __post_init__(self) -> None:
         target = self.target
         # replace the in-place reader construction with the helper call
-        self._readers = _build_readers_for_origin_and_target(target)
+        self._readers = _build_readers_for_origin_and_target(target, self.reflector)
         self._by_name = {r.name: r for r in self._readers}
 
     def __bool__(self) -> bool:
@@ -174,7 +184,7 @@ class Reader_Generic(Reader_Base, Iterable[SomeTypeVarReader]):
 
     @property
     def root(self):
-        reader = Reader_Annotation(self.target)
+        reader = self.reflector.annotation(self.target)
         return reader.origin or reader
 
     def __str__(self) -> str:

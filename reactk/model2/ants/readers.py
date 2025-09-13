@@ -37,7 +37,7 @@ class Reader_Annotation(Reader_Base):
 
     @property
     def generic(self) -> "Reader_Generic":
-        return Reader_Generic(self.target)
+        return self.reflector.generic(self.target)
 
     @property
     def target(self) -> Any:
@@ -65,12 +65,12 @@ class Reader_Annotation(Reader_Base):
     @property
     def origin(self) -> "Reader_Annotation | None":
         if self.access(MetadataAccessor):
-            return Reader_Annotation(Annotated)
+            return self.reflector.annotation(Annotated)
 
         origin = get_origin(self.target)
         if origin is None:
             return None
-        return Reader_Annotation(origin)
+        return self.reflector.annotation(origin)
 
     @property
     def name(self) -> str | None:
@@ -88,7 +88,7 @@ class Reader_Annotation(Reader_Base):
     def metadata_of_type[X](self, *type: type[X]) -> Iterable["Reader_Annotation"]:
         for x in self.metadata:
             if isinstance(x, type):
-                yield Reader_Annotation(x)
+                yield self.reflector.annotation(x)
 
     @property
     def metadata(self):
@@ -98,7 +98,7 @@ class Reader_Annotation(Reader_Base):
             case "Annotated":
                 yield from self.access(MetadataAccessor).get(())
             case "NotRequired" | "Unpack":
-                yield from Reader_Annotation(t.generic[0].value).metadata
+                yield from self.reflector.annotation(t.generic[0].value).metadata
             case _ if not isinstance(t.target, type):
                 yield t
 
@@ -126,7 +126,7 @@ class Reader_Annotation(Reader_Base):
     def inner_type_reader(self) -> "Reader_Class":
         """Return a ClassReader for the inner type, if it's a class."""
         t = self.inner_type
-        return Reader_Class(t)
+        return self.reflector.type(t)
 
 
 class OrigAccessor(KeyAccessor[Callable[..., Any]]):
@@ -160,7 +160,7 @@ class Reader_Method(Reader_Base):
 
     def get_return(self) -> Reader_Annotation:
         try:
-            return Reader_Annotation(self._annotations["return"])
+            return self.reflector.annotation(self._annotations["return"])
         except KeyError:
             raise KeyError("return") from None
 
@@ -174,14 +174,11 @@ class Reader_Method(Reader_Base):
     def get_arg(self, pos: int | str) -> Reader_Annotation:
         if pos == "return":
             return self.get_return()
-        try:
-            if isinstance(pos, int):
-                name = self._annotation_names[pos]
-            else:
-                name = pos
-            return Reader_Annotation(self._annotations[name])
-        except (IndexError, KeyError):
-            raise KeyError(pos) from None
+        if isinstance(pos, int):
+            name = self._annotation_names[pos]
+        else:
+            name = pos
+        return self.reflector.annotation(self._annotations[name])
 
 
 @dataclass
@@ -203,9 +200,7 @@ class Reader_Class(Reader_Base):
         return self.target.__name__
 
     def _refresh_annotations(self) -> None:
-        self._annotations = get_type_hints_up_to(
-            self.target,
-        )
+        self._annotations = self.reflector.get_type_hints(self.target)
         self._annotation_names = tuple(self._annotations.keys())
         attrs = get_attrs_downto(self.target, {object, Mapping, TypedDict})
         self._methods = {k: v for k, v in attrs.items() if callable(v)}
@@ -219,7 +214,7 @@ class Reader_Class(Reader_Base):
         return self._methods
 
     def get_annotation(self, key: str) -> Reader_Annotation:
-        return Reader_Annotation(self._annotations[key])
+        return self.reflector.annotation(self._annotations[key])
 
     def get_method(self, key: str) -> Reader_Method:
-        return Reader_Method(self._methods[key])
+        return self.reflector.method(self._methods[key])

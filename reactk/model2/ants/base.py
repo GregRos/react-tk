@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 @dataclass(unsafe_hash=True, eq=True)
 class Reader_Base:
     target: Any
-    reflector: Reflector
+    reflector: "Reflector"
 
     def __str__(self) -> str:
         return str(self.target)
