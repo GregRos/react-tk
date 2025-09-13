@@ -19,11 +19,13 @@ from reactk.model2.ants.base import Reader_Base
 from reactk.model2.util.core_reflection import get_attrs_downto
 from reactk.model2.ants.key_accessor import KeyAccessor
 from reactk.model2.util.str import format_signature
+from reactk.model2.util.type_hints import get_type_hints_up_to
 
 if TYPE_CHECKING:
     from reactk.model2.ants.generic_reader import SomeTypeVarReader, Reader_Generic
 
 
+@dataclass
 class Reader_Annotation(Reader_Base):
     """Wrap an annotation object and expose convenience getters.
 
@@ -201,10 +203,8 @@ class Reader_Class(Reader_Base):
         return self.target.__name__
 
     def _refresh_annotations(self) -> None:
-        self._annotations = get_type_hints(
+        self._annotations = get_type_hints_up_to(
             self.target,
-            include_extras=True,
-            localns={"Node": "object"},
         )
         self._annotation_names = tuple(self._annotations.keys())
         attrs = get_attrs_downto(self.target, {object, Mapping, TypedDict})

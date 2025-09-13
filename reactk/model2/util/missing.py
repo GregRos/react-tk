@@ -1,0 +1,5 @@
+class MISSING_TYPE:
+    pass
+
+
+MISSING = MISSING_TYPE()

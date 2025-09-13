@@ -50,12 +50,7 @@ def format_signature(func: Callable[..., Any]) -> str:
     NAME(arg1: t, arg2: t) -> return_t
     """
     name = getattr(func, "__name__", repr(func))
-    try:
-        hints = get_type_hints(func, include_extras=True)
-    except Exception:
-        # Fall back to raw annotations if get_type_hints fails
-        hints = getattr(func, "__annotations__", {})
-
+    hints = get_type_hints(func, include_extras=True)
     sig = signature(func)
     parts = []
     for param in sig.parameters.values():

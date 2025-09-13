@@ -1,32 +1,33 @@
 from __future__ import annotations
 
-from abc import ABC
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from reactk.model2.ants.args_accessor import ArgsAccessor, TypeParamsAccessor
 from collections.abc import Iterable, Iterator
 from reactk.model2.ants.base import Reader_Base
 from itertools import zip_longest
 
 
-from typing import Any, Literal, TypeIs, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeIs, TypeVar
 
 # Import readers at module load time. `readers.py` only imports
 # from `generic_reader` under TYPE_CHECKING or lazily, so this
 # does not create a circular import at runtime.
 from reactk.model2.ants.readers import Reader_Annotation, Reader_Class
 
+if TYPE_CHECKING:
+    from reactk.model2.ants.reflector import Reflector
 
-class _Base_Reader_TypeVar(ABC, Reader_Base):
 
-    def __init__(self, target: TypeVar, *, is_undeclared=False) -> None:
-        if not isinstance(target, TypeVar):
-            raise TypeError(f"Target {target!r} is not a TypeVar")
-        super().__init__(target)
-        self.is_extra = is_undeclared
+@dataclass
+class _Base_Reader_TypeVar(Reader_Base, ABC):
+    target: TypeVar
+    reflector: "Reflector"
+    is_undeclared: bool = field(default=False, kw_only=True)
 
     @property
-    def value(self) -> Reader_Annotation:
-        raise TypeError(f"TypeVar {self} is not bound to a value")
+    @abstractmethod
+    def is_bound(self) -> bool: ...
 
     @property
     def name(self) -> str:
@@ -63,18 +64,22 @@ class _Base_Reader_TypeVar(ABC, Reader_Base):
 
 
 class Reader_TypeVar(_Base_Reader_TypeVar):
-    is_bound: Literal[False] = False
-
-
-class Reader_BoundTypeVar(_Base_Reader_TypeVar):
-
-    def __init__(self, target: TypeVar, bound_value: Any) -> None:
-        super().__init__(target)
-        self._value = Reader_Annotation(bound_value)
+    @property
+    def is_bound(self) -> Literal[True]:
+        return True
 
     @property
     def value(self) -> Reader_Annotation:
-        return self._value
+        raise TypeError(f"TypeVar {self} is not bound to a value")
+
+
+@dataclass
+class Reader_BoundTypeVar(_Base_Reader_TypeVar):
+    value: Reader_Annotation
+
+    @property
+    def is_bound(self) -> Literal[True]:
+        return True
 
     def __eq__(self, other: object) -> bool:
         return (
@@ -169,7 +174,8 @@ class Reader_Generic(Reader_Base, Iterable[SomeTypeVarReader]):
 
     @property
     def root(self):
-        return Reader_Class(self.target)
+        reader = Reader_Annotation(self.target)
+        return reader.origin or reader
 
     def __str__(self) -> str:
         return f"{self.root.name}[{', '.join(str(r) for r in self._readers)}]"

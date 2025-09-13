@@ -1,12 +1,7 @@
 from abc import abstractmethod
 from typing import Any, Self, overload
 
-
-class _MISSING_TYPE:
-    pass
-
-
-MISSING = _MISSING_TYPE()
+from reactk.model2.util.missing import MISSING
 
 
 class KeyAccessor[T]:

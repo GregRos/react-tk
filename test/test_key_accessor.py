@@ -1,5 +1,6 @@
 import pytest
-from reactk.model2.ants.key_accessor import KeyAccessor, MISSING
+from reactk.model2.util.missing import MISSING
+from reactk.model2.ants.key_accessor import KeyAccessor
 
 
 class Dummy:
