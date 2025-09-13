@@ -1,7 +1,7 @@
 from abc import ABC
 from collections.abc import Mapping
 from copy import copy
-from dataclasses import is_dataclass
+from dataclasses import dataclass, is_dataclass
 from inspect import isabstract
 from typing import (
     Annotated,
@@ -39,8 +39,7 @@ class HasPropsSchema:
     def __init_subclass__(cls) -> None:
         if isabstract(cls):
             return
-        if not is_dataclass(cls):
-            raise TypeError(f"Class {cls.__name__} must be a dataclass to use props")
+
         props_block = read_props_from_top_class(cls)
         has_trace = read_props_from_top_class(_WithDefaults)
         props_block = props_block.update(has_trace)
@@ -62,6 +61,7 @@ class InitPropsBase(TypedDict):
     key: Annotated[NotRequired[str], prop_meta(no_value=None)]
 
 
+@dataclass
 class ShadowNode[Kids = Never](HasPropsSchema, HasChildren[Kids], ABC):
     @prop_getter()
     def __TRACE__(self) -> RenderTrace: ...

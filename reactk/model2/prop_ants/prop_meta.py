@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from dataclasses import dataclass, field
+from types import MappingProxyType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -24,7 +25,7 @@ from reactk.model2.prop_model.common import (
 
 @dataclass(kw_only=True)
 class common_meta:
-    metadata: dict[str, Any] = {}
+    metadata: Mapping[str, Any] = field(default=MappingProxyType({}))
     repr: DiffMode = "recursive"
     name: str | None = None
 

@@ -1,0 +1,36 @@
+test_annotation_reader:
+  test_target: # target is preserved
+  test_name: # name is correct for the following cases
+    - int # int
+    - list[int] # list
+    - dict[str, int] # dict
+    - Annotated[int, "meta"] # Annotated
+    - Annotated[list[int], "meta"] # Annotated
+    - Annotated[dict[str, int], "meta"] # Annotated
+    - Union[int, str] # Union
+  test_inner_type: # extracts inner type
+    - plain type: int #-> int
+    - generic type: list[int] #-> list
+    - generic2 type: dict[str, int] #-> dict[str, int]
+    - annotated 1: Annotated[int, "meta"] #-> int
+    - unpack: Unpack[SomeTypedDict] #-> SomeTypedDict
+    - not required: NotRequired[int] #-> int
+    - annotated[not required]: Annotated[Unpack[SomeTypedDict], "meta"] #-> SomeTypedDict
+    - optional: Optional[int] #-> int
+    - required: Required[int] #-> int
+    - annotated->optional: Annotated[Optional[int], "meta"] #-> int
+    - annotated->not required: Annotated[NotRequired[int], "meta"] #-> int
+  test_inner_type_reader: # extracts inner type reader, test with equality
+    - plain type: Reader_Annotation(int) # itself
+    - generic type: Reader_Annotation(list[int]) # itself
+    - generic2 type: Reader_Annotation(dict[str, int]) # itself
+  test_metadata: # extracts metadata from Annotated
+    - plain type: int # ()
+    - generic type: list[int] # ()
+    - annotated 1: Annotated[int, "meta"] # ("meta",)
+    - annotated 2: Annotated[list[int], "meta1", "meta2"] # ("meta1", "meta2")
+    - not_required: Annotated[NotRequired[int], "meta1"] # ("meta1",)
+  test_metadata_of_type: # extracts only metadata of a specific type
+    - str: Annotated[int, "meta", 123] # ("meta",)
+    - str, int: Annotated[int, "meta", 123, ()] # ("meta", 123, "more")
+    -

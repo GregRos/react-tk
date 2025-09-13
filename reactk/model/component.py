@@ -3,7 +3,6 @@ from dataclasses import dataclass, field
 from typing import Annotated, Any, Callable, NotRequired, Self, Tuple
 
 from reactk.model.context import Ctx
-from reactk.model2.prop_ants.prop_meta import prop_meta
 from reactk.model.shadow_node import InitPropsBase, ShadowNode
 
 

@@ -1,38 +1,52 @@
+from __future__ import annotations
+
 from abc import ABC
+from dataclasses import dataclass
 from reactk.model2.ants.args_accessor import ArgsAccessor, TypeParamsAccessor
 from collections.abc import Iterable, Iterator
-from reactk.model2.ants.readers import AnnotationReader, ClassReader
+from reactk.model2.ants.base import Reader_Base
+from itertools import zip_longest
 
 
-from typing import Any, ClassVar, Literal, TypeVar, get_origin
+from typing import Any, Literal, TypeIs, TypeVar
+
+# Import readers at module load time. `readers.py` only imports
+# from `generic_reader` under TYPE_CHECKING or lazily, so this
+# does not create a circular import at runtime.
+from reactk.model2.ants.readers import Reader_Annotation, Reader_Class
 
 
-class _Base_Reader_TypeVar(ABC):
+class _Base_Reader_TypeVar(ABC, Reader_Base):
 
-    def __init__(self, target: TypeVar) -> None:
+    def __init__(self, target: TypeVar, *, is_undeclared=False) -> None:
         if not isinstance(target, TypeVar):
             raise TypeError(f"Target {target!r} is not a TypeVar")
-        self.target = target
+        super().__init__(target)
+        self.is_extra = is_undeclared
+
+    @property
+    def value(self) -> Reader_Annotation:
+        raise TypeError(f"TypeVar {self} is not bound to a value")
 
     @property
     def name(self) -> str:
         return self.target.__name__
 
     @property
-    def bound(self) -> AnnotationReader | None:
+    def bound(self) -> Reader_Annotation | None:
         if self.target.__bound__ is None:
             return None
-        return AnnotationReader(self.target.__bound__)
+        return Reader_Annotation(self.target.__bound__)
 
     @property
-    def constraints(self) -> tuple[AnnotationReader, ...]:
-        return tuple(AnnotationReader(x) for x in self.target.__constraints__)
+    def constraints(self) -> tuple[Reader_Annotation, ...]:
+        return tuple(Reader_Annotation(x) for x in self.target.__constraints__)
 
     @property
-    def default(self) -> AnnotationReader | None:
+    def default(self) -> Reader_Annotation | None:
         if self.target.__default__ is None:
             return None
-        return AnnotationReader(self.target.__default__)
+        return Reader_Annotation(self.target.__default__)
 
     def __str__(self) -> str:
         # Format: {Name}: {Bound.Name} = {Default.Name}
@@ -53,11 +67,24 @@ class Reader_TypeVar(_Base_Reader_TypeVar):
 
 
 class Reader_BoundTypeVar(_Base_Reader_TypeVar):
-    is_bound: Literal[True] = True
 
     def __init__(self, target: TypeVar, bound_value: Any) -> None:
         super().__init__(target)
-        self.value = bound_value
+        self._value = Reader_Annotation(bound_value)
+
+    @property
+    def value(self) -> Reader_Annotation:
+        return self._value
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            type(other) == type(self)
+            and self.target == other.target
+            and self.value == other.value
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.target, self.value))
 
     def __str__(self) -> str:
         # Format: {Name}={BoundValue}
@@ -71,7 +98,41 @@ class Reader_BoundTypeVar(_Base_Reader_TypeVar):
 SomeTypeVarReader = Reader_TypeVar | Reader_BoundTypeVar
 
 
-class Reader_Generic(Iterable[SomeTypeVarReader]):
+def _build_readers_for_origin_and_target(target: Any) -> list[SomeTypeVarReader]:
+    # declared type parameters on the origin
+    params = TypeParamsAccessor(target).get(())
+    # runtime args on the supplied target (may be absent)
+    ta = ArgsAccessor(target)
+    args: tuple = ()
+    if ta.has_key:
+        args = ta.get(())
+
+    readers: list[SomeTypeVarReader] = []
+    for idx, (param, arg) in enumerate(zip_longest(params, args, fillvalue=None)):
+        if param is None:
+            param_reader = _Base_Reader_TypeVar(TypeVar(f"_{idx}"), is_undeclared=True)
+        else:
+            param_reader = _Base_Reader_TypeVar(param)
+
+        # normal handling when a declared type-variable exists
+        param_default = param_reader.default
+
+        # supplied arg wins
+        if arg is not None:
+            readers.append(Reader_BoundTypeVar(param_reader.target, arg))
+        # fallback to TypeVar default if present
+        elif param_default is not None:
+            readers.append(
+                Reader_BoundTypeVar(param_reader.target, param_default.target)
+            )
+        else:
+            readers.append(Reader_TypeVar(param_reader.target))
+
+    return readers
+
+
+@dataclass
+class Reader_Generic(Reader_Base, Iterable[SomeTypeVarReader]):
     """Read the generic signature for a class or a parameterized generic alias.
 
     This reader will produce either `TypeVarReader` (unbound) or
@@ -81,38 +142,10 @@ class Reader_Generic(Iterable[SomeTypeVarReader]):
     bound value (from args or defaults).
     """
 
-    def __init__(self, target: Any) -> None:
-        # Determine origin and args (if any)
-        origin = get_origin(target)
-        if origin is None:
-            if not isinstance(target, type):
-                raise TypeError(f"Target {target!r} is not a class or generic alias")
-            origin = target
-
-        self.target = origin
-        # declared type parameters on the origin
-        params = TypeParamsAccessor(origin).get(())
-
-        # runtime args on the supplied target (may be absent)
-        ta = ArgsAccessor(target)
-        args: tuple = ()
-        if ta.has_key:
-            args = ta.get(())
-
-        readers: list[SomeTypeVarReader] = []
-        for idx, param in enumerate(params):
-            param_reader = _Base_Reader_TypeVar(param)
-            param_default = param_reader.default
-            # supplied arg wins
-            if idx < len(args) and args[idx] is not None:
-                readers.append(Reader_BoundTypeVar(param, args[idx]))
-            # fallback to TypeVar default if present
-            elif param_default is not None:
-                readers.append(Reader_BoundTypeVar(param, param_default.target))
-            else:
-                readers.append(Reader_TypeVar(param))
-
-        self._readers = readers
+    def __post_init__(self) -> None:
+        target = self.target
+        # replace the in-place reader construction with the helper call
+        self._readers = _build_readers_for_origin_and_target(target)
         self._by_name = {r.name: r for r in self._readers}
 
     def __bool__(self) -> bool:
@@ -125,10 +158,6 @@ class Reader_Generic(Iterable[SomeTypeVarReader]):
     def __iter__(self) -> Iterator[SomeTypeVarReader]:
         return iter(self._readers)
 
-    @property
-    def cls(self):
-        return ClassReader(self.target)
-
     def __getitem__(self, key: int | str) -> SomeTypeVarReader:
         """Index by integer position or by type-var name."""
         match key:
@@ -140,7 +169,7 @@ class Reader_Generic(Iterable[SomeTypeVarReader]):
 
     @property
     def root(self):
-        return ClassReader(self.target)
+        return Reader_Class(self.target)
 
     def __str__(self) -> str:
         return f"{self.root.name}[{', '.join(str(r) for r in self._readers)}]"
@@ -148,3 +177,11 @@ class Reader_Generic(Iterable[SomeTypeVarReader]):
     @property
     def is_all_bound(self) -> bool:
         return all(isinstance(r, Reader_BoundTypeVar) for r in self._readers)
+
+
+def is_bound(tv: _Base_Reader_TypeVar) -> TypeIs[Reader_BoundTypeVar]:
+    return isinstance(tv, Reader_BoundTypeVar)
+
+
+def is_not_bound(tv: _Base_Reader_TypeVar) -> TypeIs[Reader_TypeVar]:
+    return isinstance(tv, Reader_TypeVar)

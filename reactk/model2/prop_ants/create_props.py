@@ -1,11 +1,15 @@
 from collections.abc import Iterable, Mapping
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Annotated, Any, Required, TypedDict, is_typeddict
-from reactk.model2.util.get_methods import get_attrs_downto
-from reactk.model.trace.render_trace import RenderTrace
+from reactk.model2.util.core_reflection import get_attrs_downto
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from reactk.model.trace.render_trace import RenderTrace
 from reactk.model2.ants.readers import (
-    AnnotationReader,
-    ClassReader,
-    MethodReader,
+    Reader_Annotation,
+    Reader_Class,
+    Reader_Method,
 )
 from reactk.model2.ants.key_accessor import KeyAccessor
 from reactk.model2.prop_ants.prop_meta import prop_meta, schema_meta, some_meta
@@ -26,7 +30,7 @@ class MetaAccessor(KeyAccessor[some_meta]):
 
 
 def _create_prop(
-    path: tuple[str, ...], name: str, annotation: AnnotationReader, meta: prop_meta
+    path: tuple[str, ...], name: str, annotation: Reader_Annotation, meta: prop_meta
 ):
     from reactk.model2.prop_model.prop import Prop
 
@@ -47,7 +51,7 @@ def _create_prop(
 
 
 def _create_schema(
-    path: tuple[str, ...], name: str, annotation: AnnotationReader, meta: schema_meta
+    path: tuple[str, ...], name: str, annotation: Reader_Annotation, meta: schema_meta
 ):
     from reactk.model2.prop_model.prop import PropSection
 
@@ -62,7 +66,7 @@ def _create_schema(
 
 
 def _create(
-    path: tuple[str, ...], name: str, annotation: AnnotationReader, meta: some_meta
+    path: tuple[str, ...], name: str, annotation: Reader_Annotation, meta: some_meta
 ) -> SomeProp:
     match meta:
         case prop_meta() as p_m:
@@ -74,13 +78,13 @@ def _create(
 
 
 def _get_default_meta_for_prop(
-    annotation: AnnotationReader,
+    annotation: Reader_Annotation,
 ) -> some_meta:
     match annotation.target:
         case _ if issubclass(
             annotation.target, (Mapping, VMappingBase)
         ) or is_typeddict(annotation.target):
-            return schema_meta(repr="recursive", metadata={})
+            return schema_meta(repr="recursive")
         case _:
             return prop_meta(
                 no_value=IS_REQUIRED, converter=None, repr="recursive", metadata={}
@@ -88,7 +92,7 @@ def _get_default_meta_for_prop(
 
 
 def _attrs_to_props(
-    path: tuple[str, ...], meta: Mapping[str, AnnotationReader]
+    path: tuple[str, ...], meta: Mapping[str, Reader_Annotation]
 ) -> "Iterable[SomeProp]":
     for k, v in meta.items():
         if k.startswith("_"):
@@ -98,9 +102,9 @@ def _attrs_to_props(
         yield _create(path, k, v, fst or _get_default_meta_for_prop(v))
 
 
-def _method_to_prop(path: tuple[str, ...], method: MethodReader) -> "SomeProp":
+def _method_to_prop(path: tuple[str, ...], method: Reader_Method) -> "SomeProp":
     annotation = method.get_arg(1)
-    meta = method[MetaAccessor] or _get_default_meta_for_prop(annotation)
+    meta = method.access(MetaAccessor).get() or _get_default_meta_for_prop(annotation)
     return _create(path, method.name, annotation, meta)
 
 
@@ -111,7 +115,7 @@ def _methods_to_props(path: tuple[str, ...], cls: type):
             continue
         if k.startswith("_"):
             continue
-        p = _method_to_prop(path, MethodReader(v))
+        p = _method_to_prop(path, Reader_Method(v))
         if k == "__init__":
             if not isinstance(p, schema_meta):
                 raise TypeError(
@@ -121,7 +125,7 @@ def _methods_to_props(path: tuple[str, ...], cls: type):
 
 
 def _read_props_from_class(path: tuple[str, ...], cls: type):
-    reader = ClassReader(cls)
+    reader = Reader_Class(cls)
 
     normal_props = _attrs_to_props(path, reader.annotations)
     method_props = _methods_to_props(path, cls)

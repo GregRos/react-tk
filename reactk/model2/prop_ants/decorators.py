@@ -15,8 +15,7 @@ from typing import (
     overload,
 )
 
-from reactk.model2.prop_ants import prop_meta
-from reactk.model2.prop_ants.prop_meta import schema_meta
+from reactk.model2.prop_ants.prop_meta import prop_meta, schema_meta
 
 if TYPE_CHECKING:
     from reactk.model2.prop_model.prop import PropSection, PValues

@@ -18,3 +18,17 @@ def get_attrs_downto(cls, stop_at: set[type]):
             result[name] = method
 
     return result
+
+
+def get_mro_up_to(cls: type, top: type | None = None) -> list[type]:
+    """Return the MRO slice for cls up to top (inclusive).
+
+    If top is None or not in cls.__mro__, returns [cls].
+    """
+    if top is None:
+        return [cls]
+    mro = list(cls.__mro__)
+    if top in mro:
+        stop_index = mro.index(top) + 1
+        return mro[:stop_index]
+    return [cls]

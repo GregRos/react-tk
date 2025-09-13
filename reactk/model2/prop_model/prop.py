@@ -1,16 +1,24 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from abc import abstractmethod
 from collections.abc import Callable, Iterator, Mapping
-from copy import copy, deepcopy
+from copy import copy
 from dataclasses import dataclass, field
 from functools import cached_property
-from os import truncate
+
+# os.truncate was unused; removed to clean imports
+from types import MappingProxyType
 from typing import Any, Iterable, Literal, Self
 
 from typeguard import TypeCheckError, check_type
 
 from reactk.model2.prop_model.common import DiffMode
-from reactk.model.trace.key_tools import Display
-from reactk.model.trace.render_trace import RenderTrace
+
+if TYPE_CHECKING:
+    from reactk.model.trace.key_tools import Display
+    from reactk.model.trace.render_trace import RenderTrace
 from reactk.model2.prop_model.common import (
     _IS_REQUIRED_TYPE,
     IS_REQUIRED,
@@ -30,7 +38,7 @@ type SomeProp = "Prop | PropSection"
 class PropLike:
     name: str
     repr: DiffMode
-    metadata: dict[str, Any]
+    metadata: Mapping[str, Any]
     computed_name: str | None = None
     path: tuple[str, ...]
 
@@ -65,7 +73,7 @@ class PropSection(VMappingBase[str, "SomeProp"], PropLike):
         props: "PropSection.Input" = (),
         repr: DiffMode = "recursive",
         computed_name: str | None = None,
-        metadata: dict[str, Any] = {},
+        metadata: Mapping[str, Any] = {},
     ):
         self.path = path
         self.name = name
@@ -134,7 +142,7 @@ class Prop[T](PropLike):
     value_type: type[T]
     name: str
     repr: DiffMode = field(default="recursive")
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: Mapping[str, Any] = field(default=MappingProxyType({}))
     computed_name: str | None = field(default=None)
     path: tuple[str, ...]
 

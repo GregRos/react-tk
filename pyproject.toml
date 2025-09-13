@@ -12,6 +12,7 @@ typeguard = "^4.4.0"
 pywin32 = "^308"
 funcy = "^2.0"
 funcy-typing = "^2.0.8"
+pytest = "^8.4.2"
 
 
 [build-system]
