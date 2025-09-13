@@ -2,13 +2,17 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from reactk.model2.ants.args_accessor import ArgsAccessor, TypeParamsAccessor
+from reactk.model2.ants.args_accessor import (
+    ArgsAccessor,
+    MetadataAccessor,
+    TypeParamsAccessor,
+)
 from collections.abc import Iterable, Iterator
 from reactk.model2.ants.base import Reader_Base
 from itertools import zip_longest
 
 
-from typing import TYPE_CHECKING, Any, Literal, TypeIs, TypeVar
+from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeIs, TypeVar, get_origin
 
 # Import readers at module load time. `readers.py` only imports
 # from `generic_reader` under TYPE_CHECKING or lazily, so this
@@ -182,15 +186,18 @@ class Reader_Generic(Reader_Base, Iterable[SomeTypeVarReader]):
                 return self._by_name[key]
         raise KeyError(key) from None
 
-    @property
-    def root(self):
-        reader = self.reflector.annotation(self.target)
-        return reader.origin or reader
-
     def __str__(self) -> str:
-        return f"{self.root.name}[{', '.join(str(r) for r in self._readers)}]"
+        return f"{self.origin and self.origin.name or "?"}[{', '.join(str(r) for r in self._readers)}]"
 
     @property
+    def origin(self) -> "Reader_Annotation | None":
+        if self.access(MetadataAccessor):
+            return self.reflector.annotation(Annotated)
+        origin = get_origin(self.target)
+        if origin is None:
+            return None
+        return self.reflector.annotation(origin)
+
     def is_all_bound(self) -> bool:
         return all(isinstance(r, Reader_BoundTypeVar) for r in self._readers)
 

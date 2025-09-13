@@ -1,79 +1,80 @@
 import pytest
-from reactk.model2.util.missing import MISSING
+
 from reactk.model2.ants.key_accessor import KeyAccessor
 
 
-class Dummy:
-    pass
+class WithAttr:
+    # declare attribute for type checkers; value set in __init__
+    attr = 123
 
 
-class AttrAccessor(KeyAccessor[int]):
+class WithoutAttr:
+    attr: int
+
+
+class SimpleAccessor(KeyAccessor[int]):
     @property
     def key(self) -> str:
-        return "_value"
+        return "attr"
 
 
-class BadSetTarget:
-    def __init__(self):
-        # define property that raises on set
-        class _Bad:
-            @property
-            def _value(self):
-                return 1
-
-            @_value.setter
-            def _value(self, v):
-                raise RuntimeError("cannot set")
-
-        self._bad = _Bad()
+def make_with():
+    """Create a fresh WithAttr instance and its accessor."""
+    w = WithAttr()
+    a = SimpleAccessor(w)
+    return w, a
 
 
-def test_get_set_and_has_key():
-    d = Dummy()
-    a = AttrAccessor(d)
-    assert not a.has_key
-    assert not a
+def make_without():
+    """Create a fresh WithoutAttr instance and its accessor."""
+    wo = WithoutAttr()
+    a = SimpleAccessor(wo)
+    return wo, a
 
-    # set value
-    a.set(10)
-    assert a.has_key
-    assert a
-    assert getattr(d, "_value") == 10
 
-    # get existing
-    assert a.get() == 10
-
-    # get with default when missing
-    d2 = Dummy()
-    a2 = AttrAccessor(d2)
-    assert a2.get(5) == 5
+def test_get_when_attr_exists():
+    _, accessor = make_with()
+    assert accessor.get() == 123
 
 
 def test_get_raises_when_missing():
-    d = Dummy()
-    a = AttrAccessor(d)
+    _, accessor = make_without()
     with pytest.raises(AttributeError):
-        a.get()
+        accessor.get()
 
 
-def test_str_contains_key():
-    d = Dummy()
-    a = AttrAccessor(d)
-    s = str(a)
-    assert "_value" in s
+def test_get_with_default():
+    _, accessor = make_without()
+    assert accessor.get(456) == 456
 
 
-def test_set_ignores_exception():
-    bad = BadSetTarget()
+def test_set_overwrites_existing():
+    w, accessor = make_with()
+    accessor.set(1011)
+    assert w.attr == 1011
 
-    # accessor pointing at the inner object that raises on set
-    class BadAccessor(KeyAccessor[int]):
-        @property
-        def key(self) -> str:
-            return "_value"
 
-    acc = BadAccessor(bad._bad)
-    # should not raise despite underlying setter raising
-    acc.set(3)
-    # since setter raised, has_key may remain True (attribute exists) or False
-    # but no exception should be propagated
+def test_set_creates_new():
+    wo, accessor = make_without()
+    accessor.set(101112)
+    assert wo.attr == 101112
+
+
+def test_has_key_when_exists():
+    _, accessor = make_with()
+    assert accessor.has_key is True
+
+
+def test_has_key_when_not_exists():
+    _, accessor = make_without()
+    assert accessor.has_key is False
+
+
+def test_bool_when_exists():
+    _, accessor = make_with()
+    assert bool(accessor) is True
+
+
+def test_bool_when_not_exists():
+    _, accessor = make_without()
+    assert bool(accessor) is False

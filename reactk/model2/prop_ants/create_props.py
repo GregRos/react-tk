@@ -38,7 +38,8 @@ def _create_prop(
 ):
     from reactk.model2.prop_model.prop import Prop
 
-    return Prop[annotation.inner_type](
+    x: Any = annotation.inner_type
+    return Prop[x](
         name=name,
         repr=meta.repr,
         no_value=meta.no_value,
@@ -46,7 +47,7 @@ def _create_prop(
         computed_name=meta.name,
         subsection=meta.subsection,
         metadata=meta.metadata,
-        value_type=annotation.inner_type or Any,
+        value_type=x,
         path=(
             *path,
             name,

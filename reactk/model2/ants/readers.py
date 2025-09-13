@@ -14,7 +14,7 @@ from typing import (
 )
 
 
-from reactk.model2.ants.args_accessor import MetadataAccessor
+from reactk.model2.ants.args_accessor import MetadataAccessor, UnderscoreNameAccessor
 from reactk.model2.ants.base import Reader_Base
 from reactk.model2.util.core_reflection import get_attrs_downto
 from reactk.model2.ants.key_accessor import KeyAccessor
@@ -40,10 +40,6 @@ class Reader_Annotation(Reader_Base):
         return self.reflector.generic(self.target)
 
     @property
-    def target(self) -> Any:
-        return self.target
-
-    @property
     def is_required(self) -> bool:
         t = self
         match t.name:
@@ -63,24 +59,17 @@ class Reader_Annotation(Reader_Base):
                 return True
 
     @property
-    def origin(self) -> "Reader_Annotation | None":
-        if self.access(MetadataAccessor):
-            return self.reflector.annotation(Annotated)
-
-        origin = get_origin(self.target)
-        if origin is None:
-            return None
-        return self.reflector.annotation(origin)
-
-    @property
-    def name(self) -> str | None:
+    def name(self) -> str:
         t = self.target
-        origin = self.origin
-        if origin is not None:
+        origin = self.generic.origin
+        if origin:
             return origin.name
-        elif t.__class__ is type:
+        elif _name := UnderscoreNameAccessor(self.target):
+            return _name.get(t)
+        elif isinstance(t, type):
             return t.__name__
-        return None
+        else:
+            assert False, f"Unknown annotation type: {t!r}"
 
     def __str__(self) -> str:
         return str(self.target)
@@ -102,12 +91,11 @@ class Reader_Annotation(Reader_Base):
             case _ if not isinstance(t.target, type):
                 yield t
 
-    def _get_inner_type(self) -> type:
+    def _get_inner_type(self) -> Any:
         t = self
         if t.name in ("Annotated", "NotRequired", "Unpack", "Required", "Optional"):
             return t.generic[0].value._get_inner_type()
-        if isinstance(t.target, type):
-            return t.target
+        return t.target
         raise TypeError(f"Inner type {t.target!r} is not a class")
 
     def __eq__(self, other: object) -> bool:
@@ -117,7 +105,7 @@ class Reader_Annotation(Reader_Base):
         return hash(self.target)
 
     @property
-    def inner_type(self) -> type:
+    def inner_type(self) -> Any:
         """Return the inner / unwrapped type (inlined)."""
         x = self._get_inner_type()
         return x

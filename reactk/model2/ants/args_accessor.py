@@ -38,3 +38,15 @@ class MetadataAccessor(KeyAccessor[tuple]):
     @property
     def key(self) -> str:
         return "__metadata__"
+
+
+class UnderscoreNameAccessor(KeyAccessor[str]):
+    """Accessor for the private __name__ attribute.
+
+    This accessor raises an AttributeError if the attribute is missing to
+    make callers handle the absence explicitly (per new API requirement).
+    """
+
+    @property
+    def key(self) -> str:
+        return "_name"

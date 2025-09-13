@@ -13,6 +13,8 @@ pywin32 = "^308"
 funcy = "^2.0"
 funcy-typing = "^2.0.8"
 pytest = "^8.4.2"
+hypothesis = "^6.138.15"
+ward = "^0.68.0b0"
 
 
 [build-system]
