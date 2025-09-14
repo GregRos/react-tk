@@ -108,7 +108,7 @@ def _attrs_to_props(
 
 
 def _method_to_prop(path: tuple[str, ...], method: Reader_Method) -> "SomeProp":
-    annotation = method.get_arg(1)
+    annotation = method.arg(1)
     meta = method.access(MetaAccessor).get() or _get_default_meta_for_prop(annotation)
     return _create(path, method.name, annotation, meta)
 

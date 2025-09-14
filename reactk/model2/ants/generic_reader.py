@@ -22,10 +22,9 @@ if TYPE_CHECKING:
     from reactk.model2.ants.reflector import Reflector
 
 
-@dataclass
+@dataclass(repr=False)
 class _Base_Reader_TypeVar(Reader_Base, ABC):
     target: TypeVar
-    reflector: "Reflector"
     is_undeclared: bool = field(default=False, kw_only=True)
 
     @property
@@ -66,6 +65,7 @@ class _Base_Reader_TypeVar(Reader_Base, ABC):
         return "".join(parts)
 
 
+@dataclass(eq=True, unsafe_hash=True, repr=False)
 class Reader_TypeVar(_Base_Reader_TypeVar):
     @property
     def is_bound(self) -> Literal[True]:
@@ -76,23 +76,13 @@ class Reader_TypeVar(_Base_Reader_TypeVar):
         raise TypeError(f"TypeVar {self} is not bound to a value")
 
 
-@dataclass
+@dataclass(eq=True, unsafe_hash=True, repr=False)
 class Reader_BoundTypeVar(_Base_Reader_TypeVar):
     value: Reader_Annotation
 
     @property
     def is_bound(self) -> Literal[True]:
         return True
-
-    def __eq__(self, other: object) -> bool:
-        return (
-            type(other) == type(self)
-            and self.target == other.target
-            and self.value == other.value
-        )
-
-    def __hash__(self) -> int:
-        return hash((self.target, self.value))
 
     def __str__(self) -> str:
         # Format: {Name}={BoundValue}
@@ -150,7 +140,7 @@ def _build_readers_for_origin_and_target(
     return readers
 
 
-@dataclass
+@dataclass(eq=True, unsafe_hash=True, repr=False)
 class Reader_Generic(Reader_Base, Iterable[SomeTypeVarReader]):
     """Read the generic signature for a class or a parameterized generic alias.
 
