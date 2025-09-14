@@ -66,7 +66,7 @@ class Reader_Annotation(Reader_Base):
             return origin.name
         elif _name := UnderscoreNameAccessor(self.target):
             return _name.get(t)
-        elif isinstance(t, type):
+        elif hasattr(t, "__name__"):
             return t.__name__
         else:
             assert False, f"Unknown annotation type: {t!r}"

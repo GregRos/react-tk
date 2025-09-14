@@ -1,0 +1,114 @@
+test framework: pytest
+folders:
+  test_reflector:
+    file KeyAccessor:
+      setup:
+        dummy_exists: has attribute = 123
+        doesnt_exist: no attribute
+      get():
+        when attr exists: 123
+        when attr doesnt: raises KeyError
+        pass default: 456
+      set:
+        overwrites existing: 789
+        creates new: 101112
+      has_key:
+        when attr exists: True
+        when attr doesnt: False
+      __bool__:
+        when attr exists: True
+        when attr doesnt: False
+    file Reader_Annotation:
+      test target: # target is preserved
+
+      test name:
+        - int # int
+        - list[int] # list
+        - dict[str, int] # dict
+        - Annotated[int, "meta"] # Annotated
+        - Unpack[SomeTypedDict] # Unpack
+        - NotRequired[int] # NotRequired
+        - Optional[int] # Optional
+        - Union[int, str] # Union
+      test inner_type: # extracts inner type
+        - plain type: int #-> int
+        - generic type: list[int] #-> list[int]
+        - generic2 type: dict[str, int] #-> dict[str, int]
+        - annotated 1: Annotated[int, "meta"] #-> int
+        - unpack: Unpack[SomeTypedDict] #-> SomeTypedDict
+        - not required: NotRequired[int] #-> int
+        - annotated[not required]: Annotated[Unpack[SomeTypedDict], "meta"] #-> SomeTypedDict
+        - optional: Optional[int] #-> int
+        - required: Required[int] #-> int
+        - annotated->optional: Annotated[Optional[int], "meta"] #-> int
+        - annotated->not required: Annotated[NotRequired[int], "meta"] #-> int
+      test inner_type_reader: # extracts inner type reader, test with equality
+        - plain type: Reader_Annotation(int) # itself
+        - generic type: Reader_Annotation(list[int]) # itself
+        - generic2 type: Reader_Annotation(dict[str, int]) # itself
+        - union type: # throws ValueError
+      test metadata: # extracts metadata from Annotated
+        - plain type: int # ()
+        - generic type: list[int] # ()
+        - annotated 1: Annotated[int, "meta"] # ("meta",)
+        - annotated 2: Annotated[list[int], "meta1", "meta2"] # ("meta1", "meta2")
+        - not_required: Annotated[NotRequired[int], "meta1"] # ("meta1",)
+      test metadata_of_type: # extracts only metadata of a specific type
+        - str: Annotated[int, "meta", 123] # ("meta",)
+        - str, int: Annotated[int, "meta", 123, ()] # ("meta", 123, "more")
+    file reader_Method:
+      test target: # target oreserved
+      test name: gets name of target
+      test _debug_signature: # should print target signature
+      test arg:
+        index in range: gets annotation of argument
+        index out of range: raises IndexError
+      test returns:
+        return annotation: gets return annotation
+        no return annotation: raises ValueError
+    file Reader_Class:
+      setup:
+        - define class Dummy...
+        - define class Inherited(Dummy)...
+      case Dummy:
+        test target: # target is preserved
+        test generic target:
+          - list[int] read as list
+          - dict[str, int] read as dict
+          - Annotated[int, ""] raises ValueError
+          - Unpack[SomeTypedDict] raises ValueError
+          - NotRequired[int] raises ValueError
+        test name: gets name of class
+        test _debug_signature: # should print target signature
+        test annotations:
+          all: gets all annotations as mapping
+        test methods:
+          all: gets all methods as mapping
+        test annotation:
+          exists: gets specific annotation by name
+          doesnt exist: raises KeyError
+        test method:
+          exists: gets specific method by name
+          doesnt exist: raises KeyError
+      case Inherited:
+        test methods:
+          - includes all methods
+        test annotations:
+          - includes all annotations
+        test annotation: = inherited annotation
+          - own annotation
+        test method: = inherited method
+          - own method
+    file Reader_Generic:
+      test target: # target is preserved
+      test origin:
+        - list[int] read as list
+        - dict[str, int] read as dict
+        - Annotated[int, ""] raises ValueError
+        - Unpack[SomeTypedDict] raises ValueError
+        - NotRequired[int] raises ValueError
+      test args:
+        - list[int] read as (int,)
+        - dict[str, int] read as (str, int)
+        - dict[str, list[int]] read as (str, list[int])
+        - dict[str, dict[int, str]] read as (str, dict[int, str])

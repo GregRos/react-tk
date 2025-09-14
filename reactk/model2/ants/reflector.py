@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from reactk.model2.ants.generic_reader import Reader_BoundTypeVar
-from reactk.model2.util.core_reflection import all_match_ref
+from reactk.model2.util.core_reflection import none_match_ref
 
 if TYPE_CHECKING:
     from reactk.model2.util.type_hints import type_reference
@@ -24,7 +24,7 @@ class Reflector:
             if isinstance(self.inspect_up_to, tuple)
             else (self.inspect_up_to,)
         )
-        self.is_supported = all_match_ref(*inspect_up_to)
+        self.is_supported = none_match_ref(*inspect_up_to)
 
     def type(self, target: type):
         from reactk.model2.ants.readers import Reader_Class

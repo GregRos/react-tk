@@ -34,11 +34,11 @@ def is_match_ref(tr: type_reference):
     return _is_match_ref
 
 
-def all_match_ref(*trs: type_reference):
+def none_match_ref(*trs: type_reference):
     matchers = [is_match_ref(tr) for tr in trs]
 
     def _all_match_ref(t: type) -> bool:
-        return all(matcher(t) for matcher in matchers)
+        return all(not matcher(t) for matcher in matchers)
 
     return _all_match_ref
 
@@ -54,4 +54,4 @@ def get_mro_up_to(
     if top is None:
         return [cls]
     mro = list(cls.__mro__)
-    return [*takewhile(all_match_ref(*top), mro)]
+    return [*takewhile(none_match_ref(*top), mro)]

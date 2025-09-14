@@ -3,6 +3,8 @@ import pytest
 
 from reactk.model2.ants.reflector import Reflector
 
+r = Reflector()
+
 
 @pytest.mark.parametrize(
     "target,expected",
@@ -19,7 +21,6 @@ from reactk.model2.ants.reflector import Reflector
     ],
 )
 def test_inner_type(target, expected):
-    r = Reflector()
     ann = r.annotation(target)
     assert ann.inner_type == expected
 
@@ -37,7 +38,6 @@ def test_inner_type(target, expected):
     ],
 )
 def test_name(target, expected):
-    r = Reflector()
     ann = r.annotation(target)
     assert ann.name == expected
 
@@ -51,7 +51,6 @@ def test_name(target, expected):
     ],
 )
 def test_inner_type_reader(target, expected):
-    r = Reflector()
     ann = r.annotation(target)
     assert ann.inner_class == r.type(expected)
 
@@ -67,7 +66,6 @@ def test_inner_type_reader(target, expected):
     ],
 )
 def test_metadata(target, expected):
-    r = Reflector()
     ann = r.annotation(target)
     aa = tuple(ann.metadata)
     assert aa == expected
@@ -81,7 +79,6 @@ def test_metadata(target, expected):
     ],
 )
 def test_metadata_of_type(target, types, expected):
-    r = Reflector()
     ann = r.annotation(target)
     got = tuple(x for x in ann.metadata_of_type(*types))
     assert got == tuple(r.annotation(x) for x in expected)

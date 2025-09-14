@@ -86,9 +86,9 @@ def _get_default_meta_for_prop(
     annotation: Reader_Annotation,
 ) -> some_meta:
     match annotation.target:
-        case _ if issubclass(
-            annotation.target, (Mapping, VMappingBase)
-        ) or is_typeddict(annotation.target):
+        case x if (
+            isinstance(x, type) and issubclass(x, (Mapping, VMappingBase))
+        ) or is_typeddict(x):
             return schema_meta(repr="recursive")
         case _:
             return prop_meta(
@@ -107,10 +107,13 @@ def _attrs_to_props(
         yield _create(path, k, v, fst or _get_default_meta_for_prop(v))
 
 
-def _method_to_prop(path: tuple[str, ...], method: Reader_Method) -> "SomeProp":
-    annotation = method.arg(1)
-    meta = method.access(MetaAccessor).get() or _get_default_meta_for_prop(annotation)
-    return _create(path, method.name, annotation, meta)
+def _method_to_prop(path: tuple[str, ...], method: Reader_Method) -> "SomeProp | None":
+    meta = method.access(MetaAccessor)
+    if not meta:
+        return None
+    annotation = method.arg(0)
+
+    return _create(path, method.name, annotation, meta.get())
 
 
 def _methods_to_props(path: tuple[str, ...], cls: type):
@@ -121,6 +124,8 @@ def _methods_to_props(path: tuple[str, ...], cls: type):
         if k.startswith("_"):
             continue
         p = _method_to_prop(path, reflector.method(v))
+        if not p:
+            continue
         if k == "__init__":
             if not isinstance(p, schema_meta):
                 raise TypeError(
