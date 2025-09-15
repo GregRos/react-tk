@@ -20,21 +20,16 @@ class SimpleAccessor(KeyAccessor[int]):
 
 class KeyAccessor_Test:
     # class attributes holding example objects and their accessors
-    @property
-    def w(self):
-        return WithAttr()
+    w: WithAttr
+    wo: WithoutAttr
+    accessor: SimpleAccessor
+    accessor_wo: SimpleAccessor
 
-    @property
-    def accessor(self):
-        return SimpleAccessor(self.w)
-
-    @property
-    def wo(self):
-        return WithoutAttr()
-
-    @property
-    def accessor_wo(self):
-        return SimpleAccessor(self.wo)
+    def setup_method(self) -> None:
+        self.w = WithAttr()
+        self.wo = WithoutAttr()
+        self.accessor = SimpleAccessor(self.w)
+        self.accessor_wo = SimpleAccessor(self.wo)
 
     def it_gets_when_attr_exists(self):
         assert self.accessor.get() == 123

@@ -5,7 +5,7 @@ from typing import TypeVar
 from reactk.model2.ants.reflector import Reflector
 
 
-class Reader_TypeVar_Test:
+class RTypeVar_Test:
     r: Reflector = Reflector()
 
     # Module-level Reader_TypeVar instances created inline (avoid assigning TypeVar to

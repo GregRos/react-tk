@@ -4,7 +4,7 @@ import pytest
 from reactk.model2.ants.reflector import Reflector
 
 
-class Reader_Annotation_Test:
+class RAnnotation_Test:
     # class-level reflector instance used by all test methods
     r: Reflector = Reflector()
 

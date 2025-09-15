@@ -45,7 +45,7 @@ class G_1_Lower_Default[A: object = str]:
     pass
 
 
-class Generic_Signature_Test:
+class RTypeVar_Sig_Test:
     @pytest.mark.parametrize(
         "got,expected",
         (

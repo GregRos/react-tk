@@ -3,7 +3,7 @@ import pytest
 from reactk.model2.ants.reflector import Reflector
 
 
-class Reader_Class_Test:
+class RClass_Test:
     class Sample:
         x: int
         y: str

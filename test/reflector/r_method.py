@@ -11,7 +11,7 @@ def func_without_return(a: int, b: str):
     return 0
 
 
-class Reader_Method_Test:
+class RMethod_Test:
     r: Reflector = Reflector()
 
     def it_has_name_and_debug_signature(self):
