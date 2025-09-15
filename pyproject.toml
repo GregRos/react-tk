@@ -18,6 +18,7 @@ ward = "^0.68.0b0"
 [tool.pytest.ini_options]
 python_functions = "it_*"
 python_classes = ["*_Test"]
+python_files = ["*_test.py"]
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
