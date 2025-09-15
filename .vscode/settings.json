@@ -30,5 +30,8 @@
   "python.terminal.activateEnvironment": true,
   "python-envs.defaultEnvManager": "ms-python.python:poetry",
   "python-envs.defaultPackageManager": "ms-python.python:poetry",
-  "python-envs.pythonProjects": []
+  "python-envs.pythonProjects": [],
+  "python.testing.pytestArgs": ["test"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }

@@ -70,18 +70,19 @@ class _Base_Reader_TypeVar(Reader_Base, ABC):
             return None
         return self.reflector.annotation(self.target.__default__)
 
-    def __str__(self) -> str:
+    @property
+    def _text(self) -> str:
         # Format: {Name}: {Bound.Name} = {Default.Name}
         name = self.name
         parts = [name]
         b = self.lower_bound
 
         if b is not None:
-            parts.append(f": {str(b)}")
+            parts.append(f": {b._text}")
 
         d = self.default
         if d is not None:
-            parts.append(f" = {str(d)}")
+            parts.append(f" = {d._text}")
         return "".join(parts)
 
 
@@ -110,63 +111,20 @@ class Reader_BoundTypeVar(_Base_Reader_TypeVar):
             return super().is_similar(other) and self.value == other.value
         return False
 
-    def __str__(self) -> str:
+    @property
+    def _text(self) -> str:
         # Use the base representation, drop everything at/after '=' and trim,
         # then denote the bound value with the ≡ symbol.
-        base = super().__str__()
+        base = super()._text
         if "=" in base:
             left = base.split("=", 1)[0].strip()
         else:
             left = base.strip()
-        return f"{left} ≡ {str(self.value).strip()}"
+        return f"{left} ≡ {self.value._text.strip()}"
 
 
 # Union type for readers that may be bound or unbound
 SomeTypeVarReader = Reader_TypeVar | Reader_BoundTypeVar
-
-
-def _build_readers_for_origin_and_target(
-    target: Any, reflector: "Reflector"
-) -> list[SomeTypeVarReader]:
-    # declared type parameters on the origin
-    params = TypeParamsAccessor(target).get(())
-    # runtime args on the supplied target (may be absent)
-    ta = ArgsAccessor(target)
-    args: tuple = ()
-    if ta.has_key:
-        args = ta.get(())
-
-    readers: list[SomeTypeVarReader] = []
-    for idx, (param, arg) in enumerate(zip_longest(params, args, fillvalue=None)):
-        if param is None:
-            param_reader = reflector.type_var(TypeVar(f"_{idx}"), is_undeclared=True)
-        else:
-            param_reader = reflector.type_var(param)
-
-        # normal handling when a declared type-variable exists
-        param_default = param_reader.default
-
-        # supplied arg wins
-        if arg is not None:
-            readers.append(
-                reflector.type_arg(
-                    param_reader.target, arg, is_undeclared=param_reader.is_undeclared
-                )
-            )
-        # fallback to TypeVar default if present
-        elif param_default is not None:
-            readers.append(
-                reflector.type_arg(
-                    param_reader.target,
-                    param_default.target,
-                    is_undeclared=param_reader.is_undeclared,
-                )
-            )
-        else:
-            # param_reader is already an unbound TypeVar reader
-            readers.append(param_reader)
-
-    return readers
 
 
 @dataclass(eq=True, unsafe_hash=True, repr=False)
@@ -183,7 +141,7 @@ class Reader_Generic(Reader_Base, Iterable[SomeTypeVarReader]):
     def __post_init__(self) -> None:
         target = self.target
         # replace the in-place reader construction with the helper call
-        self._readers = _build_readers_for_origin_and_target(target, self.reflector)
+        self._readers = self.reflector._get_generic_signature(target)
         self._by_name = {r.name: r for r in self._readers}
 
     def __bool__(self) -> bool:
@@ -205,18 +163,20 @@ class Reader_Generic(Reader_Base, Iterable[SomeTypeVarReader]):
                 return self._by_name[key]
         raise KeyError(key) from None
 
-    def __str__(self) -> str:
-        return f"{self.origin and self.origin.name or "?"}[{', '.join(str(r) for r in self._readers)}]"
+    @property
+    def _text(self) -> str:
+        origin_name = self.origin.name if self.origin else "?"
+        return f"{origin_name}[{', '.join(r._text for r in self._readers)}]"
 
     @property
-    def origin(self) -> "Reader_Annotation | None":
-        if self.access(MetadataAccessor):
-            return self.reflector.annotation(Annotated)
-        origin = get_origin(self.target)
-        if origin is None:
-            return None
-        return self.reflector.annotation(origin)
+    def annotation(self) -> "Reader_Annotation":
+        return self.reflector.annotation(self.target)
 
+    @property
+    def origin(self) -> Reader_Annotation | None:
+        return self.annotation.origin
+
+    @property
     def is_all_bound(self) -> bool:
         return all(isinstance(r, Reader_BoundTypeVar) for r in self._readers)
 

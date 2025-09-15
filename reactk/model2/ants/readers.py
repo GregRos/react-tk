@@ -39,6 +39,17 @@ class Reader_Annotation(Reader_Base):
         return str(self)
 
     @property
+    def origin(self) -> "Reader_Annotation | None":
+        if self.access(MetadataAccessor):
+            return self.reflector.annotation(Annotated)
+        if isinstance(self.target, type):
+            return self
+        origin = get_origin(self.target)
+        if origin is None:
+            return None
+        return self.reflector.annotation(origin)
+
+    @property
     def generic(self) -> "Reader_Generic":
         return self.reflector.generic(self.target)
 
@@ -62,9 +73,15 @@ class Reader_Annotation(Reader_Base):
                 return True
 
     @property
+    def is_type(self):
+        return isinstance(self.target, type)
+
+    @property
     def name(self) -> str:
         t = self.target
-        origin = self.generic.origin
+        if self.is_type:
+            return t.__name__
+        origin = self.origin
         if origin:
             return origin.name
         elif _name := UnderscoreNameAccessor(self.target):
@@ -74,8 +91,9 @@ class Reader_Annotation(Reader_Base):
         else:
             assert False, f"Unknown annotation type: {t!r}"
 
-    def __str__(self) -> str:
-        if self.is_class:
+    @property
+    def _text(self) -> str:
+        if self.is_type:
             return self.name
         return str(self.target)
 
@@ -97,7 +115,12 @@ class Reader_Annotation(Reader_Base):
     def _get_inner_type(self) -> Any:
         t = self
         if t.name in ("Annotated", "NotRequired", "Unpack", "Required", "Optional"):
-            return t.generic[0].value._get_inner_type()
+            g = t.generic
+            if not g.is_all_bound:
+                raise TypeError(
+                    f"Used special form {t.name} without args. It has no inner type."
+                )
+            return g[0].value._get_inner_type()
         return t.target
 
     def __eq__(self, other: object) -> bool:
@@ -110,22 +133,17 @@ class Reader_Annotation(Reader_Base):
         return x
 
     @property
-    def is_class(self) -> bool:
-        """Return True if the inner type is a class."""
-        return isinstance(self.inner_type, type)
-
-    @property
     def inner_class(self) -> "Reader_Class":
-        """Return a ClassReader for the inner type, if it's a class."""
-        t = self.inner_type
+        """Return a ClassReader for the inner type origin, if it's a class."""
+        t_r = self.reflector.annotation(self.inner_type)
 
-        if not isinstance(t, type):
-            if o := self.generic.origin:
-                t = o.target
-            if not isinstance(t, type):
-                raise TypeError(f"Inner type {t!r} is not a class")
+        if not t_r.is_type:
+            if o := t_r.origin:
+                t_r = o
+            if not t_r.is_type:
+                raise TypeError(f"Inner type {t_r!r} is not a class")
 
-        return self.reflector.type(t)
+        return self.reflector.type(t_r)  # type: ignore
 
 
 class OrigAccessor(KeyAccessor[Callable[..., Any]]):
@@ -167,7 +185,8 @@ class Reader_Method(Reader_Base):
     def _debug_signature(self) -> str:
         return format_signature(self.target)
 
-    def __str__(self) -> str:
+    @property
+    def _text(self) -> str:
         return f"{self._debug_signature}"
 
     def arg(self, pos: int | str) -> Reader_Annotation:
@@ -217,3 +236,7 @@ class Reader_Class(Reader_Base):
 
     def method(self, key: str) -> Reader_Method:
         return self.reflector.method(self._methods[key])
+
+    @property
+    def _text(self) -> str:
+        return self.name

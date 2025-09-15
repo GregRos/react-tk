@@ -1,6 +1,7 @@
 import builtins
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from reactk.model2.ants.generic_reader import Reader_BoundTypeVar
@@ -8,6 +9,7 @@ from reactk.model2.util.core_reflection import none_match_ref
 
 if TYPE_CHECKING:
     from reactk.model2.util.type_hints import type_reference
+    from reactk.model2.ants.generic_reader import SomeTypeVarReader
 
 
 @dataclass
@@ -35,6 +37,53 @@ class Reflector:
         from reactk.model2.ants.readers import Reader_Annotation
 
         return Reader_Annotation(target=target, reflector=self)
+
+    def _get_generic_signature(self, t: Any) -> tuple["SomeTypeVarReader", ...]:
+        from reactk.model2.ants.generic_reader import TypeParamsAccessor, ArgsAccessor
+
+        target = self.annotation(t)
+        origin = target.origin
+        # declared type parameters on the origin
+        params = target(TypeParamsAccessor).get(())
+        # runtime args on the supplied target (may be absent)
+        ta = target(ArgsAccessor)
+        args: tuple = ()
+        if ta.has_key:
+            args = ta.get(())
+
+        readers: list[SomeTypeVarReader] = []
+        for idx, (param, arg) in enumerate(zip_longest(params, args, fillvalue=None)):
+            if param is None:
+                param_reader = self.type_var(TypeVar(f"_{idx}"), is_undeclared=True)
+            else:
+                param_reader = self.type_var(param)
+
+            # normal handling when a declared type-variable exists
+            param_default = param_reader.default
+
+            # supplied arg wins
+            if arg is not None:
+                readers.append(
+                    self.type_arg(
+                        param_reader.target,
+                        arg,
+                        is_undeclared=param_reader.is_undeclared,
+                    )
+                )
+            # fallback to TypeVar default if present
+            elif param_default is not None:
+                readers.append(
+                    self.type_arg(
+                        param_reader.target,
+                        param_default.target,
+                        is_undeclared=param_reader.is_undeclared,
+                    )
+                )
+            else:
+                # param_reader is already an unbound TypeVar reader
+                readers.append(param_reader)
+
+        return tuple(readers)
 
     def get_type_hints(
         self, cls: builtins.type, **defaults: builtins.type

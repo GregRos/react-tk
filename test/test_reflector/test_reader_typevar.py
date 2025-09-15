@@ -13,6 +13,7 @@ RA = r.type_var(TypeVar("A"))
 RExtra = r.type_var(TypeVar("Extra"))
 RB = r.type_var(TypeVar("B", bound=int))
 RC = r.type_var(TypeVar("C", default=str))
+RD = r.type_var(TypeVar("D", bound=str, default=str))
 
 
 @pytest.mark.parametrize(
@@ -21,6 +22,7 @@ RC = r.type_var(TypeVar("C", default=str))
         (RA, "A"),
         (RB, "B"),
         (RC, "C"),
+        (RD, "D"),
     ],
 )
 def test_name(reader, expected):
@@ -30,13 +32,14 @@ def test_name(reader, expected):
 @pytest.mark.parametrize(
     "reader,expected",
     [
-        (RA, None),
-        (RB, r.type(int)),
-        (RC, None),
+        (RA.with_value(str), r.annotation(str)),
+        (RB.with_value(int), r.annotation(int)),
+        (RC.with_value(bool), r.annotation(bool)),
+        (RD.with_value(str), r.annotation(str)),
     ],
 )
 def test_bound(reader, expected):
-    return reader == expected
+    assert reader.value == expected
 
 
 @pytest.mark.parametrize(
@@ -44,7 +47,8 @@ def test_bound(reader, expected):
     [
         (RA, None),
         (RB, None),
-        (RC, r.type(str)),
+        (RC, r.annotation(str)),
+        (RD, r.annotation(str)),
     ],
 )
 def test_default(reader, expected):
@@ -57,10 +61,11 @@ def test_default(reader, expected):
         (RA, "A"),
         (RB, "B: int"),
         (RC, "C = str"),
+        (RD, "D: str = str"),
     ],
 )
 def test_str(reader, expected):
-    assert str(reader) == expected
+    assert str(reader) == f"⟪ {expected} ⟫"
 
 
 @pytest.mark.parametrize(
@@ -72,7 +77,22 @@ def test_str(reader, expected):
         (RB, RExtra, False),
         (RC, r.type_var(TypeVar("C", default=str)), True),
         (RC, RExtra, False),
+        (RD, r.type_var(TypeVar("D", bound=str, default=str)), True),
+        (RD, RExtra, False),
     ],
 )
 def test_is_similar(reader, other, expected):
     assert reader.is_similar(other) is expected
+
+
+@pytest.mark.parametrize(
+    "reader,expected",
+    [
+        (RA.with_value(str), "A ≡ str"),
+        (RB.with_value(int), "B: int ≡ int"),
+        (RC.with_value(str), "C ≡ str"),
+        (RD.with_value(str), "D: str ≡ str"),
+    ],
+)
+def test_type_arg_str(reader, expected):
+    assert str(reader) == f"⟪ {expected} ⟫"

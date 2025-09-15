@@ -1,7 +1,9 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Mapping
+from abc import abstractmethod
+from typing import TYPE_CHECKING, Any
 
 from reactk.model2.ants.key_accessor import KeyAccessor
+
 
 if TYPE_CHECKING:
     from reactk.model2.ants.reflector import Reflector
@@ -12,8 +14,15 @@ class Reader_Base:
     target: Any
     reflector: "Reflector" = field(hash=False, compare=False, repr=False)
 
+    def __call__(self, key_accessor: type[KeyAccessor[Any]]) -> KeyAccessor[Any]:
+        return self.access(key_accessor)
+
+    @property
+    @abstractmethod
+    def _text(self) -> str: ...
+
     def __str__(self) -> str:
-        return str(self.target)
+        return f"⟪ {self._text} ⟫".replace("typing.", "")
 
     def __repr__(self) -> str:
         return str(self)
