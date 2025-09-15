@@ -15,8 +15,9 @@ funcy-typing = "^2.0.8"
 pytest = "^8.4.2"
 hypothesis = "^6.138.15"
 ward = "^0.68.0b0"
-
-
+[tool.pytest.ini_options]
+python_functions = "it_*"
+python_classes = ["*_Test"]
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

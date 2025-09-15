@@ -18,63 +18,50 @@ class SimpleAccessor(KeyAccessor[int]):
         return "attr"
 
 
-def make_with():
-    """Create a fresh WithAttr instance and its accessor."""
-    w = WithAttr()
-    a = SimpleAccessor(w)
-    return w, a
+class KeyAccessor_Test:
+    # class attributes holding example objects and their accessors
+    @property
+    def w(self):
+        return WithAttr()
 
+    @property
+    def accessor(self):
+        return SimpleAccessor(self.w)
 
-def make_without():
-    """Create a fresh WithoutAttr instance and its accessor."""
-    wo = WithoutAttr()
-    a = SimpleAccessor(wo)
-    return wo, a
+    @property
+    def wo(self):
+        return WithoutAttr()
 
+    @property
+    def accessor_wo(self):
+        return SimpleAccessor(self.wo)
 
-def test_get_when_attr_exists():
-    _, accessor = make_with()
-    assert accessor.get() == 123
+    def it_gets_when_attr_exists(self):
+        assert self.accessor.get() == 123
 
+    def it_gets_raises_when_missing(self):
+        with pytest.raises(AttributeError):
+            self.accessor_wo.get()
 
-def test_get_raises_when_missing():
-    _, accessor = make_without()
-    with pytest.raises(AttributeError):
-        accessor.get()
+    def it_gets_with_default(self):
+        assert self.accessor_wo.get(456) == 456
 
+    def it_sets_overwrites_existing(self):
+        self.accessor.set(1011)
+        assert self.w.attr == 1011
 
-def test_get_with_default():
-    _, accessor = make_without()
-    assert accessor.get(456) == 456
+    def it_sets_creates_new(self):
+        self.accessor_wo.set(101112)
+        assert self.wo.attr == 101112
 
+    def it_has_key_when_exists(self):
+        assert self.accessor.has_key is True
 
-def test_set_overwrites_existing():
-    w, accessor = make_with()
-    accessor.set(1011)
-    assert w.attr == 1011
+    def it_has_key_when_not_exists(self):
+        assert self.accessor_wo.has_key is False
 
+    def it_bool_when_exists(self):
+        assert bool(self.accessor) is True
 
-def test_set_creates_new():
-    wo, accessor = make_without()
-    accessor.set(101112)
-    assert wo.attr == 101112
-
-
-def test_has_key_when_exists():
-    _, accessor = make_with()
-    assert accessor.has_key is True
-
-
-def test_has_key_when_not_exists():
-    _, accessor = make_without()
-    assert accessor.has_key is False
-
-
-def test_bool_when_exists():
-    _, accessor = make_with()
-    assert bool(accessor) is True
-
-
-def test_bool_when_not_exists():
-    _, accessor = make_without()
-    assert bool(accessor) is False
+    def it_bool_when_not_exists(self):
+        assert bool(self.accessor_wo) is False
