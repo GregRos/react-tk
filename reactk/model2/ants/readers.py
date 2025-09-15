@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from reactk.model2.ants.generic_reader import SomeTypeVarReader, Reader_Generic
 
 
-@dataclass(eq=True, unsafe_hash=True)
+@dataclass(eq=True, unsafe_hash=True, repr=False)
 class Reader_Annotation(Reader_Base):
     """Wrap an annotation object and expose convenience getters.
 
@@ -34,6 +34,9 @@ class Reader_Annotation(Reader_Base):
     module-level wrappers (kept for backward compatibility) or call
     these methods directly from the class.
     """
+
+    def __repr__(self) -> str:
+        return str(self)
 
     @property
     def generic(self) -> "Reader_Generic":
@@ -72,6 +75,8 @@ class Reader_Annotation(Reader_Base):
             assert False, f"Unknown annotation type: {t!r}"
 
     def __str__(self) -> str:
+        if self.is_class:
+            return self.name
         return str(self.target)
 
     def metadata_of_type[X](self, *type: type[X]) -> Iterable["Reader_Annotation"]:
@@ -103,6 +108,11 @@ class Reader_Annotation(Reader_Base):
         """Return the inner / unwrapped type (inlined)."""
         x = self._get_inner_type()
         return x
+
+    @property
+    def is_class(self) -> bool:
+        """Return True if the inner type is a class."""
+        return isinstance(self.inner_type, type)
 
     @property
     def inner_class(self) -> "Reader_Class":
@@ -158,7 +168,7 @@ class Reader_Method(Reader_Base):
         return format_signature(self.target)
 
     def __str__(self) -> str:
-        return f"【 MethodReader: {self._debug_signature} 】"
+        return f"{self._debug_signature}"
 
     def arg(self, pos: int | str) -> Reader_Annotation:
         if pos == "return":

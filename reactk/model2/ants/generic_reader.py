@@ -12,7 +12,16 @@ from reactk.model2.ants.base import Reader_Base
 from itertools import zip_longest
 
 
-from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeIs, TypeVar, get_origin
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Literal,
+    NoDefault,
+    TypeIs,
+    TypeVar,
+    get_origin,
+)
 
 # Import readers at module load time. `readers.py` only imports
 # from `generic_reader` under TYPE_CHECKING or lazily, so this
@@ -27,16 +36,24 @@ class _Base_Reader_TypeVar(Reader_Base, ABC):
     target: TypeVar
     is_undeclared: bool = field(default=False, kw_only=True)
 
-    @property
-    @abstractmethod
-    def is_bound(self) -> bool: ...
+    def is_similar(self, other: _Base_Reader_TypeVar) -> bool:
+        if not isinstance(other, _Base_Reader_TypeVar):
+            return False
+        # check structural equivalence of underlying TypeVar
+        return (
+            self.name == other.name
+            and self.is_undeclared == other.is_undeclared
+            and self.lower_bound == other.lower_bound
+            and self.constraints == other.constraints
+            and self.default == other.default
+        )
 
     @property
     def name(self) -> str:
         return self.target.__name__
 
     @property
-    def bound(self) -> Reader_Annotation | None:
+    def lower_bound(self) -> Reader_Annotation | None:
         if self.target.__bound__ is None:
             return None
         return self.reflector.annotation(self.target.__bound__)
@@ -49,13 +66,16 @@ class _Base_Reader_TypeVar(Reader_Base, ABC):
     def default(self) -> Reader_Annotation | None:
         if self.target.__default__ is None:
             return None
+        if self.target.__default__ is NoDefault:
+            return None
         return self.reflector.annotation(self.target.__default__)
 
     def __str__(self) -> str:
         # Format: {Name}: {Bound.Name} = {Default.Name}
         name = self.name
         parts = [name]
-        b = self.bound
+        b = self.lower_bound
+
         if b is not None:
             parts.append(f": {str(b)}")
 
@@ -67,29 +87,38 @@ class _Base_Reader_TypeVar(Reader_Base, ABC):
 
 @dataclass(eq=True, unsafe_hash=True, repr=False)
 class Reader_TypeVar(_Base_Reader_TypeVar):
-    @property
-    def is_bound(self) -> Literal[True]:
-        return True
 
     @property
     def value(self) -> Reader_Annotation:
         raise TypeError(f"TypeVar {self} is not bound to a value")
+
+    def with_value(self, value: Any) -> Reader_BoundTypeVar:
+        return Reader_BoundTypeVar(
+            target=self.target,
+            reflector=self.reflector,
+            value=self.reflector.annotation(value),
+            is_undeclared=self.is_undeclared,
+        )
 
 
 @dataclass(eq=True, unsafe_hash=True, repr=False)
 class Reader_BoundTypeVar(_Base_Reader_TypeVar):
     value: Reader_Annotation
 
-    @property
-    def is_bound(self) -> Literal[True]:
-        return True
+    def is_similar(self, other: _Base_Reader_TypeVar) -> bool:
+        if isinstance(other, Reader_BoundTypeVar):
+            return super().is_similar(other) and self.value == other.value
+        return False
 
     def __str__(self) -> str:
-        # Format: {Name}={BoundValue}
-        name = self.name
-        parts = [name]
-        parts.append(f"={str(self.value)}")
-        return "".join(parts)
+        # Use the base representation, drop everything at/after '=' and trim,
+        # then denote the bound value with the ≡ symbol.
+        base = super().__str__()
+        if "=" in base:
+            left = base.split("=", 1)[0].strip()
+        else:
+            left = base.strip()
+        return f"{left} ≡ {str(self.value).strip()}"
 
 
 # Union type for readers that may be bound or unbound

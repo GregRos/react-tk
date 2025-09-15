@@ -99,16 +99,66 @@ folders:
           - own annotation
         test method: = inherited method
           - own method
+    file Reader_TypeVar:
+      setup:
+        # wrap these using r.type_var(...)
+        Simple: TypeVar("A")
+        Extra: TypeVar("Extra")
+        Bounded: TypeVar("B", bound=int)
+        Defaulted: TypeVar("C", default=str)
+      # run for each TypeVar using parametrized tests
+      # EACH ENTRY HERE IS A SEPARATE TEST
+      test name: gets name of TypeVar
+      test bound:
+        - Simple: None
+        - Bounded: int
+        - Defaulted: None
+      test default:
+        - Simple: None
+        - Bounded: None
+        - Defaulted: str
+      test __str__:
+        Simple: "A"
+        Bounded: "B: int"
+        Defaulted: "C = str"
+      test is_similar:
+        Simple:
+          construct with same structure: true
+          Extra: false
+        Bounded:
+          construct with same structure: true
+          Extra: false
+        Defaulted:
+          construct with same structure: true
+          Extra: false
+      test Reader_TypeVarBound:
+        setup:
+          Simple_: Reader_TypeVarBound(Simple, int)
+          Bounded_: Reader_TypeVarBound(Bounded, int)
+          Defaulted_: Reader_TypeVarBound(Defaulted, str)
+        
     file Reader_Generic:
+      setup:
+        - create Generic1[A]
+        - create Generic2[A, B]
       test target: # target is preserved
+       # use parameterized tests
       test origin:
-        - list[int] read as list
-        - dict[str, int] read as dict
-        - Annotated[int, ""] raises ValueError
-        - Unpack[SomeTypedDict] raises ValueError
-        - NotRequired[int] raises ValueError
-      test args:
-        - list[int] read as (int,)
+        - list[int] # -> list
+        - dict[str, int] # -> dict
+        - dist # -> dist
+        - Annotated[int, ""] # Annotated
+        - Unpack[SomeTypedDict] # Unpack
+        - NotRequired[int] # NotRequired
+        - Generic1[int] # Generic1
+        - Generic2[int, str] # Generic2
+      test args and arg(n):
+        special: # compare with is_similar
+          Generic1[int]: Simple.with_value(int)
+          Generic2[int, str]: Bounded.with_value(str), Defaulted.with_value(int)
+
+          list[int]: TypeVar("_1", int)
+        - list[int] read as TypeVar
         - dict[str, int] read as (str, int)
         - dict[str, list[int]] read as (str, list[int])
         - dict[str, dict[int, str]] read as (str, dict[int, str])
