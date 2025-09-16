@@ -2,10 +2,10 @@ from .prop import (
     SomeProp,
     SomePropValue,
     Prop,
-    PropSection,
-    PValues,
+    PropSchema,
+    PropVector,
     PropLike,
-    PropValue,
+    PropScalar,
     PDiff,
 )
 from .common import KeyedValues, IS_REQUIRED, DiffMode, Converter

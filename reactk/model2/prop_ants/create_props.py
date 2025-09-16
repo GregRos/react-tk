@@ -21,7 +21,7 @@ import funcy
 from reactk.model2.prop_model.v_mapping import VMappingBase
 from reactk.model2.ants.reflector import Reflector
 
-from reactk.model2.prop_model.prop import Prop, PropSection
+from reactk.model2.prop_model.prop import Prop, PropSchema
 
 
 reflector = Reflector(inspect_up_to=(Mapping, TypedDict, "ShadowNode", object))
@@ -58,9 +58,9 @@ def _create_prop(
 def _create_schema(
     path: tuple[str, ...], name: str, annotation: Reader_Annotation, meta: schema_meta
 ):
-    from reactk.model2.prop_model.prop import PropSection
+    from reactk.model2.prop_model.prop import PropSchema
 
-    return PropSection(
+    return PropSchema(
         path=path,
         name=name,
         computed_name=meta.name,
@@ -148,7 +148,7 @@ def _read_props_from_class(path: tuple[str, ...], cls: type):
     return all_props
 
 
-def read_props_from_top_class(cls: type) -> "PropSection":
+def read_props_from_top_class(cls: type) -> "PropSchema":
     props = [*_read_props_from_class((), cls)]
     init_block = funcy.first(x for x in props if x.name == "__init__")
     repr = "recursive"
@@ -158,4 +158,4 @@ def read_props_from_top_class(cls: type) -> "PropSection":
         repr = init_block.repr
         metadata = init_block.metadata
     name = cls.__name__
-    return PropSection(path=(), name=name, props=props, repr=repr, metadata=metadata)
+    return PropSchema(path=(), name=name, props=props, repr=repr, metadata=metadata)

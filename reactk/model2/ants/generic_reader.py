@@ -36,7 +36,7 @@ class _Base_Reader_TypeVar(Reader_Base, ABC):
     target: TypeVar
     is_undeclared: bool = field(default=False, kw_only=True)
 
-    def is_similar(self, other: _Base_Reader_TypeVar) -> bool:
+    def is_similar_to(self, other: _Base_Reader_TypeVar) -> bool:
         if not isinstance(other, _Base_Reader_TypeVar):
             return False
         # check structural equivalence of underlying TypeVar
@@ -93,22 +93,28 @@ class Reader_TypeVar(_Base_Reader_TypeVar):
     def value(self) -> Reader_Annotation:
         raise TypeError(f"TypeVar {self} is not bound to a value")
 
-    def with_value(self, value: Any) -> Reader_BoundTypeVar:
+    def with_value(self, value: Any, *, is_defaulted=False) -> Reader_BoundTypeVar:
         return Reader_BoundTypeVar(
             target=self.target,
             reflector=self.reflector,
             value=self.reflector.annotation(value),
             is_undeclared=self.is_undeclared,
+            is_defaulted=is_defaulted,
         )
 
 
 @dataclass(eq=True, unsafe_hash=True, repr=False)
 class Reader_BoundTypeVar(_Base_Reader_TypeVar):
     value: Reader_Annotation
+    is_defaulted: bool
 
-    def is_similar(self, other: _Base_Reader_TypeVar) -> bool:
+    def is_similar_to(self, other: _Base_Reader_TypeVar) -> bool:
         if isinstance(other, Reader_BoundTypeVar):
-            return super().is_similar(other) and self.value == other.value
+            return (
+                super().is_similar_to(other)
+                and self.value == other.value
+                and self.is_defaulted == other.is_defaulted
+            )
         return False
 
     @property
@@ -148,20 +154,8 @@ class Reader_Generic(Reader_Base, Iterable[SomeTypeVarReader]):
         """Truthiness indicates whether this signature contains any type vars."""
         return bool(self._readers)
 
-    def __len__(self) -> int:
-        return len(self._readers)
-
     def __iter__(self) -> Iterator[SomeTypeVarReader]:
         return iter(self._readers)
-
-    def __getitem__(self, key: int | str) -> SomeTypeVarReader:
-        """Index by integer position or by type-var name."""
-        match key:
-            case int():
-                return self._readers[key]
-            case str():
-                return self._by_name[key]
-        raise KeyError(key) from None
 
     @property
     def _text(self) -> str:
@@ -179,6 +173,26 @@ class Reader_Generic(Reader_Base, Iterable[SomeTypeVarReader]):
     @property
     def is_all_bound(self) -> bool:
         return all(isinstance(r, Reader_BoundTypeVar) for r in self._readers)
+
+    def __getitem__(self, key: int | str) -> "SomeTypeVarReader":
+        match key:
+            case int():
+                return self._readers[key]
+            case str():
+                return self._by_name[key]
+            case _:
+                raise KeyError(key) from None
+
+    def __len__(self) -> int:
+        return len(self._readers)
+
+    def __contains__(self, key: int | str) -> bool:
+        match key:
+            case int():
+                return 0 <= key < len(self._readers)
+            case str():
+                return key in self._by_name
+        return False
 
 
 def is_bound(tv: _Base_Reader_TypeVar) -> TypeIs[Reader_BoundTypeVar]:

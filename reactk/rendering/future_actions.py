@@ -3,7 +3,7 @@ from typing import Any
 
 from reactk.model2.prop_model.common import KeyedValues
 
-from reactk.model2.prop_model import PValues
+from reactk.model2.prop_model import PropVector
 from reactk.model2.prop_model.prop import PDiff
 
 from ..model import Resource, ShadowNode

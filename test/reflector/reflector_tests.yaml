@@ -141,7 +141,6 @@ folders:
       setup:
         - create Generic1[A]
         - create Generic2[A, B]
-      test target:# target is preserved
         # use parameterized tests
       test origin:
         - list[int] # -> list

@@ -82,7 +82,7 @@ def it_stringifies(reader, expected):
     ],
 )
 def it_compares_similarity(reader, other, expected):
-    assert reader.is_similar(other) is expected
+    assert reader.is_similar_to(other) is expected
 
 
 @pytest.mark.parametrize(

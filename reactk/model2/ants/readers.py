@@ -207,7 +207,7 @@ class Reader_Class(Reader_Base):
 
     def __post_init__(self) -> None:
         target = self.target
-        if not issubclass(target, object):
+        if not isinstance(target, type):
             raise ValueError("Target must be a class")
         if issubclass(target, MethodType):
             raise ValueError("Target cannot be a method")

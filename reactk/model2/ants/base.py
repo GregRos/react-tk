@@ -29,3 +29,9 @@ class Reader_Base:
 
     def access(self, accessor: type[KeyAccessor[Any]]) -> KeyAccessor[Any]:
         return accessor(self.target)
+
+
+def unpack_reader(x: Any):
+    if isinstance(x, Reader_Base):
+        return x.target
+    return x

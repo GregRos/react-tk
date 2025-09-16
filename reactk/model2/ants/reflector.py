@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
+from reactk.model2.ants.base import unpack_reader
 from reactk.model2.ants.generic_reader import Reader_BoundTypeVar
 from reactk.model2.util.core_reflection import none_match_ref
 
@@ -31,20 +32,22 @@ class Reflector:
     def type(self, target: type):
         from reactk.model2.ants.readers import Reader_Class
 
-        return Reader_Class(target=target, reflector=self)
+        return Reader_Class(target=unpack_reader(target), reflector=self)
 
     def annotation(self, target: object):
         from reactk.model2.ants.readers import Reader_Annotation
 
-        return Reader_Annotation(target=target, reflector=self)
+        return Reader_Annotation(target=unpack_reader(target), reflector=self)
 
     def _get_generic_signature(self, t: Any) -> tuple["SomeTypeVarReader", ...]:
         from reactk.model2.ants.generic_reader import TypeParamsAccessor, ArgsAccessor
 
         target = self.annotation(t)
         origin = target.origin
+        if origin is None:
+            raise ValueError(f"Type {t} has no origin")
         # declared type parameters on the origin
-        params = target(TypeParamsAccessor).get(())
+        params = origin(TypeParamsAccessor).get(())
         # runtime args on the supplied target (may be absent)
         ta = target(ArgsAccessor)
         args: tuple = ()
@@ -74,9 +77,10 @@ class Reflector:
             elif param_default is not None:
                 readers.append(
                     self.type_arg(
-                        param_reader.target,
-                        param_default.target,
+                        target=param_reader.target,
+                        value=param_default.target,
                         is_undeclared=param_reader.is_undeclared,
+                        is_defaulted=True,
                     )
                 )
             else:
@@ -100,27 +104,30 @@ class Reflector:
     def method(self, target: Callable[..., Any]):
         from reactk.model2.ants.readers import Reader_Method
 
-        return Reader_Method(target=target, reflector=self)
+        return Reader_Method(target=unpack_reader(target), reflector=self)
 
     def generic(self, target: Any):
         """Create a Reader_Generic for the given target using this reflector."""
         from reactk.model2.ants.generic_reader import Reader_Generic
 
-        return Reader_Generic(target=target, reflector=self)
+        return Reader_Generic(target=unpack_reader(target), reflector=self)
 
     def type_var(self, target: TypeVar, *, is_undeclared=False):
         from reactk.model2.ants.generic_reader import Reader_TypeVar
 
         return Reader_TypeVar(
-            target=target, reflector=self, is_undeclared=is_undeclared
+            target=unpack_reader(target), reflector=self, is_undeclared=is_undeclared
         )
 
-    def type_arg(self, target: TypeVar, value: Any, *, is_undeclared=False):
+    def type_arg(
+        self, target: TypeVar, value: Any, *, is_undeclared=False, is_defaulted=False
+    ):
         from reactk.model2.ants.generic_reader import Reader_BoundTypeVar
 
         return Reader_BoundTypeVar(
-            target=target,
+            target=unpack_reader(target),
             reflector=self,
             is_undeclared=is_undeclared,
             value=self.annotation(value),
+            is_defaulted=is_defaulted,
         )

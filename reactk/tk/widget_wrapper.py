@@ -2,7 +2,7 @@ from logging import getLogger
 from time import sleep
 from tkinter import Label, Tk, Widget as TkWidget
 from typing import Any, ClassVar, Self, final, override
-from reactk.model2.prop_model import PropSection, PValues
+from reactk.model2.prop_model import PropSchema, PropVector
 from reactk.model2.prop_model import PDiff
 from reactk.rendering.future_actions import Create, Place, Replace, Unplace, Update
 from reactk.tk.font import to_tk_font

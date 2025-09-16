@@ -15,6 +15,7 @@ from typing import Any, Iterable, Literal, Self
 from typeguard import TypeCheckError, check_type
 
 from reactk.model2.prop_model.common import DiffMode
+from reactk.model2.util.missing import MISSING_TYPE, MISSING
 
 if TYPE_CHECKING:
     from reactk.model.trace.key_tools import Display
@@ -32,7 +33,7 @@ from reactk.model2.prop_model.v_mapping import (
 from reactk.model2.util.str import join_truncate
 
 
-type SomeProp = "Prop | PropSection"
+type SomeProp = "Prop | PropSchema"
 
 
 class PropLike:
@@ -64,13 +65,13 @@ class PropLike:
         return super().__hash__()
 
 
-class PropSection(VMappingBase[str, "SomeProp"], PropLike):
+class PropSchema(VMappingBase[str, "SomeProp"], PropLike):
 
     def __init__(
         self,
         path: tuple[str, ...],
         name: str,
-        props: "PropSection.Input" = (),
+        props: "PropSchema.Input" = (),
         repr: DiffMode = "recursive",
         computed_name: str | None = None,
         metadata: Mapping[str, Any] = {},
@@ -93,7 +94,7 @@ class PropSection(VMappingBase[str, "SomeProp"], PropLike):
     def _debug(self):
         return [str(x) if isinstance(x, Prop) else x._debug for x in self]
 
-    def _with_props(self, new_props: "PropSection.Input") -> Self:
+    def _with_props(self, new_props: "PropSchema.Input") -> Self:
         """Return a new instance of the same concrete class with the given values."""
         copyed = copy(self)
         copyed._props = self._to_dict(new_props)
@@ -126,7 +127,7 @@ class PropSection(VMappingBase[str, "SomeProp"], PropLike):
             joined = ", ".join(extra_props)
             raise ValueError(f"Extra props {joined} in {self.name}")
 
-    def update(self, other: "PropSection.Input") -> "PropSection":
+    def update(self, other: "PropSchema.Input") -> "PropSchema":
         merged_props = deep_merge(self._props, self._to_dict(other))
         return self._with_props(merged_props)
 
@@ -134,11 +135,11 @@ class PropSection(VMappingBase[str, "SomeProp"], PropLike):
         return f"⟦{self.fqn}: {join_truncate(self, 5)}⟧"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, eq=False)
 class Prop[T](PropLike):
     converter: Converter[T] | None = field(default=None)
     subsection: str | None = field(default=None)
-    no_value: T | _IS_REQUIRED_TYPE = field(default=IS_REQUIRED)
+    no_value: T | None = field(default=None)
     value_type: type[T]
     name: str
     repr: DiffMode = field(default="recursive")
@@ -146,12 +147,21 @@ class Prop[T](PropLike):
     computed_name: str | None = field(default=None)
     path: tuple[str, ...]
 
+    def __call__(self, value: T) -> "PropScalar[T]":
+        return self.to_value(value)
+
     @property
     def is_required(self) -> bool:
-        return self.no_value is _IS_REQUIRED_TYPE
+        return self.no_value is not None
 
     def __str__(self) -> str:
         return f"（{self.fqn} :: {self.value_type}）"
+
+    def to_value(
+        self, value: T | None = None, *, old: T | None = None
+    ) -> PropScalar[T]:
+
+        return PropScalar(prop=self, value=value, old=old)
 
     def assert_valid(self, input: Any):
         try:
@@ -174,11 +184,15 @@ def format_value(value: Any) -> str:
 
 
 @dataclass
-class PropValue[T]:
+class PropScalar[T]:
     __match_args__ = ("value", "prop")
     prop: Prop[T]
-    value: T
-    old: T | None = None
+    value: T | None = field(default=None)
+    old: T | None = field(default=None)
+
+    def __post_init__(self):
+        if self.prop.is_required and self.value is None:
+            raise ValueError(f"Value for required prop {self.prop.name} is missing")
 
     @property
     def fqn(self) -> str:
@@ -191,10 +205,12 @@ class PropValue[T]:
     def __str__(self) -> str:
         return f"（{self.fqn} :: {self.prop.value_type} ➔ {str(self.value)}）"
 
+    @property
+    def is_missing(self) -> bool:
+        return self.value is MISSING
+
     def compute(self) -> T:
-        v = self.value or self.prop.no_value
-        if v is IS_REQUIRED:
-            raise ValueError(f"Value for {self.prop.name} is required")
+        v = self.prop.no_value if self.is_missing else self.value
         v_: T = v  # type: ignore
         v_ = self.prop.converter(v_) if self.prop.converter else v_
         return v_
@@ -204,7 +220,7 @@ class PropValue[T]:
 
     def __eq__(self, other: Any) -> bool:
         return (
-            isinstance(other, PropValue)
+            isinstance(other, PropScalar)
             and self.prop == other.prop
             and self.value == other.value
         )
@@ -213,18 +229,21 @@ class PropValue[T]:
     def name(self) -> str:
         return self.prop.name
 
-    def update(self, value: T) -> "PropValue[T]":
-        return PropValue(prop=self.prop, value=value, old=self.value)
+    def update(self, value: T) -> "PropScalar[T]":
+
+        return PropScalar(
+            prop=self.prop, value=value, old=self.value if self.value else None
+        )
 
 
-class PValues(VMappingBase[str, "SomePropValue"]):
+class PropVector(VMappingBase[str, "SomePropValue"]):
     @property
     def name(self) -> str:
         return self.schema.name
 
     def __init__(
         self,
-        schema: PropSection,
+        schema: PropSchema,
         values: KeyedValues,
         old: KeyedValues | None = None,
     ):
@@ -254,29 +273,29 @@ class PValues(VMappingBase[str, "SomePropValue"]):
 
         for pv in self:
             match pv:
-                case PropValue() as v:
+                case PropScalar() as v:
                     v_ = v.compute()
                     section = _get_or_create_section(v.prop.subsection)
                     section[v.computed_name] = v_
-                case PValues() as bv:
+                case PropVector() as bv:
                     result.update({bv.computed_name: bv.compute()})
         return PDiff(diff=result, source=self)
 
-    def get_pv(self, key: str) -> PropValue[Any]:
+    def get_pv(self, key: str) -> PropScalar[Any]:
         match self[key]:
-            case PropValue(x, _) as p:
+            case PropScalar(x, _) as p:
                 return p
             case _:
                 raise ValueError(f"Key {key} is not a Prop")
 
-    def get_pbv(self, key: str) -> "PValues":
+    def get_pbv(self, key: str) -> "PropVector":
         match self[key]:
-            case PValues() as pb:
+            case PropVector() as pb:
                 return pb
             case _:
                 raise ValueError(f"Key {key} is not a PropBlock")
 
-    def __iter__(self) -> Iterator["PropValue | PValues"]:
+    def __iter__(self) -> Iterator["PropScalar | PropVector"]:
         for prop in self.schema:
             yield self._wrap(prop)
 
@@ -287,17 +306,18 @@ class PValues(VMappingBase[str, "SomePropValue"]):
         old_value = self._old.get(prop.name) if self._old else None
         match prop:
             case Prop() as p:
-                return PropValue(
-                    prop=p, value=self._values.get(p.name, p.no_value), old=old_value
+                return p.to_value(
+                    value=self._values.get(p.name, p.no_value), old=old_value
                 )
-            case PropSection() as pb:
-                return PValues(
+
+            case PropSchema() as pb:
+                return PropVector(
                     schema=pb, values=self._values.get(pb.name, {}), old=old_value
                 )
             case _:
                 raise ValueError(f"Invalid prop type: {type(prop)}")
 
-    def __getitem__(self, key: str) -> "PropValue | PValues":
+    def __getitem__(self, key: str) -> "PropScalar | PropVector":
         schema = self.schema[key]
         return self._wrap(schema)
 
@@ -306,12 +326,12 @@ class PValues(VMappingBase[str, "SomePropValue"]):
 
     @property
     def _debug(self):
-        return [str(x) if isinstance(x, PropValue) else x._debug for x in self]
+        return [str(x) if isinstance(x, PropScalar) else x._debug for x in self]
 
     def _get_key(self, value: "SomePropValue") -> str:
         return value.name
 
-    def update(self, overrides: KeyedValues) -> "PValues":
+    def update(self, overrides: KeyedValues) -> "PropVector":
         new_values = self._to_dict(self)
         for x in self:
             other = overrides.get(x.name)
@@ -320,11 +340,11 @@ class PValues(VMappingBase[str, "SomePropValue"]):
             cur = new_values[x.name]
             cur = cur.update(other)
             new_values[x.name] = cur
-        return PValues(schema=self.schema, values=new_values, old=self._values)
+        return PropVector(schema=self.schema, values=new_values, old=self._values)
 
-    def diff(self, other: "PValues | KeyedValues") -> "PDiff":
-        if not isinstance(other, PValues):
-            other = PValues(schema=self.schema, values=other)
+    def diff(self, other: "PropVector | KeyedValues") -> "PDiff":
+        if not isinstance(other, PropVector):
+            other = PropVector(schema=self.schema, values=other)
         self.schema.assert_valid(other._values)
         out = {}
         for k in {*self.keys(), *other.keys()}:
@@ -334,12 +354,12 @@ class PValues(VMappingBase[str, "SomePropValue"]):
                 continue
             my_prop = self[k]
             match my_prop:
-                case PropValue():
+                case PropScalar():
                     if my_prop != other[k]:
                         out[k] = other[k]
-                case PValues():
+                case PropVector():
                     other_prop = other[k]
-                    if not isinstance(other_prop, PValues):
+                    if not isinstance(other_prop, PropVector):
                         raise ValueError(
                             f"Cannot diff mapping with non-mapping at {my_prop}"
                         )
@@ -357,10 +377,10 @@ class PValues(VMappingBase[str, "SomePropValue"]):
 @dataclass
 class PDiff:
     diff: KeyedValues
-    source: PValues
+    source: PropVector
 
     def __bool__(self) -> bool:
         return bool(self.diff)
 
 
-type SomePropValue = "PropValue | PValues"
+type SomePropValue = "PropScalar | PropVector"

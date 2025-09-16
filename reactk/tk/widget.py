@@ -22,7 +22,7 @@ from reactk.model.context import Ctx
 from reactk.rendering.renderer import ComponentMount
 from reactk.rendering.stateful_reconciler import StatefulReconciler
 from reactk.model.component import Component
-from reactk.model2.prop_model import PropSection
+from reactk.model2.prop_model import PropSchema
 from reactk.tk.font import Font
 from reactk.tk.make_clickthrough import make_clickthrough
 import tkinter as tk

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, Callable, Literal, Self
 
 
-from reactk.model2.prop_model import PropSection, PValues
+from reactk.model2.prop_model import PropSchema, PropVector
 from reactk.model.shadow_node import ShadowNode
 from reactk.model2.prop_model.common import KeyedValues
 from reactk.model2.prop_model.prop import PDiff
