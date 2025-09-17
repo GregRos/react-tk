@@ -181,7 +181,7 @@ class WindowWrapper(Resource[Window]):
 
     @override
     def update(self, props: Prop_ComputedMapping, /) -> None:
-        computed = props.diff
+        computed = props.values
         assert isinstance(computed, dict)
 
         def do():

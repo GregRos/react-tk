@@ -5,7 +5,7 @@ Tests for interacting diirectly with Prop, PropSection, PValues, PDiff, PropValu
 from expression import Option, Some, Nothing
 import pytest
 from typeguard import value
-from reactk.model2.prop_model.prop import Prop, Prop_Value
+from reactk.model2.prop_model.prop import Prop, Prop_Schema, Prop_Value
 
 
 def it_works_for_required_Prop():
@@ -73,3 +73,29 @@ def it_runs_converter():
     p = Prop(name="A", value_type=int, path=(), converter=lambda x: x * 2)
     pv = p.to_value(5)
     assert pv.compute() == 10
+
+
+def it_handles_subsection():
+    p = Prop(name="A", value_type=int, path=(), subsection="sub")
+    assert p(5).value == Some(5)
+    ps = Prop_Schema(path=(), name="S", props={"A": p})
+    result = ps({"A": 5}).compute()
+    assert result == {"sub": {"A": 5}}
+
+
+def it_handles_merging_subsection():
+    p1 = Prop(name="A", value_type=int, path=(), subsection="sub")
+    p2 = Prop(name="B", value_type=str, path=(), subsection="sub")
+    ps = Prop_Schema(path=(), name="S", props={"A": p1, "B": p2})
+    result = ps({"A": 5, "B": "x"}).compute()
+    assert result == {"sub": {"A": 5, "B": "x"}}
+
+
+def it_handles_diff_with_subsection():
+    p1 = Prop(name="A", value_type=int, path=(), subsection="sub")
+    p2 = Prop(name="B", value_type=str, path=(), subsection="sub")
+    ps = Prop_Schema(path=(), name="S", props={"A": p1, "B": p2})
+    pv1 = ps({"A": 5, "B": "x"})
+    pv2 = ps({"A": 10, "B": "x"})
+    diff = pv1.diff(pv2)
+    assert diff == {"sub": {"A": 10}}

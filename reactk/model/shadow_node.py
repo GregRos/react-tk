@@ -24,7 +24,7 @@ from reactk.model2.prop_ants.create_props import (
 )
 from reactk.model2.prop_model.common import KeyedValues
 from reactk.model2.prop_model.prop import Prop_Schema, Prop_Mapping
-from reactk.model2.prop_model.v_mapping import deep_merge
+from reactk.model2.util.dict import deep_merge
 
 
 class _WithDefaults(TypedDict):

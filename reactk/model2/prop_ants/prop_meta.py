@@ -27,12 +27,12 @@ from reactk.model2.prop_model.common import (
 @dataclass(kw_only=True)
 class common_meta:
     metadata: Mapping[str, Any] = field(default=MappingProxyType({}))
-    repr: DiffMode = "recursive"
     name: str | None = None
 
 
 @dataclass(kw_only=True)
 class prop_meta(common_meta):
+    repr: DiffMode = "simple"
     subsection: str | None = None
     no_value: Any = Nothing
     converter: Converter[Any] | None = None
@@ -40,7 +40,7 @@ class prop_meta(common_meta):
 
 @dataclass(kw_only=True)
 class schema_meta(common_meta):
-    pass
+    repr: DiffMode = "recursive"
 
 
 type some_meta = prop_meta | schema_meta

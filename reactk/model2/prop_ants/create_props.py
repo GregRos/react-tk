@@ -48,10 +48,7 @@ def _create_prop(
         subsection=meta.subsection,
         metadata=meta.metadata,
         value_type=x,
-        path=(
-            *path,
-            name,
-        ),
+        path=(*path,),
     )
 
 
@@ -149,7 +146,8 @@ def _read_props_from_class(path: tuple[str, ...], cls: type):
 
 
 def read_props_from_top_class(cls: type) -> "Prop_Schema":
-    props = [*_read_props_from_class((), cls)]
+    name = cls.__name__
+    props = [*_read_props_from_class((name,), cls)]
     init_block = funcy.first(x for x in props if x.name == "__init__")
     repr = "recursive"
     metadata = {}
@@ -157,5 +155,4 @@ def read_props_from_top_class(cls: type) -> "Prop_Schema":
         props.remove(init_block)
         repr = init_block.repr
         metadata = init_block.metadata
-    name = cls.__name__
     return Prop_Schema(path=(), name=name, props=props, repr=repr, metadata=metadata)

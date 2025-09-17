@@ -66,7 +66,7 @@ class WidgetWrapper(Resource[Widget]):
 
     @override
     def update(self, a: Prop_ComputedMapping, /) -> None:
-        diff = a.diff
+        diff = a.values
         configure = diff.get("configure", {})
         if "font" in diff:
             configure["font"] = to_tk_font(diff["font"])
@@ -77,7 +77,7 @@ class WidgetWrapper(Resource[Widget]):
     @override
     def place(self, a: Prop_ComputedMapping, /) -> None:
         logger.debug(f"Calling place for {self.node}")
-        d = a.diff
+        d = a.values
         pack = d.get("Pack", {})
         if not pack:  # pragma: no cover
             return
@@ -95,6 +95,6 @@ class WidgetWrapper(Resource[Widget]):
     def replace(
         self, other: "WidgetWrapper.ThisResource", a: Prop_ComputedMapping, /
     ) -> None:
-        self.resource.pack(after=self.resource, **a.diff.get("Pack", {}))
+        self.resource.pack(after=self.resource, **a.values.get("Pack", {}))
 
         self.resource.pack_forget()

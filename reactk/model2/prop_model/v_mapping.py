@@ -62,19 +62,3 @@ class VMappingBase[K, V](ABC, Iterable[V]):
     def __repr__(self) -> str:  # pragma: no cover - simple convenience
         cls = type(self).__name__
         return f"{cls}({list(self)!r})"
-
-
-def deep_merge(a: Mapping, b: Mapping) -> dict:
-    """
-    Recursively merge two mappings.
-    Values from *b* overwrite or merge into *a*.
-    Returns a new dict; neither input is modified.
-    """
-    merged = dict(a)  # shallow copy of the left operand
-    for key, b_val in b.items():
-        a_val = merged.get(key)
-        if isinstance(a_val, Mapping) and isinstance(b_val, Mapping):
-            merged[key] = deep_merge(a_val, b_val)
-        else:
-            merged[key] = b_val
-    return merged

@@ -15,6 +15,7 @@ from typing import Any, Iterable, Literal, Self
 from typeguard import TypeCheckError, check_type
 
 from reactk.model2.prop_model.common import DiffMode
+from reactk.model2.util.dict import deep_diff, deep_merge, dict_equal
 from reactk.model2.util.maybe import MaybeOption, maybe_normalize
 from reactk.model2.util.missing import MISSING_TYPE, MISSING
 
@@ -27,7 +28,6 @@ from reactk.model2.prop_model.common import (
 )
 from reactk.model2.prop_model.v_mapping import (
     VMappingBase,
-    deep_merge,
 )
 from reactk.model2.util.str import join_truncate
 
@@ -285,7 +285,7 @@ class Prop_Mapping(VMappingBase[str, "SomePropValue"]):
                     section[v.computed_name] = v_
                 case Prop_Mapping() as bv:
                     result.update({bv.computed_name: bv.compute()})
-        return Prop_ComputedMapping(diff=result, source=self)
+        return Prop_ComputedMapping(values=result, source=self)
 
     def get_pv(self, key: str) -> Prop_Value[Any]:
         match self[key]:
@@ -363,61 +363,35 @@ class Prop_Mapping(VMappingBase[str, "SomePropValue"]):
     def diff(self, other: "Prop_Mapping | KeyedValues") -> "Prop_ComputedMapping":
         if not isinstance(other, Prop_Mapping):
             other = Prop_Mapping(prop=self.prop, value=other)
-        self.prop.assert_valid(other._values)
-        out = {}
-        for k in {*self.keys(), *other.keys()}:
-            if k not in self:
-                out[k] = other[k]
-            elif k not in other:
-                continue
-            match self[k], other[k]:
-                case Prop_Value() as my_prop, Prop_Value() as other_prop:
-                    if my_prop != other[k]:
-                        out[my_prop.computed_name] = other_prop.compute()
-                case Prop_Mapping() as my_prop, Prop_Mapping() as other_prop:
-                    other_prop = other[k]
-                    if not isinstance(other_prop, Prop_Mapping):
-                        raise ValueError(
-                            f"Cannot diff mapping with non-mapping at {my_prop}"
-                        )
-                    if my_prop.prop.repr == "recursive":
-                        result = my_prop.diff(other_prop)
-                        if result:
-                            out[my_prop.computed_name] = result.diff
-                    elif my_prop.prop.repr == "simple":
-                        if my_prop != other[k]:
-                            out[my_prop.computed_name] = other_prop._values
-                    else:
-                        continue
-                case _:
-                    raise ValueError(f"Cannot diff different prop types at {k}")
-        return Prop_ComputedMapping(diff=out, source=other)
+        my_computed = self.compute()
+        other_computed = other.compute()
+        return my_computed.diff(other_computed)
 
 
 @dataclass
 class Prop_ComputedMapping:
-    diff: KeyedValues
+    values: KeyedValues
     source: Prop_Mapping
 
     def __bool__(self) -> bool:
-        return bool(self.diff)
+        return bool(self.values)
 
     def __eq__(self, other: Any) -> bool:
         match other:
             case Prop_ComputedMapping() as o:
-                return {
-                    *self.diff.items(),
-                } == {
-                    *o.diff.items(),
-                }
+                return dict_equal(self.values, o.values)
             case Mapping() as m:
-                return {
-                    *self.diff.items(),
-                } == {
-                    *m.items(),
-                }
+                return dict_equal(self.values, m)
             case _:
                 return False
+
+    def diff(
+        self, other: "Prop_ComputedMapping | KeyedValues"
+    ) -> "Prop_ComputedMapping":
+        if not isinstance(other, Prop_ComputedMapping):
+            other = Prop_ComputedMapping(values=other, source=self.source)
+        out = deep_diff(self.values, other.values)
+        return Prop_ComputedMapping(values=out, source=other.source)
 
 
 type SomePropValue = "Prop_Value | Prop_Mapping"
