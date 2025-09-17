@@ -49,7 +49,7 @@ class HasPropsSchema:
         values = self.__PROP_VALUES__
         schema = self.__PROPS__
         if not values:
-            pbv = Prop_Mapping(schema=schema, values={}, old=None)
+            pbv = Prop_Mapping(prop=schema, value={}, old=None)
             self.__PROP_VALUES__ = pbv
         new_pbv = values.update(other).update(kwargs)
         clone = copy(self)

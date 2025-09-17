@@ -67,3 +67,9 @@ def it_fails_to_create_PropValue_for_required_Prop_with_no_value():
         p.to_value()
     with pytest.raises(ValueError):
         Prop_Value(prop=p, value=Nothing)
+
+
+def it_runs_converter():
+    p = Prop(name="A", value_type=int, path=(), converter=lambda x: x * 2)
+    pv = p.to_value(5)
+    assert pv.compute() == 10

@@ -82,6 +82,14 @@ class Prop_Schema(VMappingBase[str, "Prop_Any"], _Prop_Base):
         self.metadata = metadata
         self._props = self._to_dict(props)
 
+    def __call__(self, values: "KeyedValues" = MappingProxyType({})) -> "Prop_Mapping":
+        return self.with_values(values)
+
+    def with_values(
+        self, values: "KeyedValues" = MappingProxyType({})
+    ) -> "Prop_Mapping":
+        return Prop_Mapping(self, values)
+
     def _get_key(self, value: "Prop_Any") -> str:
         return value.name
 
@@ -108,7 +116,7 @@ class Prop_Schema(VMappingBase[str, "Prop_Any"], _Prop_Base):
     def __getitem__(self, key: str) -> "Prop_Any":
         return self._props[key]
 
-    def assert_valid(self, input: Any) -> None:
+    def assert_valid(self, input: KeyedValues) -> None:
         if not isinstance(input, Mapping):
             raise ValueError(
                 f"Input for {self.name} must be a mapping, got {type(input)}"
@@ -120,7 +128,7 @@ class Prop_Schema(VMappingBase[str, "Prop_Any"], _Prop_Base):
                         f"Missing required prop {prop.name} in {self.name}"
                     )
                 continue
-            prop.is_valid(input[prop.name])
+            prop.assert_valid(input[prop.name])
         extra_props = set(input.keys()) - {prop.name for prop in self}
         if extra_props:
             joined = ", ".join(extra_props)
@@ -237,26 +245,26 @@ class Prop_Value[T]:
 class Prop_Mapping(VMappingBase[str, "SomePropValue"]):
     @property
     def name(self) -> str:
-        return self.schema.name
+        return self.prop.name
 
     def __init__(
         self,
-        schema: Prop_Schema,
-        values: KeyedValues,
+        prop: Prop_Schema,
+        value: KeyedValues,
         old: KeyedValues | None = None,
     ):
-        self.schema = schema
-        self._values = values
+        self.prop = prop
+        self._values = value
         self._old = old
-        self.schema.assert_valid(values)
+        self.prop.assert_valid(value)
 
     @property
     def fqn(self) -> str:
-        return self.schema.fqn
+        return self.prop.fqn
 
     @property
     def computed_name(self) -> str:
-        return self.schema.computed_name or self.schema.name
+        return self.prop.computed_name or self.prop.name
 
     def compute(self) -> "Prop_ComputedMapping":
         result = {}
@@ -294,29 +302,29 @@ class Prop_Mapping(VMappingBase[str, "SomePropValue"]):
                 raise ValueError(f"Key {key} is not a PropBlock")
 
     def __iter__(self) -> Iterator["Prop_Value | Prop_Mapping"]:
-        for prop in self.schema:
+        for prop in self.prop:
             yield self._wrap(prop)
 
     def __len__(self) -> int:
-        return len(self.schema)
+        return len(self.prop)
 
     def _wrap(self, prop: Prop_Any) -> "SomePropValue":
         old_value = self._old.get(prop.name) if self._old else None
         match prop:
             case Prop() as p:
                 return p.to_value(
-                    value=self._values.get(p.name, p.no_value), old=old_value
+                    value=self._values.get(p.name, Nothing), old=old_value
                 )
 
             case Prop_Schema() as pb:
                 return Prop_Mapping(
-                    schema=pb, values=self._values.get(pb.name, {}), old=old_value
+                    prop=pb, value=self._values.get(pb.name, {}), old=old_value
                 )
             case _:
                 raise ValueError(f"Invalid prop type: {type(prop)}")
 
     def __getitem__(self, key: str) -> "Prop_Value | Prop_Mapping":
-        schema = self.schema[key]
+        schema = self.prop[key]
         return self._wrap(schema)
 
     def __str__(self) -> str:
@@ -329,46 +337,60 @@ class Prop_Mapping(VMappingBase[str, "SomePropValue"]):
     def _get_key(self, value: "SomePropValue") -> str:
         return value.name
 
+    @classmethod
+    def _from_mapping(
+        cls,
+        schema: Prop_Schema,
+        mapping: Mapping[str, "SomePropValue"],
+        old: KeyedValues = MappingProxyType({}),
+    ) -> "Prop_Mapping":
+        kvs = {}
+        for prop in mapping.values():
+            match prop:
+                case Prop_Value() as pv:
+                    kvs[pv.prop.name] = pv.value
+                case Prop_Mapping() as pm:
+                    kvs[pm.prop.name] = pm._values
+                case _:
+                    raise ValueError(f"Invalid prop type: {type(prop)}")
+        return Prop_Mapping(prop=schema, value=kvs, old=old)
+
     def update(self, overrides: KeyedValues) -> "Prop_Mapping":
-        new_values = self._to_dict(self)
-        for x in self:
-            other = overrides.get(x.name)
-            if other is None:
-                continue
-            cur = new_values[x.name]
-            cur = cur.update(other)
-            new_values[x.name] = cur
-        return Prop_Mapping(schema=self.schema, values=new_values, old=self._values)
+        new_values = deep_merge(self._values, overrides)
+        self.prop.assert_valid(new_values)
+        return Prop_Mapping(prop=self.prop, value=new_values, old=self._values)
 
     def diff(self, other: "Prop_Mapping | KeyedValues") -> "Prop_ComputedMapping":
         if not isinstance(other, Prop_Mapping):
-            other = Prop_Mapping(schema=self.schema, values=other)
-        self.schema.assert_valid(other._values)
+            other = Prop_Mapping(prop=self.prop, value=other)
+        self.prop.assert_valid(other._values)
         out = {}
         for k in {*self.keys(), *other.keys()}:
             if k not in self:
                 out[k] = other[k]
             elif k not in other:
                 continue
-            my_prop = self[k]
-            match my_prop:
-                case Prop_Value():
+            match self[k], other[k]:
+                case Prop_Value() as my_prop, Prop_Value() as other_prop:
                     if my_prop != other[k]:
-                        out[k] = other[k]
-                case Prop_Mapping():
+                        out[my_prop.computed_name] = other_prop.compute()
+                case Prop_Mapping() as my_prop, Prop_Mapping() as other_prop:
                     other_prop = other[k]
                     if not isinstance(other_prop, Prop_Mapping):
                         raise ValueError(
                             f"Cannot diff mapping with non-mapping at {my_prop}"
                         )
-                    if my_prop.schema.repr == "recursive":
+                    if my_prop.prop.repr == "recursive":
                         result = my_prop.diff(other_prop)
                         if result:
-                            out[k] = result
-                    else:
+                            out[my_prop.computed_name] = result.diff
+                    elif my_prop.prop.repr == "simple":
                         if my_prop != other[k]:
-                            out[k] = other[k]
-
+                            out[my_prop.computed_name] = other_prop._values
+                    else:
+                        continue
+                case _:
+                    raise ValueError(f"Cannot diff different prop types at {k}")
         return Prop_ComputedMapping(diff=out, source=other)
 
 
@@ -379,6 +401,23 @@ class Prop_ComputedMapping:
 
     def __bool__(self) -> bool:
         return bool(self.diff)
+
+    def __eq__(self, other: Any) -> bool:
+        match other:
+            case Prop_ComputedMapping() as o:
+                return {
+                    *self.diff.items(),
+                } == {
+                    *o.diff.items(),
+                }
+            case Mapping() as m:
+                return {
+                    *self.diff.items(),
+                } == {
+                    *m.items(),
+                }
+            case _:
+                return False
 
 
 type SomePropValue = "Prop_Value | Prop_Mapping"
