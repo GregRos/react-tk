@@ -3,8 +3,8 @@ from typing import Any
 
 from reactk.model2.prop_model.common import KeyedValues
 
-from reactk.model2.prop_model import PropVector
-from reactk.model2.prop_model.prop import PDiff
+from reactk.model2.prop_model import Prop_Mapping
+from reactk.model2.prop_model.prop import Prop_ComputedMapping
 
 from ..model import Resource, ShadowNode
 
@@ -28,7 +28,7 @@ class Create:
 class Update:
     existing: Resource
     next: ShadowNode
-    diff: PDiff
+    diff: Prop_ComputedMapping
 
     def __bool__(self):
         return bool(self.diff)
@@ -63,7 +63,7 @@ class Place:
     what: Update | Recreate | Create
 
     @property
-    def diff(self) -> PDiff:
+    def diff(self) -> Prop_ComputedMapping:
         return self.what.diff
 
     def __repr__(self) -> str:
@@ -80,7 +80,7 @@ class Replace:
     with_what: Update | Recreate | Create
 
     @property
-    def diff(self) -> PDiff:
+    def diff(self) -> Prop_ComputedMapping:
         return self.with_what.diff
 
     def __repr__(self) -> str:

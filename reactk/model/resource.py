@@ -3,10 +3,10 @@ from datetime import datetime
 from typing import Any, Callable, Literal, Self
 
 
-from reactk.model2.prop_model import PropSchema, PropVector
+from reactk.model2.prop_model import Prop_Schema, Prop_Mapping
 from reactk.model.shadow_node import ShadowNode
 from reactk.model2.prop_model.common import KeyedValues
-from reactk.model2.prop_model.prop import PDiff
+from reactk.model2.prop_model.prop import Prop_ComputedMapping
 
 type Compat = Literal["update", "replace", "recreate"]
 
@@ -45,16 +45,16 @@ class Resource[Node: ShadowNode](ABC):
         return self.node.uid
 
     @abstractmethod
-    def update(self, props: PDiff, /) -> None: ...
+    def update(self, props: Prop_ComputedMapping, /) -> None: ...
 
     @abstractmethod
-    def place(self, props: PDiff, /) -> None: ...
+    def place(self, props: Prop_ComputedMapping, /) -> None: ...
 
     @abstractmethod
     def unplace(self) -> None: ...
 
     @abstractmethod
-    def replace(self, other: "ThisResource", diff: PDiff, /) -> None: ...
+    def replace(self, other: "ThisResource", diff: Prop_ComputedMapping, /) -> None: ...
 
     @abstractmethod
     def get_compatibility(self, other: Node) -> Compat: ...

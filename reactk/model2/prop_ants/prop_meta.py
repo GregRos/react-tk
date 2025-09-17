@@ -14,9 +14,10 @@ from typing import (
     overload,
 )
 
+from expression import Nothing
+
 from reactk.model2.ants.readers import OrigAccessor
 from reactk.model2.prop_model.common import (
-    IS_REQUIRED,
     Converter,
     DiffMode,
     KeyedValues,
@@ -33,7 +34,7 @@ class common_meta:
 @dataclass(kw_only=True)
 class prop_meta(common_meta):
     subsection: str | None = None
-    no_value: Any = IS_REQUIRED
+    no_value: Any = Nothing
     converter: Converter[Any] | None = None
 
 

@@ -2,8 +2,8 @@ from logging import getLogger
 from time import sleep
 from tkinter import Label, Tk, Widget as TkWidget
 from typing import Any, ClassVar, Self, final, override
-from reactk.model2.prop_model import PropSchema, PropVector
-from reactk.model2.prop_model import PDiff
+from reactk.model2.prop_model import Prop_Schema, Prop_Mapping
+from reactk.model2.prop_model import Prop_ComputedMapping
 from reactk.rendering.future_actions import Create, Place, Replace, Unplace, Update
 from reactk.tk.font import to_tk_font
 from reactk.tk.make_clickthrough import make_clickthrough
@@ -65,7 +65,7 @@ class WidgetWrapper(Resource[Widget]):
         self.resource.destroy()
 
     @override
-    def update(self, a: PDiff, /) -> None:
+    def update(self, a: Prop_ComputedMapping, /) -> None:
         diff = a.diff
         configure = diff.get("configure", {})
         if "font" in diff:
@@ -75,7 +75,7 @@ class WidgetWrapper(Resource[Widget]):
         self.resource.configure(**diff.get("configure", {}))
 
     @override
-    def place(self, a: PDiff, /) -> None:
+    def place(self, a: Prop_ComputedMapping, /) -> None:
         logger.debug(f"Calling place for {self.node}")
         d = a.diff
         pack = d.get("Pack", {})
@@ -92,7 +92,9 @@ class WidgetWrapper(Resource[Widget]):
         self.resource.pack_forget()
 
     @override
-    def replace(self, other: "WidgetWrapper.ThisResource", a: PDiff, /) -> None:
+    def replace(
+        self, other: "WidgetWrapper.ThisResource", a: Prop_ComputedMapping, /
+    ) -> None:
         self.resource.pack(after=self.resource, **a.diff.get("Pack", {}))
 
         self.resource.pack_forget()

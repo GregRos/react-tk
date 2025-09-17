@@ -17,13 +17,13 @@ from typing import (
 
 
 import reactk
-from reactk.model2.prop_model import PropSchema, PropVector
+from reactk.model2.prop_model import Prop_Schema, Prop_Mapping
 from reactk.model.component import Component
 from reactk.model.resource import (
     Compat,
     Resource,
 )
-from reactk.model2.prop_model.prop import PDiff
+from reactk.model2.prop_model.prop import Prop_ComputedMapping
 from reactk.rendering.future_actions import Create, Replace, Unplace, Update
 from reactk.rendering.stateful_reconciler import StatefulReconciler
 from reactk.rendering.renderer import ComponentMount
@@ -128,7 +128,9 @@ class WindowWrapper(Resource[Window]):
         self.run_in_owner(self.resource.destroy)
 
     @override
-    def replace(self, other: "WindowWrapper.ThisResource", diff: PDiff, /) -> None:
+    def replace(
+        self, other: "WindowWrapper.ThisResource", diff: Prop_ComputedMapping, /
+    ) -> None:
         def do_replace():
 
             self.resource.withdraw()
@@ -161,7 +163,7 @@ class WindowWrapper(Resource[Window]):
         return f"{width}x{height}+{x}+{y}"
 
     @override
-    def place(self, diff: PDiff, /) -> None:
+    def place(self, diff: Prop_ComputedMapping, /) -> None:
         geo = diff["Geometry"]  # type: Geometry # type: ignore
         normed = self.normalize_geo(geo)
 
@@ -178,7 +180,7 @@ class WindowWrapper(Resource[Window]):
         return "update"
 
     @override
-    def update(self, props: PDiff, /) -> None:
+    def update(self, props: Prop_ComputedMapping, /) -> None:
         computed = props.diff
         assert isinstance(computed, dict)
 

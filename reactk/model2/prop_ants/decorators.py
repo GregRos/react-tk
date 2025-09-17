@@ -18,14 +18,14 @@ from typing import (
 from reactk.model2.prop_ants.prop_meta import prop_meta, schema_meta
 
 if TYPE_CHECKING:
-    from reactk.model2.prop_model.prop import PropSchema, PropVector
+    from reactk.model2.prop_model.prop import Prop_Schema, Prop_Mapping
     from reactk.model2.prop_model.common import KeyedValues
     from reactk.model2.prop_ants.prop_meta import some_meta
 
 
 class _HasMerge(Protocol):
-    __PROPS__: ClassVar["PropSchema"]
-    __PROP_VALUES__: "PropVector"
+    __PROPS__: ClassVar["Prop_Schema"]
+    __PROP_VALUES__: "Prop_Mapping"
 
     def __merge__(self, other: "KeyedValues") -> Self: ...
 

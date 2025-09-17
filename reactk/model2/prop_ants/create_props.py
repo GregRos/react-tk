@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Required, TypedDict, is_typedd
 from reactk.model2.ants.reflector import Reflector
 from reactk.model2.util.core_reflection import get_attrs_downto
 from typing import TYPE_CHECKING
+from expression import Nothing, Some, Option
 
 if TYPE_CHECKING:
     from reactk.model.trace.render_trace import RenderTrace
@@ -14,14 +15,13 @@ from reactk.model2.ants.readers import (
 )
 from reactk.model2.ants.key_accessor import KeyAccessor
 from reactk.model2.prop_ants.prop_meta import prop_meta, schema_meta, some_meta
-from reactk.model2.prop_model.common import IS_REQUIRED
-from reactk.model2.prop_model.prop import SomeProp
+from reactk.model2.prop_model.prop import Prop_Any
 import funcy
 
 from reactk.model2.prop_model.v_mapping import VMappingBase
 from reactk.model2.ants.reflector import Reflector
 
-from reactk.model2.prop_model.prop import Prop, PropSchema
+from reactk.model2.prop_model.prop import Prop, Prop_Schema
 
 
 reflector = Reflector(inspect_up_to=(Mapping, TypedDict, "ShadowNode", object))
@@ -58,9 +58,9 @@ def _create_prop(
 def _create_schema(
     path: tuple[str, ...], name: str, annotation: Reader_Annotation, meta: schema_meta
 ):
-    from reactk.model2.prop_model.prop import PropSchema
+    from reactk.model2.prop_model.prop import Prop_Schema
 
-    return PropSchema(
+    return Prop_Schema(
         path=path,
         name=name,
         computed_name=meta.name,
@@ -72,7 +72,7 @@ def _create_schema(
 
 def _create(
     path: tuple[str, ...], name: str, annotation: Reader_Annotation, meta: some_meta
-) -> SomeProp:
+) -> Prop_Any:
     match meta:
         case prop_meta() as p_m:
             return _create_prop(path, name, annotation, p_m)
@@ -92,13 +92,13 @@ def _get_default_meta_for_prop(
             return schema_meta(repr="recursive")
         case _:
             return prop_meta(
-                no_value=IS_REQUIRED, converter=None, repr="recursive", metadata={}
+                no_value=Nothing, converter=None, repr="recursive", metadata={}
             )
 
 
 def _attrs_to_props(
     path: tuple[str, ...], meta: Mapping[str, Reader_Annotation]
-) -> "Iterable[SomeProp]":
+) -> "Iterable[Prop_Any]":
     for k, v in meta.items():
         if k.startswith("_"):
             continue
@@ -107,7 +107,7 @@ def _attrs_to_props(
         yield _create(path, k, v, fst or _get_default_meta_for_prop(v))
 
 
-def _method_to_prop(path: tuple[str, ...], method: Reader_Method) -> "SomeProp | None":
+def _method_to_prop(path: tuple[str, ...], method: Reader_Method) -> "Prop_Any | None":
     meta = method.access(MetaAccessor)
     if not meta:
         return None
@@ -148,7 +148,7 @@ def _read_props_from_class(path: tuple[str, ...], cls: type):
     return all_props
 
 
-def read_props_from_top_class(cls: type) -> "PropSchema":
+def read_props_from_top_class(cls: type) -> "Prop_Schema":
     props = [*_read_props_from_class((), cls)]
     init_block = funcy.first(x for x in props if x.name == "__init__")
     repr = "recursive"
@@ -158,4 +158,4 @@ def read_props_from_top_class(cls: type) -> "PropSchema":
         repr = init_block.repr
         metadata = init_block.metadata
     name = cls.__name__
-    return PropSchema(path=(), name=name, props=props, repr=repr, metadata=metadata)
+    return Prop_Schema(path=(), name=name, props=props, repr=repr, metadata=metadata)

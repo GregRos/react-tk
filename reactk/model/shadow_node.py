@@ -23,7 +23,7 @@ from reactk.model2.prop_ants.create_props import (
     read_props_from_top_class,
 )
 from reactk.model2.prop_model.common import KeyedValues
-from reactk.model2.prop_model.prop import PropSchema, PropVector
+from reactk.model2.prop_model.prop import Prop_Schema, Prop_Mapping
 from reactk.model2.prop_model.v_mapping import deep_merge
 
 
@@ -33,8 +33,8 @@ class _WithDefaults(TypedDict):
 
 
 class HasPropsSchema:
-    __PROPS__: ClassVar[PropSchema]
-    __PROP_VALUES__: PropVector
+    __PROPS__: ClassVar[Prop_Schema]
+    __PROP_VALUES__: Prop_Mapping
 
     def __init_subclass__(cls) -> None:
         if isabstract(cls):
@@ -49,7 +49,7 @@ class HasPropsSchema:
         values = self.__PROP_VALUES__
         schema = self.__PROPS__
         if not values:
-            pbv = PropVector(schema=schema, values={}, old=None)
+            pbv = Prop_Mapping(schema=schema, values={}, old=None)
             self.__PROP_VALUES__ = pbv
         new_pbv = values.update(other).update(kwargs)
         clone = copy(self)

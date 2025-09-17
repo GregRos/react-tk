@@ -1,11 +1,10 @@
 from .prop import (
-    SomeProp,
+    Prop_Any,
     SomePropValue,
     Prop,
-    PropSchema,
-    PropVector,
-    PropLike,
-    PropScalar,
-    PDiff,
+    Prop_Schema,
+    Prop_Mapping,
+    Prop_Value,
+    Prop_ComputedMapping,
 )
-from .common import KeyedValues, IS_REQUIRED, DiffMode, Converter
+from .common import KeyedValues, DiffMode, Converter
