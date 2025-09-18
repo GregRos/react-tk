@@ -43,11 +43,6 @@ class WindowWrapper(Resource[Window]):
     resource: Tk
     _component_mount: WidgetMount
 
-    @staticmethod
-    @override
-    def node_type() -> type[Window]:
-        return Window
-
     def __init__(
         self,
         node: Window,

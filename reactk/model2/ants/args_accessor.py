@@ -50,3 +50,27 @@ class UnderscoreNameAccessor(KeyAccessor[str]):
     @property
     def key(self) -> str:
         return "_name"
+
+
+class BasesAccessor(KeyAccessor[tuple[type, ...]]):
+    """Accessor for the private __bases__ attribute.
+
+    This accessor raises an AttributeError if the attribute is missing to
+    make callers handle the absence explicitly (per new API requirement).
+    """
+
+    @property
+    def key(self) -> str:
+        return "__bases__"
+
+
+class OrigBasesAccessor(KeyAccessor[tuple[type, ...]]):
+    """Accessor for the private __orig_bases__ attribute.
+
+    This accessor raises an AttributeError if the attribute is missing to
+    make callers handle the absence explicitly (per new API requirement).
+    """
+
+    @property
+    def key(self) -> str:
+        return "__orig_bases__"

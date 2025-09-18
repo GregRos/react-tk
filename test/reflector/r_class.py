@@ -21,6 +21,14 @@ class Inherited(Sample):
         return s
 
 
+class Sample2:
+    pass
+
+
+class MultiBase(Sample, Sample2):
+    pass
+
+
 r: Reflector = Reflector()
 
 
@@ -98,3 +106,38 @@ def it_retrieves_inherited_methods():
     assert m_b.name == "method_b"
     m_own = tr_inh.method("own_method")
     assert m_own.name == "own_method"
+
+
+def it_retrieves_single_base():
+    tr = r.type(Inherited)
+    bases = set(tr.bases)
+    assert bases == {r.type(Sample)}
+
+
+def it_retrieves_base_annotations_without_generics():
+    tr = r.type(Inherited)
+    base_anns = set(tr.base_annotations)
+    assert base_anns == {r.annotation(Sample)}
+
+
+def it_retrieves_no_bases():
+    tr = r.type(Sample)
+    bases = set(tr.bases)
+    assert bases == {r.type(object)}
+
+
+def it_retrieves_base_annotations():
+    class InheritedGeneric(list[int]):
+        pass
+
+    tr = r.type(InheritedGeneric)
+    base_anns = set(tr.base_annotations)
+    assert base_anns == {r.annotation(list[int])}
+
+
+def it_retrieves_multiple_bases():
+
+    tr = r.type(MultiBase)
+    bases = set(tr.bases)
+    assert bases == {r.type(Sample), r.type(Sample2)}
+    assert set(tr.base_annotations) == {r.annotation(Sample), r.annotation(Sample2)}

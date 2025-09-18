@@ -17,6 +17,11 @@ class Reader_Base:
     def __call__(self, key_accessor: type[KeyAccessor[Any]]) -> KeyAccessor[Any]:
         return self.access(key_accessor)
 
+    def inner_equals(self, other: object) -> bool:
+        if not isinstance(other, Reader_Base):
+            return self.target == other
+        return self.target == other.target
+
     @property
     @abstractmethod
     def _text(self) -> str: ...

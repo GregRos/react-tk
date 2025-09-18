@@ -14,7 +14,11 @@ from typing import (
 )
 
 
-from reactk.model2.ants.args_accessor import MetadataAccessor, UnderscoreNameAccessor
+from reactk.model2.ants.args_accessor import (
+    MetadataAccessor,
+    OrigBasesAccessor,
+    UnderscoreNameAccessor,
+)
 from reactk.model2.ants.base import Reader_Base
 from reactk.model2.util.core_reflection import get_attrs_downto
 from reactk.model2.ants.key_accessor import KeyAccessor
@@ -154,8 +158,8 @@ class OrigAccessor(KeyAccessor[Callable[..., Any]]):
 
 @dataclass(eq=True, unsafe_hash=True, repr=False)
 class Reader_Method(Reader_Base):
-    _annotations: dict[str, Any] = field(init=False)
-    _annotation_names: tuple[str, ...] = field(init=False)
+    _annotations: dict[str, Any] = field(init=False, hash=False, compare=False)
+    _annotation_names: tuple[str, ...] = field(init=False, hash=False, compare=False)
 
     def __post_init__(self) -> None:
         target = self.target
@@ -201,9 +205,9 @@ class Reader_Method(Reader_Base):
 
 @dataclass(eq=True, unsafe_hash=True, repr=False)
 class Reader_Class(Reader_Base):
-    _annotations: dict[str, Any] = field(init=False)
-    _methods: dict[str, Any] = field(init=False)
-    _annotation_names: tuple[str, ...] = field(init=False)
+    _annotations: dict[str, Any] = field(init=False, hash=False, compare=False)
+    _methods: dict[str, Any] = field(init=False, hash=False, compare=False)
+    _annotation_names: tuple[str, ...] = field(init=False, hash=False, compare=False)
 
     def __post_init__(self) -> None:
         target = self.target
@@ -212,6 +216,24 @@ class Reader_Class(Reader_Base):
         if issubclass(target, MethodType):
             raise ValueError("Target cannot be a method")
         self._refresh_annotations()
+
+    @property
+    def bases(self) -> Iterable["Reader_Class"]:
+        for b in self.target.__bases__:
+            yield self.reflector.type(b)
+
+    @property
+    def as_annotation(self) -> "Reader_Annotation":
+        return self.reflector.annotation(self.target)
+
+    @property
+    def base_annotations(self) -> Iterable["Reader_Annotation"]:
+        orig_bases = self(OrigBasesAccessor)
+        if not orig_bases:
+            yield from (b.as_annotation for b in self.bases)
+            return
+        for b in orig_bases.get():
+            yield self.reflector.annotation(b)
 
     @property
     def name(self) -> str:

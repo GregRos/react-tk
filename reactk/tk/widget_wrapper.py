@@ -15,11 +15,6 @@ logger = getLogger(__name__)
 
 class WidgetWrapper(Resource[Widget]):
 
-    @staticmethod
-    @override
-    def node_type() -> type[Widget]:
-        return Widget
-
     @final
     @override
     def migrate(self, node: Widget) -> Self:

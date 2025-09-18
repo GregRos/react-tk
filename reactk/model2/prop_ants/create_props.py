@@ -1,7 +1,7 @@
 from collections.abc import Iterable, Mapping
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Annotated, Any, Required, TypedDict, is_typeddict
-from reactk.model2.ants.reflector import Reflector
+from typing import TYPE_CHECKING, Annotated, Any, Required, is_typeddict
+from reactk.model2.prop_ants.shadow_reflector import shadow_reflector
 from reactk.model2.util.core_reflection import get_attrs_downto
 from typing import TYPE_CHECKING
 from expression import Nothing, Some, Option
@@ -21,14 +21,8 @@ from reactk.model2.prop_model.prop import Prop_Any
 import funcy
 
 from reactk.model2.prop_model.v_mapping import VMappingBase
-from reactk.model2.ants.reflector import Reflector
 
 from reactk.model2.prop_model.prop import Prop, Prop_Schema
-
-
-reflector = Reflector(
-    inspect_up_to=(Mapping, TypedDict, "ShadowNode", object, "_HasMerge")
-)
 
 
 class MetaAccessor(KeyAccessor[some_meta]):
@@ -124,7 +118,7 @@ def _methods_to_props(path: tuple[str, ...], cls: type):
             continue
         if k.startswith("_"):
             continue
-        p = _method_to_prop(path, reflector.method(v))
+        p = _method_to_prop(path, shadow_reflector.method(v))
         if not p:
             continue
         if k == "__init__":
@@ -136,9 +130,9 @@ def _methods_to_props(path: tuple[str, ...], cls: type):
 
 
 def _read_props_from_class(path: tuple[str, ...], cls: type):
-    if not reflector.is_supported(cls):
+    if not shadow_reflector.is_supported(cls):
         return ()
-    reader = reflector.type(cls)
+    reader = shadow_reflector.type(cls)
 
     normal_props = _attrs_to_props(path, reader.annotations)
     method_props = _methods_to_props(path, cls)
