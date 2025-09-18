@@ -6,6 +6,8 @@ from reactk.model2.util.core_reflection import get_attrs_downto
 from typing import TYPE_CHECKING
 from expression import Nothing, Some, Option
 
+from reactk.model2.util.maybe import maybe_normalize
+
 if TYPE_CHECKING:
     from reactk.model.trace.render_trace import RenderTrace
 from reactk.model2.ants.readers import (
@@ -24,7 +26,9 @@ from reactk.model2.ants.reflector import Reflector
 from reactk.model2.prop_model.prop import Prop, Prop_Schema
 
 
-reflector = Reflector(inspect_up_to=(Mapping, TypedDict, "ShadowNode", object))
+reflector = Reflector(
+    inspect_up_to=(Mapping, TypedDict, "ShadowNode", object, "_HasMerge")
+)
 
 
 class MetaAccessor(KeyAccessor[some_meta]):
@@ -42,7 +46,7 @@ def _create_prop(
     return Prop[x](
         name=name,
         repr=meta.repr,
-        no_value=meta.no_value,
+        no_value=maybe_normalize(meta.no_value),
         converter=meta.converter,
         computed_name=meta.name,
         subsection=meta.subsection,

@@ -1,6 +1,6 @@
 from typing import Annotated, TypedDict
 
-from expression import Nothing
+from expression import Nothing, Some
 from reactk.model2.prop_ants import prop_meta, schema_meta
 from reactk.model2.prop_ants.create_props import read_props_from_top_class
 from reactk.model2.prop_model.prop import Prop, Prop_Schema, Prop_Value
@@ -37,7 +37,7 @@ def it_works_for_simple_typed_dict():
     a_b = a["b"]
     assert isinstance(a_b, Prop)
     assert a_b.computed_name == "__b__"
-    assert a_b.no_value == ""
+    assert a_b.no_value == Some("")
     assert a_b.converter is str
     assert a_b.subsection == "configure"
     assert a_b.repr == "never"
@@ -79,7 +79,7 @@ def it_creates_prop_in_nested_schema():
     a_a_b = a_a["b"]
     assert isinstance(a_a_b, Prop)
     assert a_a_b.computed_name == "__b__"
-    assert a_a_b.no_value == ""
+    assert a_a_b.no_value == Some("")
     assert a_a_b.value_type == str
     assert a_a_b.repr == "never"
     assert a_a_b.is_required is False
