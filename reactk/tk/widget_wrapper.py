@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+from calendar import c
 from logging import getLogger
 from time import sleep
 from tkinter import Label, Tk, Widget as TkWidget
@@ -13,26 +15,15 @@ from reactk.tk.widget import Widget
 logger = getLogger(__name__)
 
 
-class WidgetWrapper(Resource[Widget]):
+class WidgetWrapperBase(Resource[Widget], ABC):
+    resource: TkWidget
 
-    @final
-    @override
-    def migrate(self, node: Widget) -> Self:
+    @abstractmethod
+    def migrate(self, node: Widget) -> Self: ...
 
-        x = WidgetWrapper(node, self.resource)
-        return x  # type: ignore
-
-    @staticmethod
-    def create(tk: Tk, node: Widget) -> "WidgetWrapper":
-
-        match node.type_name:
-            case "Label":
-                lbl = Label(tk, name=node.to_string_marker("safe"))
-                make_clickthrough(lbl)
-                return __class__(node, lbl)
-
-            case _:
-                raise ValueError(f"Unknown type: {node.type_name}")
+    @abstractmethod
+    @classmethod
+    def create(cls, tk: Tk, node: Widget) -> "LabelWrapper": ...
 
     @override
     def get_compatibility(self, other: Widget) -> Compat:
@@ -48,8 +39,8 @@ class WidgetWrapper(Resource[Widget]):
         self.resource = resource
 
     @staticmethod
-    def _wrap(node: Widget, resource: TkWidget) -> "WidgetWrapper":
-        return WidgetWrapper(node, resource)
+    def _wrap(node: Widget, resource: TkWidget) -> "LabelWrapper":
+        return LabelWrapper(node, resource)
 
     @override
     def is_same_resource(self, other: Resource) -> bool:
@@ -80,16 +71,28 @@ class WidgetWrapper(Resource[Widget]):
 
         logger.debug(f"Ending place for {self.node}")
 
-        x = 1
-
     @override
     def unplace(self) -> None:
         self.resource.pack_forget()
 
     @override
     def replace(
-        self, other: "WidgetWrapper.ThisResource", a: Prop_ComputedMapping, /
+        self, other: "WidgetWrapperBase.ThisResource", a: Prop_ComputedMapping, /
     ) -> None:
         self.resource.pack(after=self.resource, **a.values.get("Pack", {}))
-
         self.resource.pack_forget()
+
+
+class LabelWrapper(WidgetWrapperBase):
+    resource: TkWidget
+
+    @classmethod
+    def create(cls, tk: Tk, node: Widget) -> "LabelWrapper":
+        lbl = Label(tk, name=node.to_string_marker("safe"))
+        make_clickthrough(lbl)
+        return __class__(node, lbl)
+
+    def migrate(self, node: Widget) -> Self:
+
+        x = LabelWrapper(node, self.resource)
+        return x  # type: ignore

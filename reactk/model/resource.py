@@ -11,12 +11,14 @@ from reactk.model2.prop_model import Prop_Schema, Prop_Mapping
 from reactk.model.shadow_node import ShadowNode
 from reactk.model2.prop_model.common import KeyedValues
 from reactk.model2.prop_model.prop import Prop_ComputedMapping
+from reactk.rendering.generate_actions import AnyNode
 
 type Compat = Literal["update", "replace", "recreate"]
 
 
-class Resource[Node: ShadowNode](ABC):
+class Resource[Node: ShadowNode[Any] = AnyNode](ABC):
     resource: Any
+    kids: list["Resource"]
     type ThisResource = Resource[Node]
 
     def __repr__(self) -> str:
@@ -62,7 +64,9 @@ class Resource[Node: ShadowNode](ABC):
     def update(self, props: Prop_ComputedMapping, /) -> None: ...
 
     @abstractmethod
-    def place(self, props: Prop_ComputedMapping, /) -> None: ...
+    def place(
+        self, container: "Resource", props: Prop_ComputedMapping, at: int, /
+    ) -> None: ...
 
     @abstractmethod
     def unplace(self) -> None: ...

@@ -25,13 +25,14 @@ from reactk.model.resource import (
 )
 from reactk.model2.prop_model.prop import Prop_ComputedMapping
 from reactk.rendering.future_actions import Create, Replace, Unplace, Update
+from reactk.rendering.generate_actions import AnyNode
 from reactk.rendering.stateful_reconciler import StatefulReconciler
 from reactk.rendering.renderer import ComponentMount
 from reactk.model.context import Ctx
 from reactk.tk.make_clickthrough import make_clickthrough
 from reactk.tk.widget_mount import WidgetMount
 from reactk.tk.widget import Widget
-from reactk.tk.widget_wrapper import WidgetWrapper
+from reactk.tk.widget_wrapper import LabelWrapper
 from reactk.tk.window import Window
 from reactk.tk.geometry import Geometry
 from reactk.model.trace.key_tools import Display
@@ -41,21 +42,16 @@ from reactk.model.trace.key_tools import Display
 # into a single tree
 class WindowWrapper(Resource[Window]):
     resource: Tk
-    _component_mount: WidgetMount
 
     def __init__(
         self,
         node: Window,
         resource: Tk,
         context: Ctx,
-        root: Component,
-        mount: WidgetMount | None = None,
     ):
         super().__init__(node)
-        mount = mount or WidgetMount(resource, context, root)
         self.resource = resource
         self.context = context
-        self._component_mount = mount
 
     @override
     def is_same_resource(self, other: Resource) -> bool:
@@ -79,8 +75,11 @@ class WindowWrapper(Resource[Window]):
         thread.start()
         waiter.wait()
         root = node.__PROP_VALUES__.compute()
-        assert False, "handle children!"
-        wrapper = WindowWrapper(node, tk, context, root=root)
+        wrapper = WindowWrapper(
+            node,
+            tk,
+            context,
+        )
 
         return wrapper
 
@@ -110,13 +109,7 @@ class WindowWrapper(Resource[Window]):
 
     @override
     def migrate(self, node: Window) -> Self:
-        return self.__class__(
-            node,
-            self.resource,
-            self.context,
-            self._component_mount._mounted,
-            self._component_mount,
-        )
+        return self.__class__(node, self.resource, self.context)
 
     @override
     def destroy(self) -> None:
@@ -158,7 +151,13 @@ class WindowWrapper(Resource[Window]):
         return f"{width}x{height}+{x}+{y}"
 
     @override
-    def place(self, diff: Prop_ComputedMapping, /) -> None:
+    def place(
+        self,
+        container: "WindowWrapper.ThisResource",
+        at: int,
+        diff: Prop_ComputedMapping,
+        /,
+    ) -> None:
         geo = diff["Geometry"]  # type: Geometry # type: ignore
         normed = self.normalize_geo(geo)
 

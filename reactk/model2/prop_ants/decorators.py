@@ -109,5 +109,6 @@ class prop_getter:
 
 
 class HasChildren[Child](_HasMerge):
+
     def __getitem__(self, children: Iterable[Child]) -> Self:
         return self.__merge__({"__CHILDREN__": children})

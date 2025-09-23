@@ -4,7 +4,7 @@ import sys
 from time import sleep
 
 
-from reactk import Ctx, WindowMount, Window, Label, Widget, Component
+from reactk import Ctx, Window, Label, Widget, Component
 from reactk.tk.font import Font
 
 

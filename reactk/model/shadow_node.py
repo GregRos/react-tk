@@ -64,7 +64,11 @@ class InitPropsBase(TypedDict):
 @dataclass
 class ShadowNode[Kids = Never](HasPropsSchema, HasChildren[Kids], ABC):
     @prop_getter()
+    def __CHILDREN__(self) -> Iterable[Kids]: ...
+
+    @prop_getter()
     def __TRACE__(self) -> RenderTrace: ...
+
     def to_string_marker(self, display: Display) -> str:
         return self.__TRACE__.to_string(display)
 
