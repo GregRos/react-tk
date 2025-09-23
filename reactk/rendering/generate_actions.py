@@ -5,6 +5,7 @@ from typing import (
     Any,
     Callable,
     Iterable,
+    Mapping,
 )
 
 from .future_actions import (
@@ -97,13 +98,24 @@ class ReconcileKidsTarget:
         if messages:
             raise ValueError(messages)
 
+    def _existing_children(self, parent: AnyNode) -> Iterable[Resource]:
+        existing_parent = self._existing_resources.get(parent.uid)
+        if not existing_parent:
+            return
+        for child in existing_parent.node.__CHILDREN__:
+            if child.uid not in self._placed:
+                existing_child = self._existing_resources.get(child.uid)
+                if existing_child:
+                    yield existing_child
+
     def compute_reconcile_actions(self, parent: AnyNode, is_creating_new=False):
         self._check_duplicates(parent.__CHILDREN__)
-        parent_resource = self._existing_resources[parent.uid]
+        existing_children = self._existing_children(parent)
         pos = -1
         for prev, next in zip_longest(
-            parent_resource.kids, parent.__CHILDREN__, fillvalue=None
+            existing_children, parent.__CHILDREN__, fillvalue=None
         ):
+            prev = self._existing_resources.get(prev.uid) if prev else None
             if is_creating_new:
                 prev = None
             pos += 1
@@ -134,15 +146,16 @@ class Reconciler:
     type Construct = Callable[[AnyNode], ThisResource]
     existing_resources: dict[str, ThisResource]
 
-    def __init__(
-        self,
-        resource_type: type[ThisResource],
-        create: Construct,
-    ):
+    def __init__(self, resource_types: Mapping[type[AnyNode], type[ThisResource]]):
         self._placement = ()
         self.existing_resources = {}
-        self.create = create
-        self.resource_type = resource_type
+        self.resource_types = resource_types
+
+    def create(self, node: AnyNode) -> ThisResource:
+        resource_type = self.resource_types.get(type(node))
+        if not resource_type:
+            raise TypeError(f"No resource type for node type {type(node)}")
+        return resource_type.create(node)  # type: ignore
 
     def _do_create_action(self, action: Update | Create):
         match action:

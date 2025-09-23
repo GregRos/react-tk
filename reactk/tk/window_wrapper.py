@@ -26,11 +26,9 @@ from reactk.model.resource import (
 from reactk.model2.prop_model.prop import Prop_ComputedMapping
 from reactk.rendering.future_actions import Create, Replace, Unplace, Update
 from reactk.rendering.generate_actions import AnyNode
-from reactk.rendering.stateful_reconciler import StatefulReconciler
 from reactk.rendering.renderer import ComponentMount
 from reactk.model.context import Ctx
 from reactk.tk.make_clickthrough import make_clickthrough
-from reactk.tk.widget_mount import WidgetMount
 from reactk.tk.widget import Widget
 from reactk.tk.widget_wrapper import LabelWrapper
 from reactk.tk.window import Window
@@ -47,14 +45,12 @@ class WindowWrapper(Resource[Window]):
         self,
         node: Window,
         resource: Tk,
-        context: Ctx,
     ):
         super().__init__(node)
         self.resource = resource
-        self.context = context
 
     @override
-    def is_same_resource(self, other: Resource) -> bool:
+    def is_same_resource(self, other: "WindowWrapper.ThisResource") -> bool:
         return self.resource is other.resource
 
     def to_string_marker(self, display: Display) -> str:
@@ -78,7 +74,6 @@ class WindowWrapper(Resource[Window]):
         wrapper = WindowWrapper(
             node,
             tk,
-            context,
         )
 
         return wrapper
@@ -109,7 +104,7 @@ class WindowWrapper(Resource[Window]):
 
     @override
     def migrate(self, node: Window) -> Self:
-        return self.__class__(node, self.resource, self.context)
+        return self.__class__(node, self.resource)
 
     @override
     def destroy(self) -> None:
@@ -153,9 +148,9 @@ class WindowWrapper(Resource[Window]):
     @override
     def place(
         self,
-        container: "WindowWrapper.ThisResource",
-        at: int,
+        container: "Resource",
         diff: Prop_ComputedMapping,
+        at: int,
         /,
     ) -> None:
         geo = diff["Geometry"]  # type: Geometry # type: ignore
@@ -188,7 +183,9 @@ class WindowWrapper(Resource[Window]):
                 self.resource.configure(**configure)
             if (override_redirect := computed.get("override_redirect")) is not None:
                 self.resource.overrideredirect(override_redirect)
-            if child := computed.get("child"):
-                self._component_mount.remount(child)
 
         self.run_in_owner(do)
+
+    @classmethod
+    def create(cls, container: Any, node: Window) -> "WindowWrapper":
+        return WindowWrapper(node, Tk())

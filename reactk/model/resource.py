@@ -24,6 +24,10 @@ class Resource[Node: ShadowNode[Any] = AnyNode](ABC):
     def __repr__(self) -> str:
         return self.node.__repr__()
 
+    @abstractmethod
+    @classmethod
+    def create(cls, container: "Resource", node: Node) -> "ThisResource": ...
+
     @classmethod
     def node_type(cls) -> type[Node]:
         base_annotations = shadow_reflector.type(cls).base_annotations

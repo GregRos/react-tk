@@ -20,7 +20,6 @@ from reactk.model2.prop_ants import prop_meta, schema_meta, schema_setter
 from reactk.model2.prop_model import Prop
 from reactk.model.context import Ctx
 from reactk.rendering.renderer import ComponentMount
-from reactk.rendering.stateful_reconciler import StatefulReconciler
 from reactk.model.component import Component
 from reactk.model2.prop_model import Prop_Schema
 from reactk.tk.font import Font

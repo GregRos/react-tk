@@ -23,7 +23,7 @@ class WidgetWrapperBase(Resource[Widget], ABC):
 
     @abstractmethod
     @classmethod
-    def create(cls, tk: Tk, node: Widget) -> "LabelWrapper": ...
+    def create(cls, container: Resource, node: Widget) -> "WidgetWrapperBase": ...
 
     @override
     def get_compatibility(self, other: Widget) -> Compat:
@@ -43,7 +43,7 @@ class WidgetWrapperBase(Resource[Widget], ABC):
         return LabelWrapper(node, resource)
 
     @override
-    def is_same_resource(self, other: Resource) -> bool:
+    def is_same_resource(self, other: "WidgetWrapperBase.ThisResource") -> bool:
         return self.resource == other.resource
 
     @override
@@ -61,14 +61,23 @@ class WidgetWrapperBase(Resource[Widget], ABC):
         self.resource.configure(**diff.get("configure", {}))
 
     @override
-    def place(self, a: Prop_ComputedMapping, /) -> None:
+    def place(self, container: Resource, a: Prop_ComputedMapping, at: int, /) -> None:
+        if not isinstance(container.resource, (TkWidget, Tk)):
+            raise TypeError(f"Container {container} is not a TkWidget")
         logger.debug(f"Calling place for {self.node}")
         d = a.values
         pack = d.get("Pack", {})
         if not pack:  # pragma: no cover
             return
-        self.resource.pack_configure(**d.get("Pack", {}))
-
+        slaves = container.resource.slaves()
+        if slaves:
+            if at >= len(slaves):
+                pack["after"] = slaves[-1]
+            elif at <= 0:
+                pack["before"] = slaves[0]
+            else:
+                pack["after"] = slaves[at - 1]
+        self.resource.pack_configure(**d.get("Pack", {}), in_=container.resource)
         logger.debug(f"Ending place for {self.node}")
 
     @override
@@ -87,8 +96,8 @@ class LabelWrapper(WidgetWrapperBase):
     resource: TkWidget
 
     @classmethod
-    def create(cls, tk: Tk, node: Widget) -> "LabelWrapper":
-        lbl = Label(tk, name=node.to_string_marker("safe"))
+    def create(cls, container: "Resource", node: Widget) -> "LabelWrapper":
+        lbl = Label(container.resource, name=node.to_string_marker("safe"))
         make_clickthrough(lbl)
         return __class__(node, lbl)
 
