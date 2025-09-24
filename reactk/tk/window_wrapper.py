@@ -56,8 +56,8 @@ class WindowWrapper(Resource[Window]):
     def to_string_marker(self, display: Display) -> str:
         return self.node.to_string_marker(display)
 
-    @staticmethod
-    def create(node: Window, context: Ctx) -> "WindowWrapper":
+    @classmethod
+    def create(cls, container: Any, node: Window) -> "WindowWrapper":
         waiter = threading.Event()
         tk: Tk = None  # type: ignore
 
@@ -70,7 +70,6 @@ class WindowWrapper(Resource[Window]):
         thread = threading.Thread(target=ui_thread)
         thread.start()
         waiter.wait()
-        root = node.__PROP_VALUES__.compute()
         wrapper = WindowWrapper(
             node,
             tk,
@@ -185,7 +184,3 @@ class WindowWrapper(Resource[Window]):
                 self.resource.overrideredirect(override_redirect)
 
         self.run_in_owner(do)
-
-    @classmethod
-    def create(cls, container: Any, node: Window) -> "WindowWrapper":
-        return WindowWrapper(node, Tk())

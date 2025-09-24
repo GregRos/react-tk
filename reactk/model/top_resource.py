@@ -6,25 +6,12 @@ from reactk.rendering.generate_actions import AnyNode
 from reactk.tk.window import Window
 
 
-class TopNode(ShadowNode):
-    INSTANCE: ClassVar["TopNode"]
+class VirtualResource[Node: ShadowNode[Any]](Resource[Node]):
+    def __init__(self, node: Node):
+        super().__init__(node)
 
-    def __new__(cls, *args, **kwargs):
-        if cls.INSTANCE is None:
-            cls.INSTANCE = super().__new__(cls)
-        return cls.INSTANCE
-
-
-class TopLevelVirtualResource(Resource[TopNode]):
-    INSTANCE: ClassVar["TopLevelVirtualResource"]
-
-    def __new__(cls, *args, **kwargs):
-        if cls.INSTANCE is None:
-            cls.INSTANCE = super().__new__(cls)
-        return cls.INSTANCE
-
-    def is_same_resource(self, other: Any) -> bool:
-        return True
+    def is_same_resource(self, other: "VirtualResource.ThisResource") -> bool:
+        return other.node.uid == self.node.uid
 
     def migrate(self, node: Any) -> Self:
         return self
@@ -54,4 +41,4 @@ class TopLevelVirtualResource(Resource[TopNode]):
 
     @classmethod
     def create(cls, container: Any, node: Any) -> Any:
-        return cls()
+        return cls(node)

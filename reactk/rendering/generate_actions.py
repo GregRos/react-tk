@@ -8,6 +8,8 @@ from typing import (
     Mapping,
 )
 
+from reactk.rendering.ui_state import RenderState
+
 from .future_actions import (
     Create,
     Recreate,
@@ -23,10 +25,11 @@ from itertools import groupby, zip_longest
 
 logger = logging.getLogger("ui")
 type AnyNode = ShadowNode[ShadowNode[Any]]
+type ReconcileAction = Place | Replace | Unplace | Update
 
 
 @dataclass
-class ReconcileTarget:
+class _ComputeAction:
     prev: Resource | None
     next: Resource | ShadowNode | None
     container: AnyNode
@@ -69,7 +72,7 @@ class ReconcileTarget:
         if self.prev.uid != self.next_node.uid:
             return Replace(self.container, self.prev, inner_action)
         match self.prev.get_compatibility(self.next_node):
-            case "update":
+            case "update" if isinstance(inner_action, Update):
                 return inner_action
             case "replace":
                 return Replace(self.container, self.prev, inner_action)
@@ -80,10 +83,8 @@ class ReconcileTarget:
 
 
 @dataclass
-class ReconcileKidsTarget:
-    parent: AnyNode
-    _existing_resources: dict[str, Resource]
-    _placed = set[str]()
+class ComputeTreeActions:
+    state: RenderState
 
     @staticmethod
     def _check_duplicates(rendering: Iterable[ShadowNode]):
@@ -99,40 +100,47 @@ class ReconcileKidsTarget:
             raise ValueError(messages)
 
     def _existing_children(self, parent: AnyNode) -> Iterable[Resource]:
-        existing_parent = self._existing_resources.get(parent.uid)
+        existing_parent = self.state.existing_resources.get(parent.uid)
         if not existing_parent:
             return
         for child in existing_parent.node.__CHILDREN__:
-            if child.uid not in self._placed:
-                existing_child = self._existing_resources.get(child.uid)
+            if child.uid not in self.state.placed:
+                existing_child = self.state.existing_resources.get(child.uid)
                 if existing_child:
                     yield existing_child
 
-    def compute_reconcile_actions(self, parent: AnyNode, is_creating_new=False):
+    def compute_reconcile_actions(
+        self, parent: AnyNode, is_creating_new=False
+    ) -> Iterable["ReconcileAction"]:
         self._check_duplicates(parent.__CHILDREN__)
         existing_children = self._existing_children(parent)
         pos = -1
         for prev, next in zip_longest(
             existing_children, parent.__CHILDREN__, fillvalue=None
         ):
-            prev = self._existing_resources.get(prev.uid) if prev else None
+            prev = self.state.existing_resources.get(prev.uid) if prev else None
             if is_creating_new:
                 prev = None
             pos += 1
-            if not next and prev and prev.uid in self._placed:
+            if not next and prev and prev.uid in self.state.placed:
                 continue
             if next:
-                self._placed.add(next.uid)
-            prev_resource = self._existing_resources.get(prev.uid) if prev else None
-            next_resource = self._existing_resources.get(next.uid) if next else None
-            action = ReconcileTarget(
+                self.state.placed.add(next.uid)
+            prev_resource = (
+                self.state.existing_resources.get(prev.uid) if prev else None
+            )
+            next_resource = (
+                self.state.existing_resources.get(next.uid) if next else None
+            )
+            action = _ComputeAction(
                 prev=prev_resource or prev,
                 next=next_resource or next,
                 at=pos,
                 container=parent,
             ).get_outer_action()
+            yield action
             if next and next.__CHILDREN__:
-                self.compute_reconcile_actions(
+                yield from self.compute_reconcile_actions(
                     next,
                     is_creating_new=not action.is_creating_new and not is_creating_new,
                 )
@@ -140,19 +148,18 @@ class ReconcileKidsTarget:
 
 class Reconciler:
 
-    type ReconcileAction = Place | Replace | Unplace | Update
     type CreateAction = Create | Recreate | Update
     type ThisResource = Resource
     type Construct = Callable[[AnyNode], ThisResource]
-    existing_resources: dict[str, ThisResource]
 
-    def __init__(self, resource_types: Mapping[type[AnyNode], type[ThisResource]]):
-        self._placement = ()
-        self.existing_resources = {}
-        self.resource_types = resource_types
+    def __init__(
+        self,
+        state: RenderState,
+    ):
+        self.state = state
 
-    def create(self, node: AnyNode) -> ThisResource:
-        resource_type = self.resource_types.get(type(node))
+    def _create(self, node: AnyNode) -> ThisResource:
+        resource_type = self.state.node_mapping.get(type(node))
         if not resource_type:
             raise TypeError(f"No resource type for node type {type(node)}")
         return resource_type.create(node)  # type: ignore
@@ -160,9 +167,9 @@ class Reconciler:
     def _do_create_action(self, action: Update | Create):
         match action:
             case Create(next) as c:
-                new_resource = self.create(next)  # type: ignore
+                new_resource = self._create(next)  # type: ignore
                 new_resource.update(c.diff)
-                self.existing_resources[next.uid] = new_resource
+                self.state.existing_resources[next.uid] = new_resource
                 return new_resource
             case Update(existing, next, diff):
                 if diff:
@@ -185,14 +192,14 @@ class Reconciler:
             case Unplace(existing):
                 existing.unplace()
             case Place(container, at, Recreate(old, next)) as x:
-                existing_container = self.existing_resources[container.uid]
+                existing_container = self.state.existing_resources[container.uid]
                 new_resource = self._do_create_action(Create(next))
                 old.destroy()
                 new_resource.place(existing_container, x.diff, at)
             case Place(container, at, createAction) as x if not isinstance(
                 createAction, Recreate
             ):
-                existing_container = self.existing_resources[container.uid]
+                existing_container = self.state.existing_resources[container.uid]
                 resource = self._do_create_action(createAction)
                 resource.place(existing_container, x.diff, at)
             case Replace(container, existing, Recreate(old, next)) as x:
