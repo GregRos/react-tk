@@ -10,7 +10,7 @@ type RenderResult[Node: ShadowNode] = Component[Node] | Node
 
 
 @dataclass(kw_only=True)
-class Component[Node: ShadowNode[Any]](ABC):
+class Component[Node: ShadowNode[Any] = ShadowNode[Any]](ABC):
     key: str = field(default="")
 
     def render(self, yld: Callable[[RenderResult[Node]], None], ctx: Ctx, /): ...

@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from reactk.model import Resource
 from reactk.rendering.future_actions import (
     Create,
     Place,
@@ -15,6 +14,9 @@ from reactk.rendering.ui_state import RenderState
 from typing import Callable, Iterable, Protocol
 
 
-class Reconciler[Res](Protocol):
+class Reconciler[Res]:
+    @classmethod
     @abstractmethod
-    def run_action(action: ReconcileAction[Res]) -> None: ...
+    def create(cls, state: RenderState) -> "Reconciler[Res]": ...
+    @abstractmethod
+    def run_action(self, action: ReconcileAction[Res]) -> None: ...

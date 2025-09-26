@@ -1,36 +1,36 @@
 from abc import abstractmethod
+from dataclasses import dataclass
 from tkinter import Tk, Widget
-from reactk.model import Resource
 from reactk.model2.prop_model.prop import Prop_ComputedMapping
-from reactk.rendering import Reconciler
 from reactk.rendering.future_actions import (
     Create,
     Place,
     Recreate,
     Replace,
-    ResourceNodePair,
+    RenderedNode,
     Unplace,
     Update,
 )
 from reactk.rendering.generate_actions import AnyNode, ReconcileAction, logger
 from reactk.rendering.ui_state import RenderState
 
+from reactk.rendering.reconciler import Reconciler
 
 from typing import Callable, Iterable
 
-from reactk.tk.font import to_tk_font
+from reactk.tk.types.font import to_tk_font
 
 
+@dataclass
 class WidgetReconciler(Reconciler[Widget]):
+    state: RenderState
 
-    def __init__(
-        self,
-        state: RenderState,
-    ):
-        self.state = state
+    @classmethod
+    def create(cls, state: RenderState) -> "WidgetReconciler":
+        return cls(state)
 
     @abstractmethod
-    def _create(self, container: Widget, node: AnyNode) -> ResourceNodePair[Widget]: ...
+    def _create(self, container: Widget, node: AnyNode) -> RenderedNode[Widget]: ...
 
     def _pack(self, resource: Widget, diff: Prop_ComputedMapping):
         resource.pack_configure(

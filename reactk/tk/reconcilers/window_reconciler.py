@@ -8,7 +8,7 @@ from reactk.rendering.future_actions import (
     Create,
     Recreate,
     Replace,
-    ResourceNodePair,
+    RenderedNode,
     Unplace,
     Update,
     Place,
@@ -16,9 +16,9 @@ from reactk.rendering.future_actions import (
 from reactk.rendering.generate_actions import ReconcileAction
 from reactk.rendering.reconciler import Reconciler
 from reactk.rendering.ui_state import RenderState
-from reactk.tk.geometry import Geometry
-from reactk.tk.widget_reconciler import WidgetReconciler
-from reactk.tk.window import Window
+from reactk.tk.types.geometry import Geometry
+from reactk.tk.reconcilers.widget_reconciler import WidgetReconciler
+from reactk.tk.nodes.window import Window
 
 logger = logging.getLogger("ui").getChild("diff")
 
@@ -49,7 +49,7 @@ class WindowReconciler(Reconciler[Tk]):
 
         return f"{width}x{height}+{x}+{y}"
 
-    def _place(self, pair: ResourceNodePair[Tk], diff: Prop_ComputedMapping) -> None:
+    def _place(self, pair: RenderedNode[Tk], diff: Prop_ComputedMapping) -> None:
         geo = diff.values["Geometry"]  # type: Geometry
         resource = pair.resource
         normed = self._normalize_geo(resource, geo)
@@ -73,7 +73,7 @@ class WindowReconciler(Reconciler[Tk]):
     def _unplace(self, resource: Tk) -> None:
         resource.withdraw()
 
-    def _create(self, node: ShadowNode[Any]) -> "ResourceNodePair[Tk]":
+    def _create(self, node: ShadowNode[Any]) -> "RenderedNode[Tk]":
         waiter = threading.Event()
         tk: Tk = None  # type: ignore
 
@@ -87,7 +87,7 @@ class WindowReconciler(Reconciler[Tk]):
         thread.start()
         waiter.wait()
 
-        return ResourceNodePair(tk, node)
+        return RenderedNode(tk, node)
 
     def _do_create_action(self, action: Update[Tk] | Create[Tk]):
         match action:

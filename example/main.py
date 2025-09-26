@@ -5,7 +5,7 @@ from time import sleep
 
 
 from reactk import Ctx, Window, Label, Widget, Component
-from reactk.tk.font import Font
+from reactk.tk.types.font import Font
 
 
 @dataclass(kw_only=True)
@@ -27,9 +27,9 @@ class StuffComponent(Component[Widget]):
 class WindowComponent(Component[Window]):
     def render(self, yld, ctx: Ctx):
         yld(
-            Window(topmost=True, background="black", alpha=85)
-            .Geometry(width=500, height=500, x=500, y=500, anchor_point="lt")
-            .child(StuffComponent(text=ctx.text))
+            Window(topmost=True, background="black", alpha=85).Geometry(
+                width=500, height=500, x=500, y=500, anchor_point="lt"
+            )[StuffComponent(text=ctx.text)]
         )
 
 

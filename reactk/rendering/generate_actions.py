@@ -6,18 +6,19 @@ from typing import (
     Iterable,
 )
 
+from reactk.model.component import Component
 from reactk.rendering.ui_state import RenderState
 
 from .future_actions import (
     Create,
     Recreate,
     Replace,
-    ResourceNodePair,
+    RenderedNode,
     Unplace,
     Update,
     Place,
 )
-from ..model import ShadowNode, Resource
+from ..model import ShadowNode
 
 
 from itertools import groupby, zip_longest
@@ -29,8 +30,8 @@ type ReconcileAction[Res] = Place[Res] | Replace[Res] | Unplace[Res] | Update[Re
 
 @dataclass
 class _ComputeAction:
-    prev: ResourceNodePair | None
-    next: ResourceNodePair | ShadowNode | None
+    prev: RenderedNode | None
+    next: RenderedNode | ShadowNode | None
     container: AnyNode
     at: int
 
@@ -40,7 +41,7 @@ class _ComputeAction:
         return self.next if isinstance(self.next, ShadowNode) else self.next.node  # type: ignore
 
     @property
-    def next_resource(self) -> ResourceNodePair | None:
+    def next_resource(self) -> RenderedNode | None:
         if not self.next or isinstance(self.next, ShadowNode):
             return None
         return self.next
@@ -98,7 +99,7 @@ class ComputeTreeActions:
         if messages:
             raise ValueError(messages)
 
-    def _existing_children(self, parent: AnyNode) -> Iterable[Resource]:
+    def _existing_children(self, parent: AnyNode) -> Iterable[RenderedNode]:
         existing_parent = self.state.existing_resources.get(parent.uid)
         if not existing_parent:
             return
@@ -117,16 +118,16 @@ class ComputeTreeActions:
         for prev, next in zip_longest(
             existing_children, parent.__CHILDREN__, fillvalue=None
         ):
-            prev = self.state.existing_resources.get(prev.uid) if prev else None
+            prev = self.state.existing_resources.get(prev.node.uid) if prev else None
             if is_creating_new:
                 prev = None
             pos += 1
-            if not next and prev and prev.uid in self.state.placed:
+            if not next and prev and prev.node.uid in self.state.placed:
                 continue
             if next:
                 self.state.placed.add(next.uid)
             prev_resource = (
-                self.state.existing_resources.get(prev.uid) if prev else None
+                self.state.existing_resources.get(prev.node.uid) if prev else None
             )
             next_resource = (
                 self.state.existing_resources.get(next.uid) if next else None

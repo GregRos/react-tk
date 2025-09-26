@@ -4,6 +4,7 @@ import sys
 from typing import Any, Callable, Generator, Iterable
 
 from reactk.model import ShadowNode, Ctx, Component
+from reactk.model.top import TopLevelNode
 from reactk.model.trace.render_frame import RenderFrame
 from reactk.pretty.format_superscript import format_superscript
 from reactk.model.trace.render_trace import RenderTrace
@@ -21,7 +22,7 @@ class ComponentMount:
 
     def __init__(self, context: Ctx, node_mapping: NodeMapping):
         self.context = context
-        self.state = RenderState(existing_resources={}, node_mapping=node_mapping)
+        self.state = RenderState(existing_resources={}, reconciler_mapping=node_mapping)
 
     @property
     def _compute_actions(self):
@@ -31,7 +32,20 @@ class ComponentMount:
         self.context(**ctx_args)
         return self.context
 
-    def _compute_render(self) -> None:
+    def _render_kids(
+        self, node: ShadowNode[Any]
+    ) -> Generator[ShadowNode[Any], None, None]:
+        for kid in node.__CHILDREN__:
+            if isinstance(kid, ShadowNode):
+                yield kid
+            elif isinstance(kid, Component):
+                yield from self._compute_render(kid)
+            else:
+                raise TypeError(
+                    f"Expected __CHILDREN__ to contain ShadowNode or Component, but got {type(kid)}"
+                )
+
+    def _compute_render(self, root: Component[Any]) -> tuple[ShadowNode[Any], ...]:
         rendering = tuple[ShadowNode[Any], ...]()
         trace = RenderTrace()
 
@@ -57,6 +71,7 @@ class ComponentMount:
                     occurence_by_line[line_no] += 1
 
                     if isinstance(node, ShadowNode):
+                        node.__merge__(__CHILDREN__=self._render_kids(node))
                         rendering += (with_trace(node, my_trace),)
                     elif isinstance(node, Component):
                         node.render(on_yielded_for(my_trace), self.context)
@@ -69,12 +84,12 @@ class ComponentMount:
 
         yield_ = on_yielded_for(trace)
         yield_(self._mounted)
+        return rendering
 
     def remount(self, root: Component[Any]):
         self._mounted = root
         self.force_rerender()
 
     def force_rerender(self):
-        nodes = self._compute_render()
-        actions = self._compute_actions.compute_actions(nodes)
-        self._reconciler.reconcile(actions)
+        nodes = self._compute_render(self._mounted)
+        actions = self._compute_actions.compute_actions(TopLevelNode()[*nodes])

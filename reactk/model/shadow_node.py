@@ -15,6 +15,7 @@ from typing import (
     Self,
     TypedDict,
 )
+from reactk.model.component import Component
 from reactk.model.resource import Compat
 from reactk.model.trace.key_tools import Display
 from reactk.model.trace.render_trace import RenderTrace
@@ -26,7 +27,7 @@ from reactk.model2.prop_ants.create_props import (
 from reactk.model2.prop_model.common import KeyedValues
 from reactk.model2.prop_model.prop import Prop_Schema, Prop_Mapping
 from reactk.model2.util.dict import deep_merge
-from reactk.tk.widget import Widget
+from reactk.tk.nodes.widget import Widget
 
 
 class _WithDefaults(TypedDict):
@@ -64,11 +65,13 @@ class InitPropsBase(TypedDict):
 
 
 @dataclass
-class ShadowNode[Kids = Never](HasPropsSchema, HasChildren[Kids], ABC):
+class ShadowNode[Kids: ShadowNode = Never](
+    HasPropsSchema, HasChildren[Kids | Component[Kids]], ABC
+):
     type This = ShadowNode[Kids]
 
     @prop_getter()
-    def __CHILDREN__(self) -> Iterable[Kids]: ...
+    def __CHILDREN__(self) -> Iterable[Kids | Component[Kids]]: ...
 
     @prop_getter()
     def __TRACE__(self) -> RenderTrace: ...

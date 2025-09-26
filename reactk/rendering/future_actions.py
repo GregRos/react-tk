@@ -6,12 +6,12 @@ from reactk.model2.prop_model.common import KeyedValues
 from reactk.model2.prop_model import Prop_Mapping
 from reactk.model2.prop_model.prop import Prop_ComputedMapping
 
-from ..model import Resource, ShadowNode
+from ..model import ShadowNode
 from ..rendering.generate_actions import AnyNode
 
 
 @dataclass
-class ResourceNodePair[Res]:
+class RenderedNode[Res]:
     resource: Res
     node: ShadowNode[Any]
 
@@ -42,7 +42,7 @@ class Create[Res]:
 
 @dataclass
 class Update[Res]:
-    existing: ResourceNodePair[Res]
+    existing: RenderedNode[Res]
     next: AnyNode
     diff: Prop_ComputedMapping
 
@@ -63,7 +63,7 @@ class Update[Res]:
 
 @dataclass
 class Recreate[Res]:
-    old: ResourceNodePair[Res]
+    old: RenderedNode[Res]
     next: AnyNode
     container: AnyNode
 
@@ -108,7 +108,7 @@ class Place[Res]:
 @dataclass
 class Replace[Res]:
     container: AnyNode
-    replaces: ResourceNodePair[Res]
+    replaces: RenderedNode[Res]
     with_what: Update | Recreate | Create
 
     @property
@@ -129,7 +129,7 @@ class Replace[Res]:
 
 @dataclass
 class Unplace[Res]:
-    what: ResourceNodePair[Res]
+    what: RenderedNode[Res]
     container: AnyNode
 
     @property
