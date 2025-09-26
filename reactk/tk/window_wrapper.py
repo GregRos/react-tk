@@ -57,7 +57,7 @@ class WindowWrapper(Resource[Window]):
         return self.node.to_string_marker(display)
 
     @classmethod
-    def create(cls, container: Any, node: Window) -> "WindowWrapper":
+    def create(cls, node: Window) -> "WindowWrapper":
         waiter = threading.Event()
         tk: Tk = None  # type: ignore
 

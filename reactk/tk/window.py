@@ -12,6 +12,7 @@ from typing import (
 )
 
 
+from reactk.model.resource import Compat
 from reactk.model2.prop_ants import prop_meta, schema_meta, schema_setter, prop_setter
 from reactk.model.component import Component
 from reactk.model.shadow_node import (
@@ -32,7 +33,7 @@ class WindowProps(InitPropsBase):
     alpha: Annotated[NotRequired[float], prop_meta(subsection="attributes")]
 
 
-class Window(ShadowNode, Component[Widget]):  # type: ignore
+class Window(ShadowNode[Widget]):
 
     @prop_setter()
     def child(self, child: Annotated[Widget | Component[Widget], prop_meta()]): ...
@@ -42,3 +43,7 @@ class Window(ShadowNode, Component[Widget]):  # type: ignore
 
     @schema_setter()
     def Geometry(self, **props: Unpack[Geometry]) -> None: ...
+
+    @override
+    def get_compatibility(self, other: "Window.This") -> Compat:
+        return "update"

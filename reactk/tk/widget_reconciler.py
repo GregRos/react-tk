@@ -1,0 +1,130 @@
+from abc import abstractmethod
+from tkinter import Tk, Widget
+from reactk.model import Resource
+from reactk.model2.prop_model.prop import Prop_ComputedMapping
+from reactk.rendering import Reconciler
+from reactk.rendering.future_actions import (
+    Create,
+    Place,
+    Recreate,
+    Replace,
+    ResourceNodePair,
+    Unplace,
+    Update,
+)
+from reactk.rendering.generate_actions import AnyNode, ReconcileAction, logger
+from reactk.rendering.ui_state import RenderState
+
+
+from typing import Callable, Iterable
+
+from reactk.tk.font import to_tk_font
+
+
+class WidgetReconciler(Reconciler[Widget]):
+
+    def __init__(
+        self,
+        state: RenderState,
+    ):
+        self.state = state
+
+    @abstractmethod
+    def _create(self, container: Widget, node: AnyNode) -> ResourceNodePair[Widget]: ...
+
+    def _pack(self, resource: Widget, diff: Prop_ComputedMapping):
+        resource.pack_configure(
+            **diff.values.get("Pack", {}),
+        )
+
+    def _pack_replace(self, what: Widget, replaces: Widget, diff: Prop_ComputedMapping):
+        pack = diff.values.get("Pack")
+        if not pack:  # pragma: no cover
+            return
+        pack["after"] = replaces
+        self._pack(what, diff)
+
+    def _pack_at(self, resource: Widget, diff: Prop_ComputedMapping, at: int):
+        pack = diff.values.get("Pack", {})
+        if not pack:  # pragma: no cover
+            return
+        slaves = resource.master.slaves()
+        if slaves:
+            if at >= len(slaves):
+                pack["after"] = slaves[-1]
+            elif at <= 0:
+                pack["before"] = slaves[0]
+            else:
+                pack["after"] = slaves[at - 1]
+        self._pack(resource, diff)
+
+    def _update(self, resource: Widget, props: Prop_ComputedMapping) -> None:
+        diff = props.values
+        configure = diff.get("configure", {})
+        if "font" in diff:
+            configure["font"] = to_tk_font(diff["font"])
+        if not configure:
+            return
+        resource.configure(**diff.get("configure", {}))
+
+    def _get_some_ui_resource(self, node: ReconcileAction[Widget]) -> Widget | Tk:
+        match node:
+            case Update(existing):
+                return existing.resource
+            case x:
+                container = x.container
+                return self.state.existing_resources[container.uid].resource
+
+    def _do_create_action(self, action: Update[Widget] | Create[Widget]):
+        match action:
+            case Create(next, container) as c:
+                parent = self.state.existing_resources[container.uid].resource
+                new_resource = self._create(parent, next)
+
+                self.state.existing_resources[next.uid] = new_resource
+                return new_resource
+            case Update(existing, next, diff):
+                if diff:
+                    self._update(existing.resource, diff)
+                return existing.migrate(next)
+            case _:
+                assert False, f"Unknown action: {action}"
+
+    def _run_action_main_thread(self, action: ReconcileAction[Widget]):
+        if action:
+            # FIXME: This should be an externalized event
+            logger.info(f"⚖️  RECONCILE {action}")
+        else:
+            logger.info(f"🚫 RECONCILE {action.key} ")
+            return
+
+        match action:
+            case Update(existing, next):
+                self._do_create_action(action)
+            case Unplace(existing):
+                existing.resource.pack_forget()
+            case Place(_, at, Recreate(old, next, container)) as x:
+                new_resource = self._do_create_action(Create(next, container))
+                old.resource.destroy()
+                self._pack_at(new_resource.resource, x.diff, at)
+            case Place(container, at, createAction) as x if not isinstance(
+                createAction, Recreate
+            ):
+                cur = self._do_create_action(createAction)
+                self._pack_at(cur.resource, x.diff, at)
+            case Replace(_, existing, Recreate(old, next, container)) as x:
+                cur = self._do_create_action(Create(next, container))
+                self._pack_replace(cur.resource, existing.resource, x.diff)
+                old.resource.destroy()
+            case Replace(container, existing, createAction) if not isinstance(
+                createAction, Recreate
+            ):
+                cur = self._do_create_action(createAction)
+                self._pack_replace(cur.resource, existing.resource, createAction.diff)
+            case _:
+                assert False, f"Unknown action: {action}"
+
+    def run_action(self, action: ReconcileAction[Widget], log=True):
+        existing_parent = self._get_some_ui_resource(action)
+
+        existing_parent.after(0, lambda: self._run_action_main_thread(action))

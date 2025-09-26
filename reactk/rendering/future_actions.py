@@ -11,8 +11,19 @@ from ..rendering.generate_actions import AnyNode
 
 
 @dataclass
-class Create:
+class ResourceNodePair[Res]:
+    resource: Res
+    node: ShadowNode[Any]
+
+    def migrate(self, node: AnyNode):
+        self.node = node
+        return self
+
+
+@dataclass
+class Create[Res]:
     next: AnyNode
+    container: AnyNode
 
     def __post_init__(self):
         self.diff = self.next.__PROP_VALUES__.compute()
@@ -30,8 +41,8 @@ class Create:
 
 
 @dataclass
-class Update:
-    existing: Resource
+class Update[Res]:
+    existing: ResourceNodePair[Res]
     next: AnyNode
     diff: Prop_ComputedMapping
 
@@ -51,16 +62,17 @@ class Update:
 
 
 @dataclass
-class Recreate:
-    old: Resource
+class Recreate[Res]:
+    old: ResourceNodePair[Res]
     next: AnyNode
+    container: AnyNode
 
     def __post_init__(self):
         self.diff = self.next.__PROP_VALUES__.compute()
 
     @property
     def props(self):
-        return f"{self.old.uid} ♻️ {self.next.__PROP_VALUES__}"
+        return f"{self.old.node.uid} ♻️ {self.next.__PROP_VALUES__}"
 
     @property
     def key(self) -> Any:
@@ -72,10 +84,10 @@ class Recreate:
 
 
 @dataclass
-class Place:
-    where: AnyNode
+class Place[Res]:
+    container: AnyNode
     at: int
-    what: Update | Recreate | Create
+    what: Update[Res] | Recreate[Res] | Create[Res]
 
     @property
     def diff(self) -> Prop_ComputedMapping:
@@ -94,9 +106,9 @@ class Place:
 
 
 @dataclass
-class Replace:
-    where: AnyNode
-    replaces: Resource
+class Replace[Res]:
+    container: AnyNode
+    replaces: ResourceNodePair[Res]
     with_what: Update | Recreate | Create
 
     @property
@@ -108,25 +120,25 @@ class Replace:
         return self.with_what.diff
 
     def __repr__(self) -> str:
-        return f"{self.replaces.uid} ↔️ {self.with_what.__repr__()}"
+        return f"{self.replaces.node.uid} ↔️ {self.with_what.__repr__()}"
 
     @property
     def uid(self) -> Any:
-        return self.replaces.uid
+        return self.replaces.node.uid
 
 
 @dataclass
-class Unplace:
-    what: Resource
-    where: AnyNode
+class Unplace[Res]:
+    what: ResourceNodePair[Res]
+    container: AnyNode
 
     @property
     def is_creating_new(self) -> bool:
         return False
 
     def __repr__(self) -> str:
-        return f"🙈  {self.what.uid}"
+        return f"🙈  {self.what.node.uid}"
 
     @property
     def uid(self) -> Any:
-        return self.what.uid
+        return self.what.node.uid

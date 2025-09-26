@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from copy import copy
 from dataclasses import dataclass, is_dataclass
@@ -15,6 +15,7 @@ from typing import (
     Self,
     TypedDict,
 )
+from reactk.model.resource import Compat
 from reactk.model.trace.key_tools import Display
 from reactk.model.trace.render_trace import RenderTrace
 from reactk.model2.prop_ants.prop_meta import prop_meta
@@ -25,6 +26,7 @@ from reactk.model2.prop_ants.create_props import (
 from reactk.model2.prop_model.common import KeyedValues
 from reactk.model2.prop_model.prop import Prop_Schema, Prop_Mapping
 from reactk.model2.util.dict import deep_merge
+from reactk.tk.widget import Widget
 
 
 class _WithDefaults(TypedDict):
@@ -63,6 +65,8 @@ class InitPropsBase(TypedDict):
 
 @dataclass
 class ShadowNode[Kids = Never](HasPropsSchema, HasChildren[Kids], ABC):
+    type This = ShadowNode[Kids]
+
     @prop_getter()
     def __CHILDREN__(self) -> Iterable[Kids]: ...
 
@@ -71,6 +75,9 @@ class ShadowNode[Kids = Never](HasPropsSchema, HasChildren[Kids], ABC):
 
     def to_string_marker(self, display: Display) -> str:
         return self.__TRACE__.to_string(display)
+
+    @abstractmethod
+    def get_compatibility(self, other: This) -> Compat: ...
 
     @property
     def type_name(self) -> str:

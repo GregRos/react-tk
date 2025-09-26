@@ -16,6 +16,7 @@ from typing import (
     Unpack,
     override,
 )
+from reactk.model.resource import Compat
 from reactk.model2.prop_ants import prop_meta, schema_meta, schema_setter
 from reactk.model2.prop_model import Prop
 from reactk.model.context import Ctx
@@ -76,6 +77,15 @@ class Widget(ShadowNode):
 
     @schema_setter(repr="simple")
     def Pack(self, **props: Unpack[PackProps]) -> None: ...
+
+    @override
+    def get_compatibility(self, other: "Widget.This") -> Compat:
+        if self.type_name != other.type_name:
+            return "recreate"
+        elif self.__PROP_VALUES__.diff(other.__PROP_VALUES__):
+            return "replace"
+        else:
+            return "update"
 
 
 class Label(Widget):
