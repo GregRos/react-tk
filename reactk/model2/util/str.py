@@ -66,3 +66,24 @@ def format_signature(func: Callable[..., Any]) -> str:
     ret_ann = hints.get("return", sig.return_annotation)
     ret_str = _type_name(ret_ann if ret_ann is not _empty else Any)
     return f"{name}({', '.join(parts)}) -> {ret_str}"
+
+
+def format_subscript(value: int) -> str:
+    subscript_map = {
+        "0": "₀",
+        "1": "₁",
+        "2": "₂",
+        "3": "₃",
+        "4": "₄",
+        "5": "₅",
+        "6": "₆",
+        "7": "₇",
+        "8": "₈",
+        "9": "₉",
+        "-": "₋",
+    }
+    strified = str(value)
+    result = ""
+    for c in strified:
+        result += subscript_map[c]
+    return result

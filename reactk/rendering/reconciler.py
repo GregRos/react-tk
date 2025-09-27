@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from reactk.model.resource import Compat
+from typing import Literal
+
+# Compat moved here from reactk.model.resource to centralize reconciler types
+type Compat = Literal["update", "replace", "recreate"]
 from reactk.model2.ants.key_accessor import KeyAccessor
 from reactk.model2.prop_model import prop
 from reactk.rendering.future_actions import (

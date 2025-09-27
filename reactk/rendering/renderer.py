@@ -8,7 +8,6 @@ from reactk.model.context import Ctx
 
 from reactk.model.top import TopLevelNode
 from reactk.model.trace import RenderFrame
-from reactk.pretty.format_superscript import format_superscript
 from reactk.model.trace import RenderTrace, RenderTraceAccessor
 from reactk.rendering.generate_actions import (
     AnyNode,

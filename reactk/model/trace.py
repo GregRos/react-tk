@@ -4,8 +4,8 @@ from types import FrameType
 from typing import TYPE_CHECKING, Literal
 from inspect import getframeinfo, stack, FrameInfo, currentframe
 
-from reactk.pretty.format_subscript import format_subscript
 from reactk.model2.ants.key_accessor import KeyAccessor
+from reactk.model2.util.str import format_subscript
 
 if TYPE_CHECKING:
     from reactk.model.component import Component
