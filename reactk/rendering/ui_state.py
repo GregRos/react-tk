@@ -6,7 +6,7 @@ from reactk.model.renderable.node.shadow_node import ShadowNode
 from reactk.model.renderable.trace import RenderTrace, RenderTraceAccessor
 
 if TYPE_CHECKING:
-    from reactk.rendering.generate_actions import AnyNode
+    from reactk.rendering.compute_actions import AnyNode
 
 
 @dataclass

@@ -7,7 +7,7 @@ from typing import Any
 from reactk.rendering.reconciler import Compat
 from reactk.model.renderable.node.shadow_node import ShadowNode
 from reactk.model.props.impl.prop import Prop_ComputedMapping
-from reactk.rendering.future_actions import (
+from reactk.rendering.actions import (
     Create,
     Recreate,
     Replace,
@@ -16,8 +16,8 @@ from reactk.rendering.future_actions import (
     Update,
     Place,
 )
-from reactk.rendering.generate_actions import ReconcileAction
-from reactk.rendering.reconciler import Reconciler
+from reactk.rendering.compute_actions import ReconcileAction
+from reactk.rendering.reconciler import ReconcilerBase
 from reactk.rendering.ui_state import RenderState
 from reactk.tk.types.geometry import Geometry
 from reactk.tk.reconcilers.widget_reconciler import WidgetReconciler
@@ -26,7 +26,7 @@ logger = logging.getLogger("ui").getChild("diff")
 
 
 @dataclass
-class WindowReconciler(Reconciler[Tk]):
+class WindowReconciler(ReconcilerBase[Tk]):
 
     @classmethod
     def create(cls, state: RenderState) -> "WindowReconciler":

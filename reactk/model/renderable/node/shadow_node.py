@@ -34,7 +34,7 @@ from reactk.model.props.impl.common import KeyedValues
 from reactk.model.props.impl.prop import Prop_Mapping
 
 if TYPE_CHECKING:
-    from reactk.rendering.reconciler import Reconciler
+    from reactk.rendering.reconciler import ReconcilerBase
 
 
 class HasPropsSchema:

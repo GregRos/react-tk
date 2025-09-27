@@ -11,7 +11,7 @@ from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
 from reactk.model.props.impl.prop import Prop
 from reactk.rendering.ui_state import RenderState
 
-from .future_actions import (
+from .actions import (
     Create,
     Recreate,
     Replace,

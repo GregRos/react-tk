@@ -9,12 +9,12 @@ from reactk.model.renderable.context import Ctx
 from reactk.model.renderable.node.top import TopLevelNode
 from reactk.model.renderable.trace import RenderFrame
 from reactk.model.renderable.trace import RenderTrace, RenderTraceAccessor
-from reactk.rendering.generate_actions import (
+from reactk.rendering.compute_actions import (
     AnyNode,
     ComputeTreeActions,
     ReconcileAction,
 )
-from reactk.rendering.reconciler import Reconciler, ReconcilerAccessor
+from reactk.rendering.reconciler import ReconcilerBase, ReconcilerAccessor
 from reactk.rendering.ui_state import RenderState, RenderedNode
 from reactk.model.renderable.component import Component
 

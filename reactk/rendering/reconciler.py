@@ -3,10 +3,9 @@ from dataclasses import dataclass
 from typing import Literal
 
 # Compat moved here from reactk.model.resource to centralize reconciler types
-type Compat = Literal["update", "replace", "recreate"]
 from reactk.reflect.key_accessor import KeyAccessor
 from reactk.model.props.impl import prop
-from reactk.rendering.future_actions import (
+from reactk.rendering.actions import (
     Create,
     Place,
     Recreate,
@@ -14,15 +13,17 @@ from reactk.rendering.future_actions import (
     Unplace,
     Update,
 )
-from reactk.rendering.generate_actions import AnyNode, ReconcileAction, logger
+from reactk.rendering.compute_actions import AnyNode, ReconcileAction, logger
 from reactk.rendering.ui_state import RenderState, RenderedNode
 
 
 from typing import Callable, Iterable, Protocol
 
+type Compat = Literal["update", "replace", "recreate"]
+
 
 @dataclass
-class Reconciler[Res](ABC):
+class ReconcilerBase[Res](ABC):
     state: RenderState
 
     def _register(self, node: AnyNode, resource: Res) -> RenderedNode[Res]:
@@ -36,13 +37,13 @@ class Reconciler[Res](ABC):
 
     @classmethod
     @abstractmethod
-    def create(cls, state: RenderState) -> "Reconciler[Res]": ...
+    def create(cls, state: RenderState) -> "ReconcilerBase[Res]": ...
 
     @abstractmethod
     def run_action(self, action: ReconcileAction[Res]) -> None: ...
 
 
-class ReconcilerAccessor(KeyAccessor[type[Reconciler]]):
+class ReconcilerAccessor(KeyAccessor[type[ReconcilerBase]]):
     @property
     def key(self) -> str:
         return "_reconciler"

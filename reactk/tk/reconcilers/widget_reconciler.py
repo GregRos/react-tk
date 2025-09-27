@@ -5,7 +5,7 @@ from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
 from reactk.rendering.reconciler import Compat
 from reactk.model.renderable.node.shadow_node import ShadowNode
 from reactk.model.props.impl.prop import Prop_ComputedMapping
-from reactk.rendering.future_actions import (
+from reactk.rendering.actions import (
     Create,
     Place,
     Recreate,
@@ -14,10 +14,10 @@ from reactk.rendering.future_actions import (
     Unplace,
     Update,
 )
-from reactk.rendering.generate_actions import AnyNode, ReconcileAction, logger
+from reactk.rendering.compute_actions import AnyNode, ReconcileAction, logger
 from reactk.rendering.ui_state import RenderState
 
-from reactk.rendering.reconciler import Reconciler
+from reactk.rendering.reconciler import ReconcilerBase
 
 from typing import Any, Callable, Iterable, override
 
@@ -25,7 +25,7 @@ from reactk.tk.types.font import to_tk_font
 
 
 @dataclass
-class WidgetReconciler(Reconciler[Widget]):
+class WidgetReconciler(ReconcilerBase[Widget]):
     state: RenderState
 
     @classmethod
