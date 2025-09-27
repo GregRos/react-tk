@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any
 
 from reactk.model.prop_value_accessor import PropValuesAccessor
 from reactk.model.shadow_node import ShadowNode
-from reactk.model.trace2 import RenderTrace, RenderTraceAccessor
+from reactk.model.trace import RenderTrace, RenderTraceAccessor
 
 if TYPE_CHECKING:
     from reactk.rendering.generate_actions import AnyNode

@@ -9,7 +9,7 @@ from expression import Nothing, Some, Option
 from reactk.model2.util.maybe import maybe_normalize
 
 if TYPE_CHECKING:
-    from reactk.model.trace2 import RenderTrace
+    from reactk.model.trace import RenderTrace
 from reactk.model2.ants.readers import (
     Reader_Annotation,
     Reader_Class,
