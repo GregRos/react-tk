@@ -34,7 +34,7 @@ class common_meta:
 class prop_meta(common_meta):
     repr: DiffMode = "simple"
     subsection: str | None = None
-    no_value: Any = Nothing
+    no_value: Any = field(default=Nothing)
     converter: Converter[Any] | None = None
 
 

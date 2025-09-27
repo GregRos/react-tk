@@ -173,7 +173,9 @@ class Reader_Method(Reader_Base):
 
     def _refresh_annotations(self) -> None:
         self._annotations = get_type_hints(
-            self.target, include_extras=True, localns={"Node": "object"}
+            self.target,
+            include_extras=True,
+            localns={"Node": "object", "Kids": "object"},
         )
         self._annotation_names = tuple(
             x for x in self._annotations.keys() if x != "return"

@@ -17,6 +17,8 @@ from typing import (
     Unpack,
     override,
 )
+
+from expression import Some
 from reactk.model.resource import Compat
 from reactk.model2.prop_ants import prop_meta, schema_meta, schema_setter
 from reactk.rendering.reconciler import Reconciler
@@ -41,7 +43,7 @@ class WidgetProps(InitPropsBase):
         NotRequired[str], prop_meta(no_value="center", subsection="configure")
     ]
     wraplength: Annotated[
-        NotRequired[int], prop_meta(no_value=None, subsection="configure")
+        NotRequired[int], prop_meta(no_value=Some(None), subsection="configure")
     ]
     relief: Annotated[
         NotRequired[str], prop_meta(no_value="solid", subsection="configure")

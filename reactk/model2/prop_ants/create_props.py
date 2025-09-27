@@ -77,9 +77,14 @@ def _create(
             raise TypeError(f"Unknown meta type {type(meta)} for key {name}")
 
 
-def _get_default_meta_for_prop(
+def _get_meta_for_prop(
     annotation: Reader_Annotation,
-) -> some_meta:
+) -> some_meta | None:
+    first_meta = funcy.first(annotation.metadata_of_type(prop_meta, schema_meta))
+    if first_meta:
+        return first_meta.target
+    if annotation.name.startswith("_"):
+        return None
     match annotation.target:
         case x if (
             isinstance(x, type) and issubclass(x, (Mapping, VMappingBase))
@@ -95,11 +100,10 @@ def _attrs_to_props(
     path: tuple[str, ...], meta: Mapping[str, Reader_Annotation]
 ) -> "Iterable[Prop_Any]":
     for k, v in meta.items():
-        if k.startswith("_"):
+        meta_for_prop = _get_meta_for_prop(v)
+        if not meta_for_prop:
             continue
-        metas = map(lambda x: x.target, v.metadata_of_type(schema_meta, prop_meta))
-        fst = next(iter(metas), None)
-        yield _create(path, k, v, fst or _get_default_meta_for_prop(v))
+        yield _create(path, k, v, meta_for_prop)
 
 
 def _method_to_prop(path: tuple[str, ...], method: Reader_Method) -> "Prop_Any | None":
@@ -116,13 +120,11 @@ def _methods_to_props(path: tuple[str, ...], cls: type):
     for k, v in methods.items():
         if not callable(v):
             continue
-        if k.startswith("_"):
-            continue
         p = _method_to_prop(path, shadow_reflector.method(v))
         if not p:
             continue
         if k == "__init__":
-            if not isinstance(p, schema_meta):
+            if not isinstance(p, Prop_Schema):
                 raise TypeError(
                     f"__init__ method must be annotated with schema_meta, got {type(p)}"
                 )
@@ -150,7 +152,9 @@ def read_props_from_top_class(cls: type) -> "Prop_Schema":
     repr = "recursive"
     metadata = {}
     if init_block:
+        as_s: Prop_Schema = init_block  # type: ignore
         props.remove(init_block)
+        props.extend(init_block.values())  # type: ignore
         repr = init_block.repr
         metadata = init_block.metadata
     return Prop_Schema(path=(), name=name, props=props, repr=repr, metadata=metadata)

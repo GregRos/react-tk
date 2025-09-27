@@ -17,6 +17,8 @@ from typing import (
     Self,
     TypedDict,
 )
+
+from expression import Some
 from reactk.model.resource import Compat
 from reactk.model.trace.key_tools import Display
 from reactk.model.trace.render_trace import RenderTrace
@@ -63,7 +65,7 @@ class HasPropsSchema:
 
 
 class InitPropsBase(TypedDict):
-    key: Annotated[NotRequired[str], prop_meta(no_value=None)]
+    key: Annotated[NotRequired[str], prop_meta(no_value=Some(None))]
 
 
 @dataclass
