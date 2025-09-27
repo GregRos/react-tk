@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from reactk.model.component import Component
-from reactk.model.context import Ctx
+from reactk.model.renderable.component import Component
+from reactk.model.renderable.context import Ctx
 from reactk.tk.nodes.widget import Label, Widget
 from reactk.tk.nodes.window import Window
 from reactk.tk.types.font import Font

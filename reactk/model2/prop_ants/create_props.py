@@ -9,13 +9,13 @@ from expression import Nothing, Some, Option
 from reactk.model2.util.maybe import maybe_normalize
 
 if TYPE_CHECKING:
-    from reactk.model.trace import RenderTrace
-from reactk.model2.ants.readers import (
+    from reactk.model.renderable.trace import RenderTrace
+from reactk.reflect.readers import (
     Reader_Annotation,
     Reader_Class,
     Reader_Method,
 )
-from reactk.model2.ants.key_accessor import KeyAccessor
+from reactk.reflect.key_accessor import KeyAccessor
 from reactk.model2.prop_ants.prop_meta import prop_meta, schema_meta, some_meta
 from reactk.model2.prop_model.prop import Prop_Any
 import funcy
@@ -154,7 +154,6 @@ def read_props_from_top_class(cls: type) -> "Prop_Schema":
     repr = "recursive"
     metadata = {}
     if init_block:
-        as_s: Prop_Schema = init_block  # type: ignore
         props.remove(init_block)
         props.extend(init_block.values())  # type: ignore
         repr = init_block.repr

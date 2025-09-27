@@ -16,8 +16,8 @@ from expression import Some
 
 
 from reactk.model2.prop_ants import prop_meta, schema_meta, schema_setter, prop_setter
-from reactk.model.component import Component
-from reactk.model.shadow_node import (
+from reactk.model.renderable.component import Component
+from reactk.model.renderable.node.shadow_node import (
     NodeProps,
     ShadowNode,
 )

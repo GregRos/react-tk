@@ -4,12 +4,12 @@ from types import FrameType
 from typing import TYPE_CHECKING, Literal
 from inspect import getframeinfo, stack, FrameInfo, currentframe
 
-from reactk.model2.ants.key_accessor import KeyAccessor
+from reactk.reflect.key_accessor import KeyAccessor
 from reactk.model2.util.str import format_subscript
 
 if TYPE_CHECKING:
-    from reactk.model.component import Component
-    from reactk.model.shadow_node import ShadowNode
+    from reactk.model.renderable.component import Component
+    from reactk.model.renderable.node.shadow_node import ShadowNode
 
 replace_chars_in_key = re.compile(r"[^a-zA-Z0-9_]+")
 starts_with_non_breaking = re.compile(r"^[^a-zA-Z0-9_]")

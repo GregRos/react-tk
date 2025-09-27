@@ -1,4 +1,4 @@
-from reactk.model2.ants.key_accessor import KeyAccessor
+from reactk.reflect.key_accessor import KeyAccessor
 from reactk.model2.prop_model.prop import Prop_Mapping, Prop_Schema
 
 

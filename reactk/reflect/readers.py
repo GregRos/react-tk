@@ -14,19 +14,19 @@ from typing import (
 )
 
 
-from reactk.model2.ants.args_accessor import (
+from reactk.reflect.args_accessor import (
     MetadataAccessor,
     OrigBasesAccessor,
     UnderscoreNameAccessor,
 )
-from reactk.model2.ants.base import Reader_Base
+from reactk.reflect.base import Reader_Base
 from reactk.model2.util.core_reflection import get_attrs_downto
-from reactk.model2.ants.key_accessor import KeyAccessor
+from reactk.reflect.key_accessor import KeyAccessor
 from reactk.model2.util.str import format_signature
 from reactk.model2.util.type_hints import get_type_hints_up_to
 
 if TYPE_CHECKING:
-    from reactk.model2.ants.generic_reader import SomeTypeVarReader, Reader_Generic
+    from reactk.reflect.generic_reader import SomeTypeVarReader, Reader_Generic
 
 
 @dataclass(eq=True, unsafe_hash=True, repr=False)
@@ -68,7 +68,7 @@ class Reader_Annotation(Reader_Base):
             case "Annotated" | "Unpack":
                 var = t.generic[0]
                 # local import to avoid import-time cycles when generic_reader imports readers
-                from reactk.model2.ants.generic_reader import is_not_bound
+                from reactk.reflect.generic_reader import is_not_bound
 
                 if is_not_bound(var):
                     raise TypeError("First generic argument is not a bound TypeVar")

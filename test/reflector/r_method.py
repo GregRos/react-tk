@@ -1,6 +1,6 @@
 import pytest
 
-from reactk.model2.ants.reflector import Reflector
+from reactk.reflect.reflector import Reflector
 
 
 def func_with_annotations(a: int, b: str) -> int:

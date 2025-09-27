@@ -1,6 +1,6 @@
 from typing import Any
 
-from reactk.model.shadow_node import NodeProps, ShadowNode
+from reactk.model.renderable.node.shadow_node import NodeProps, ShadowNode
 from reactk.model2.prop_ants.decorators import schema_setter
 
 

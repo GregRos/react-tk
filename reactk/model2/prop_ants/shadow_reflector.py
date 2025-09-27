@@ -1,4 +1,4 @@
-from reactk.model2.ants.reflector import Reflector
+from reactk.reflect.reflector import Reflector
 
 
 from collections.abc import Mapping

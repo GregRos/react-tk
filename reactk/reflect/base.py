@@ -2,11 +2,11 @@ from dataclasses import dataclass, field
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any
 
-from reactk.model2.ants.key_accessor import KeyAccessor
+from reactk.reflect.key_accessor import KeyAccessor
 
 
 if TYPE_CHECKING:
-    from reactk.model2.ants.reflector import Reflector
+    from reactk.reflect.reflector import Reflector
 
 
 @dataclass(repr=False)

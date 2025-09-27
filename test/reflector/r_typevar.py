@@ -2,7 +2,7 @@ import pytest
 
 from typing import TypeVar
 
-from reactk.model2.ants.reflector import Reflector
+from reactk.reflect.reflector import Reflector
 
 # Move Reflector and TypeVar readers to module scope
 r: Reflector = Reflector()

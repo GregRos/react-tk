@@ -1,7 +1,7 @@
 from typing import Annotated, Unpack, NotRequired, Required, Union
 import pytest
 
-from reactk.model2.ants.reflector import Reflector
+from reactk.reflect.reflector import Reflector
 
 # module-level reflector instance used by all tests
 r: Reflector = Reflector()

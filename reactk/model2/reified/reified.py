@@ -1,5 +1,5 @@
-from reactk.model2.ants.generic_reader import Reader_Generic
-from reactk.model2.ants.reflector import Reflector
+from reactk.reflect.generic_reader import Reader_Generic
+from reactk.reflect.reflector import Reflector
 
 reflector = Reflector()
 

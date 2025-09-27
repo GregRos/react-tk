@@ -6,8 +6,8 @@ from typing import (
     Iterable,
 )
 
-from reactk.model.component import Component
-from reactk.model.prop_value_accessor import PropValuesAccessor
+from reactk.model.renderable.component import Component
+from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
 from reactk.model2.prop_model.prop import Prop
 from reactk.rendering.ui_state import RenderState
 
@@ -20,7 +20,7 @@ from .future_actions import (
     Update,
     Place,
 )
-from ..model.shadow_node import ShadowNode
+from reactk.model.renderable.node.shadow_node import ShadowNode
 
 
 from itertools import groupby, zip_longest
