@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import logging
 import threading
 from tkinter import Tk
@@ -23,12 +24,9 @@ from reactk.tk.nodes.window import Window
 logger = logging.getLogger("ui").getChild("diff")
 
 
+@dataclass
 class WindowReconciler(Reconciler[Tk]):
-    def __init__(
-        self,
-        state: RenderState,
-    ):
-        self.state = state
+    state: RenderState
 
     def _normalize_geo(self, existing: Tk, geo: Geometry) -> str:
         x, y, width, height = (geo[k] for k in ("x", "y", "width", "height"))

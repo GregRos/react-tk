@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from tkinter import Tk, Widget
+from tkinter import Tk, Widget, Label as TkLabel
 from reactk.model2.prop_model.prop import Prop_ComputedMapping
 from reactk.rendering.future_actions import (
     Create,
@@ -128,3 +128,11 @@ class WidgetReconciler(Reconciler[Widget]):
         existing_parent = self._get_some_ui_resource(action)
 
         existing_parent.after(0, lambda: self._run_action_main_thread(action))
+
+
+class LabelReconciler(WidgetReconciler):
+    def _create(self, container: Widget, node: AnyNode) -> RenderedNode[Widget]:
+        return RenderedNode(
+            TkLabel(container),
+            node,
+        )

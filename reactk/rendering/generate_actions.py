@@ -50,7 +50,7 @@ class _ComputeAction:
         assert self.next
         if not self.prev:
             return Create(self.next_node, self.container)
-        if self.prev.node.get_compatibility(self.next_node) == "recreate":
+        if self.prev.node._get_compatibility(self.next_node) == "recreate":
             return Recreate(self.prev.resource, self.next_node, self.container)
         return Update(
             self.prev,
@@ -71,7 +71,7 @@ class _ComputeAction:
             )
         if self.prev.node.uid != self.next_node.uid:
             return Replace(self.container, self.prev, inner_action)
-        match self.prev.node.get_compatibility(self.next_node):
+        match self.prev.node._get_compatibility(self.next_node):
             case "update" if isinstance(inner_action, Update):
                 return inner_action
             case "replace":

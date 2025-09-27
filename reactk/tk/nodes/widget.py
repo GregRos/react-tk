@@ -11,6 +11,7 @@ from typing import (
     ClassVar,
     Generator,
     Literal,
+    Never,
     NotRequired,
     Self,
     Unpack,
@@ -18,15 +19,8 @@ from typing import (
 )
 from reactk.model.resource import Compat
 from reactk.model2.prop_ants import prop_meta, schema_meta, schema_setter
-from reactk.model2.prop_model import Prop
-from reactk.model.context import Ctx
 from reactk.rendering.reconciler import Reconciler
-from reactk.rendering.renderer import ComponentMount
-from reactk.model.component import Component
-from reactk.model2.prop_model import Prop_Schema
 from reactk.tk.types.font import Font
-from reactk.tk.win32.make_clickthrough import make_clickthrough
-import tkinter as tk
 from reactk.model.shadow_node import InitPropsBase, ShadowNode
 
 
@@ -71,7 +65,7 @@ class PackProps(InitPropsBase):
     ]
 
 
-class Widget(ShadowNode):
+class Widget[Kids: ShadowNode[Any]](ShadowNode[Kids]):
 
     @schema_setter()
     def __init__(self, **props: Unpack[WidgetProps]) -> None: ...
@@ -80,7 +74,7 @@ class Widget(ShadowNode):
     def Pack(self, **props: Unpack[PackProps]) -> None: ...
 
     @override
-    def get_compatibility(self, other: "Widget.This") -> Compat:
+    def _get_compatibility(self, other: "Widget.This") -> Compat:
         if self.type_name != other.type_name:
             return "recreate"
         elif self.__PROP_VALUES__.diff(other.__PROP_VALUES__):
@@ -89,6 +83,10 @@ class Widget(ShadowNode):
             return "update"
 
 
-class Label(Widget):
+class Label(Widget[Never]):
 
-    pass
+    @classmethod
+    def get_reconciler(cls) -> type[Reconciler[Any]]:
+        from reactk.tk.reconcilers.widget_reconciler import LabelReconciler
+
+        return LabelReconciler

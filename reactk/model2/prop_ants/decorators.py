@@ -21,13 +21,17 @@ if TYPE_CHECKING:
     from reactk.model2.prop_model.prop import Prop_Schema, Prop_Mapping
     from reactk.model2.prop_model.common import KeyedValues
     from reactk.model2.prop_ants.prop_meta import some_meta
+    from reactk.model.component import Component
+    from reactk.model.shadow_node import ShadowNode
 
 
 class _HasMerge(Protocol):
     __PROPS__: ClassVar["Prop_Schema"]
     __PROP_VALUES__: "Prop_Mapping"
 
-    def __merge__(self, other: "KeyedValues") -> Self: ...
+    def __merge__(self, other: "KeyedValues") -> Self:
+        self.__PROP_VALUES__ = self.__PROP_VALUES__.update(other)
+        return self
 
 
 @dataclass
@@ -37,12 +41,17 @@ class MethodSetterTransformer:
     def self_meta(self) -> "some_meta": ...
 
     def _transform(self, f: Callable) -> Callable:
-        def wrapper(self: _HasMerge, input: "KeyedValues") -> Self:
-            if not isinstance(input, Mapping):
-                raise TypeError(
-                    f"Schema setter method {f.__name__} must return a Mapping, got {type(input)}"
-                )
-            return self.__merge__({f.__name__: input})  # type: ignore
+        def init_wrapper(self: _HasMerge, **kwargs: Any) -> None:
+
+            self.__merge__(kwargs)
+            return None
+
+        if f.__name__ == "__init__":
+            return init_wrapper
+
+        def wrapper(self: _HasMerge, **kwargs: Any) -> Any:
+            init_wrapper(self, **kwargs)
+            return self
 
         return wrapper
 
@@ -108,7 +117,7 @@ class prop_getter:
         return _getter[R](prop_name)
 
 
-class HasChildren[Kids](_HasMerge):
+class HasChildren[Kids: "ShadowNode[Any]"](_HasMerge):
 
-    def __getitem__(self, *children: Kids) -> Self:
+    def __getitem__(self, *children: Kids | "Component[Kids]") -> Self:
         return self.__merge__({"__CHILDREN__": children})

@@ -1,29 +1,22 @@
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from reactk.model2.prop_model.common import KeyedValues
 
-from reactk.model2.prop_model import Prop_Mapping
 from reactk.model2.prop_model.prop import Prop_ComputedMapping
+from reactk.rendering.ui_state import RenderedNode
 
-from ..model import ShadowNode
-from ..rendering.generate_actions import AnyNode
-
-
-@dataclass
-class RenderedNode[Res]:
-    resource: Res
-    node: ShadowNode[Any]
-
-    def migrate(self, node: AnyNode):
-        self.node = node
-        return self
+if TYPE_CHECKING:
+    from reactk.rendering.generate_actions import AnyNode
 
 
 @dataclass
 class Create[Res]:
-    next: AnyNode
-    container: AnyNode
+    next: "AnyNode"
+    container: "AnyNode"
+
+    @property
+    def node(self) -> "AnyNode":
+        return self.next
 
     def __post_init__(self):
         self.diff = self.next.__PROP_VALUES__.compute()
@@ -43,8 +36,12 @@ class Create[Res]:
 @dataclass
 class Update[Res]:
     existing: RenderedNode[Res]
-    next: AnyNode
+    next: "AnyNode"
     diff: Prop_ComputedMapping
+
+    @property
+    def node(self) -> "AnyNode":
+        return self.next
 
     def __bool__(self):
         return bool(self.diff)
@@ -64,8 +61,11 @@ class Update[Res]:
 @dataclass
 class Recreate[Res]:
     old: RenderedNode[Res]
-    next: AnyNode
-    container: AnyNode
+    next: "AnyNode"
+    container: "AnyNode"
+
+    def node(self) -> "AnyNode":
+        return self.next
 
     def __post_init__(self):
         self.diff = self.next.__PROP_VALUES__.compute()
@@ -85,9 +85,13 @@ class Recreate[Res]:
 
 @dataclass
 class Place[Res]:
-    container: AnyNode
+    container: "AnyNode"
     at: int
     what: Update[Res] | Recreate[Res] | Create[Res]
+
+    @property
+    def node(self) -> "AnyNode":
+        return self.what.next
 
     @property
     def diff(self) -> Prop_ComputedMapping:
@@ -107,9 +111,13 @@ class Place[Res]:
 
 @dataclass
 class Replace[Res]:
-    container: AnyNode
+    container: "AnyNode"
     replaces: RenderedNode[Res]
     with_what: Update | Recreate | Create
+
+    @property
+    def node(self) -> "AnyNode":
+        return self.with_what.next
 
     @property
     def is_creating_new(self) -> bool:
@@ -130,7 +138,11 @@ class Replace[Res]:
 @dataclass
 class Unplace[Res]:
     what: RenderedNode[Res]
-    container: AnyNode
+    container: "AnyNode"
+
+    @property
+    def node(self) -> "AnyNode":
+        return self.what.node
 
     @property
     def is_creating_new(self) -> bool:

@@ -44,5 +44,11 @@ class Window(ShadowNode[Widget]):
     def Geometry(self, **props: Unpack[Geometry]) -> None: ...
 
     @override
-    def get_compatibility(self, other: "Window.This") -> Compat:
+    def _get_compatibility(self, other: "Window.This") -> Compat:
         return "update"
+
+    @classmethod
+    def get_reconciler(cls) -> type[Reconciler[Any]]:
+        from reactk.tk.reconcilers.window_reconciler import WindowReconciler
+
+        return WindowReconciler

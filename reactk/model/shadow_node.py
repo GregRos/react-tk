@@ -3,7 +3,9 @@ from collections.abc import Mapping
 from copy import copy
 from dataclasses import dataclass, is_dataclass
 from inspect import isabstract
+from pyclbr import Class
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     ClassVar,
@@ -15,7 +17,6 @@ from typing import (
     Self,
     TypedDict,
 )
-from reactk.model.component import Component
 from reactk.model.resource import Compat
 from reactk.model.trace.key_tools import Display
 from reactk.model.trace.render_trace import RenderTrace
@@ -26,8 +27,9 @@ from reactk.model2.prop_ants.create_props import (
 )
 from reactk.model2.prop_model.common import KeyedValues
 from reactk.model2.prop_model.prop import Prop_Schema, Prop_Mapping
-from reactk.model2.util.dict import deep_merge
-from reactk.tk.nodes.widget import Widget
+
+if TYPE_CHECKING:
+    from reactk.rendering.reconciler import Reconciler
 
 
 class _WithDefaults(TypedDict):
@@ -49,14 +51,14 @@ class HasPropsSchema:
         cls.__PROPS__ = props_block
 
     def __merge__(self, other: KeyedValues = {}, **kwargs: Any) -> Self:
-        values = self.__PROP_VALUES__
         schema = self.__PROPS__
-        if not values:
-            pbv = Prop_Mapping(prop=schema, value={}, old=None)
-            self.__PROP_VALUES__ = pbv
-        new_pbv = values.update(other).update(kwargs)
+        if getattr(self, "__PROP_VALUES__", None) is None:
+            pbv = Prop_Mapping(prop=schema, value=other, old=None)
+            values = self.__PROP_VALUES__ = pbv
+        else:
+            values = self.__PROP_VALUES__.update(other)
         clone = copy(self)
-        clone.__PROP_VALUES__ = new_pbv
+        clone.__PROP_VALUES__ = values
         return clone
 
 
@@ -65,13 +67,15 @@ class InitPropsBase(TypedDict):
 
 
 @dataclass
-class ShadowNode[Kids: ShadowNode = Never](
-    HasPropsSchema, HasChildren[Kids | Component[Kids]], ABC
-):
+class ShadowNode[Kids: ShadowNode = Never](HasPropsSchema, HasChildren[Kids], ABC):
     type This = ShadowNode[Kids]
 
+    @classmethod
+    @abstractmethod
+    def get_reconciler(cls) -> "type[Reconciler[Any]]": ...
+
     @prop_getter()
-    def __CHILDREN__(self) -> Iterable[Kids | Component[Kids]]: ...
+    def __CHILDREN__(self) -> Iterable[Kids]: ...
 
     @prop_getter()
     def __TRACE__(self) -> RenderTrace: ...
@@ -80,7 +84,7 @@ class ShadowNode[Kids: ShadowNode = Never](
         return self.__TRACE__.to_string(display)
 
     @abstractmethod
-    def get_compatibility(self, other: This) -> Compat: ...
+    def _get_compatibility(self, other: This) -> Compat: ...
 
     @property
     def type_name(self) -> str:

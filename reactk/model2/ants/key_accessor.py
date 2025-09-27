@@ -13,6 +13,14 @@ class KeyAccessor[T]:
     def __bool__(self) -> bool:
         return self.has_key
 
+    @classmethod
+    def decorate(cls: type[Self], value: T):
+        def wrapper(target: object) -> None:
+            accessor = cls(target)
+            accessor.set(value)
+
+        return wrapper
+
     @property
     @abstractmethod
     def key(self) -> str: ...

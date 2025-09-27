@@ -256,7 +256,6 @@ class Prop_Mapping(VMappingBase[str, "SomePropValue"]):
         self.prop = prop
         self._values = value
         self._old = old
-        self.prop.assert_valid(value)
 
     @property
     def fqn(self) -> str:
@@ -268,6 +267,7 @@ class Prop_Mapping(VMappingBase[str, "SomePropValue"]):
 
     def compute(self) -> "Prop_ComputedMapping":
         result = {}
+        self.prop.assert_valid(self._values)
 
         def _get_or_create_section(name: str | None) -> dict[str, Any]:
             if name is None:
@@ -357,7 +357,6 @@ class Prop_Mapping(VMappingBase[str, "SomePropValue"]):
 
     def update(self, overrides: KeyedValues) -> "Prop_Mapping":
         new_values = deep_merge(self._values, overrides)
-        self.prop.assert_valid(new_values)
         return Prop_Mapping(prop=self.prop, value=new_values, old=self._values)
 
     def diff(self, other: "Prop_Mapping | KeyedValues") -> "Prop_ComputedMapping":

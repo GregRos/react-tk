@@ -4,7 +4,11 @@ from reactk.model.shadow_node import ShadowNode
 
 
 class TopLevelNode(ShadowNode[Any]):
-    def get_compatibility(self, other: ShadowNode[Any]) -> Compat:
+    def _get_compatibility(self, other: ShadowNode[Any]) -> Compat:
         return "update"
 
-    pass
+    @classmethod
+    def get_reconciler(cls):
+        from reactk.model.top_reconciler import TopLevelReconciler
+
+        return TopLevelReconciler
