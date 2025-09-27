@@ -2,10 +2,10 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from tkinter import Tk, Widget, Label as TkLabel
 from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
-from reactk.rendering.reconciler import Compat
+from reactk.rendering.actions.reconciler import Compat
 from reactk.model.renderable.node.shadow_node import ShadowNode
 from reactk.model.props.impl.prop import Prop_ComputedMapping
-from reactk.rendering.actions import (
+from reactk.rendering.actions.actions import (
     Create,
     Place,
     Recreate,
@@ -14,10 +14,10 @@ from reactk.rendering.actions import (
     Unplace,
     Update,
 )
-from reactk.rendering.compute_actions import AnyNode, ReconcileAction, logger
+from reactk.rendering.actions.compute import AnyNode, ReconcileAction, logger
 from reactk.rendering.render_state import RenderState
 
-from reactk.rendering.reconciler import ReconcilerBase
+from reactk.rendering.actions.reconciler import ReconcilerBase
 
 from typing import Any, Callable, Iterable, override
 

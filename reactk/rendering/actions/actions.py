@@ -7,7 +7,7 @@ from reactk.model.props.impl.prop import Prop_ComputedMapping
 from reactk.rendering.render_state import RenderedNode
 
 if TYPE_CHECKING:
-    from reactk.rendering.compute_actions import AnyNode
+    from reactk.rendering.actions.compute import AnyNode
 
 
 @dataclass

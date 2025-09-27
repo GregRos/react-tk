@@ -4,10 +4,10 @@ import logging
 import threading
 from tkinter import Tk
 from typing import Any
-from reactk.rendering.reconciler import Compat
+from reactk.rendering.actions.reconciler import Compat
 from reactk.model.renderable.node.shadow_node import ShadowNode
 from reactk.model.props.impl.prop import Prop_ComputedMapping
-from reactk.rendering.actions import (
+from reactk.rendering.actions.actions import (
     Create,
     Recreate,
     Replace,
@@ -16,8 +16,8 @@ from reactk.rendering.actions import (
     Update,
     Place,
 )
-from reactk.rendering.compute_actions import ReconcileAction
-from reactk.rendering.reconciler import ReconcilerBase
+from reactk.rendering.actions.compute import ReconcileAction
+from reactk.rendering.actions.reconciler import ReconcilerBase
 from reactk.rendering.render_state import RenderState
 from reactk.tk.types.geometry import Geometry
 from reactk.tk.reconcilers.widget_reconciler import WidgetReconciler

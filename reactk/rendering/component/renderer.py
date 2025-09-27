@@ -9,21 +9,21 @@ from reactk.model.renderable.context import Ctx
 from reactk.model.renderable.node.top import TopLevelNode
 from reactk.model.renderable.trace import RenderFrame
 from reactk.model.renderable.trace import RenderTrace, RenderTraceAccessor
-from reactk.rendering.compute_actions import (
+from reactk.rendering.actions.compute import (
     AnyNode,
     ComputeTreeActions,
     ReconcileAction,
 )
-from reactk.rendering.reconciler import ReconcilerBase, ReconcilerAccessor
+from reactk.rendering.actions.reconciler import ReconcilerBase, ReconcilerAccessor
 from reactk.rendering.render_state import RenderState, RenderedNode
 from reactk.model.renderable.component import Component
 
 
-def with_trace(node: ShadowNode[Any], trace: RenderTrace) -> ShadowNode[Any]:
+def _with_trace(node: ShadowNode[Any], trace: RenderTrace) -> ShadowNode[Any]:
     return RenderTraceAccessor(node).set(trace) or node
 
 
-class ComponentRenderer[Node: ShadowNode[Any] = ShadowNode[Any]]:
+class RootRenderer[Node: ShadowNode[Any] = ShadowNode[Any]]:
     _mounted: Component[Node]
     state: RenderState
 
@@ -81,7 +81,7 @@ class ComponentRenderer[Node: ShadowNode[Any] = ShadowNode[Any]]:
 
                     if isinstance(node, ShadowNode):
                         node = node.__merge__(KIDS=tuple(self._render_kids(node)))
-                        rendering += (with_trace(node, my_trace),)
+                        rendering += (_with_trace(node, my_trace),)
                     elif isinstance(node, Component):
                         node.render(on_yielded_for(my_trace), self.context)
                     else:
@@ -94,10 +94,6 @@ class ComponentRenderer[Node: ShadowNode[Any] = ShadowNode[Any]]:
         yield_ = on_yielded_for(trace)
         yield_(root)
         return rendering
-
-    def mount(self, root: Component[Any]):
-        self._mounted = root
-        self.force_rerender()
 
     def force_rerender(self):
         self.state.placed = set()

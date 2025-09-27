@@ -4,9 +4,7 @@ import sys
 from time import sleep
 
 
-from reactk import Ctx, Window, Label, Widget, Component
-from reactk.tk.mount import WindowMount
-from reactk.tk.types.font import Font
+from reactk import Ctx, Window, Label, Widget, Component, Window, Font, WindowRenderer
 
 
 @dataclass(kw_only=True)
@@ -28,6 +26,7 @@ class StuffComponent(Component[Widget]):
 class WindowComponent(Component[Window]):
     def render(self, yld, ctx: Ctx):
         x = StuffComponent(text=ctx.text)
+
         yld(
             Window(topmost=True, background="black", alpha=85).Geometry(
                 width=500, height=500, x=500, y=500, anchor_point="lt"
@@ -35,7 +34,7 @@ class WindowComponent(Component[Window]):
         )
 
 
-MyTK = WindowMount(WindowComponent())
+MyTK = WindowRenderer(WindowComponent())
 
 MyTK(text="Hello, World!")
 sleep(2)

@@ -5,7 +5,7 @@ from typing import Literal
 # Compat moved here from reactk.model.resource to centralize reconciler types
 from reactk.reflect.accessor.base import KeyAccessor
 from reactk.model.props.impl import prop
-from reactk.rendering.actions import (
+from reactk.rendering.actions.actions import (
     Create,
     Place,
     Recreate,
@@ -13,7 +13,7 @@ from reactk.rendering.actions import (
     Unplace,
     Update,
 )
-from reactk.rendering.compute_actions import AnyNode, ReconcileAction, logger
+from reactk.rendering.actions.compute import AnyNode, ReconcileAction, logger
 from reactk.rendering.render_state import RenderState, RenderedNode
 
 

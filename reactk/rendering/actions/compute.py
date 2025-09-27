@@ -44,7 +44,7 @@ class _ComputeAction:
         return self.next
 
     def _get_compatibility(self, older: RenderedNode, newer: AnyNode) -> str:
-        from reactk.rendering.reconciler import ReconcilerAccessor
+        from reactk.rendering.actions.reconciler import ReconcilerAccessor
 
         reconciler_class = ReconcilerAccessor(older).get()
         return reconciler_class.get_compatibility(older, newer)
