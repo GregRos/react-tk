@@ -67,7 +67,7 @@ class MethodSetterTransformer:
         def apply(f: Callable) -> Any:
             transformed = self._transform(f)
             # perform runtime imports here to avoid circular imports at module import time
-            from reactk.reflect.readers import OrigAccessor
+            from reactk.reflect.reader.type import OrigAccessor
             from reactk.model.props.annotations.create_props import MetaAccessor
 
             OrigAccessor(transformed).set(f)

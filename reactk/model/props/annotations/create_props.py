@@ -10,12 +10,12 @@ from reactk.util.maybe import maybe_normalize
 
 if TYPE_CHECKING:
     from reactk.model.renderable.trace import RenderTrace
-from reactk.reflect.readers import (
+from reactk.reflect.reader.type import (
     Reader_Annotation,
     Reader_Class,
     Reader_Method,
 )
-from reactk.reflect.accessor.key_accessor import KeyAccessor
+from reactk.reflect.accessor.base import KeyAccessor
 from reactk.model.props.annotations.prop_meta import prop_meta, schema_meta, some_meta
 from reactk.model.props.impl.prop import Prop_Any
 import funcy

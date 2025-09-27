@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from reactk.reflect.type_accessors import (
+from reactk.reflect.accessor.type import (
     ArgsAccessor,
     MetadataAccessor,
     TypeParamsAccessor,
 )
 from collections.abc import Iterable, Iterator
-from reactk.reflect.base import Reader_Base
+from reactk.reflect.reader.base import Reader_Base
 from itertools import zip_longest
 
 
@@ -27,7 +27,7 @@ from typing import (
 # from `generic_reader` under TYPE_CHECKING or lazily, so this
 # does not create a circular import at runtime.
 if TYPE_CHECKING:
-    from reactk.reflect.readers import Reader_Annotation, Reader_Class
+    from reactk.reflect.reader.type import Reader_Annotation, Reader_Class
     from reactk.reflect.reflector import Reflector
 
 
