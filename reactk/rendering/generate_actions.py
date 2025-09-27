@@ -7,6 +7,8 @@ from typing import (
 )
 
 from reactk.model.component import Component
+from reactk.model.prop_value_accessor import PropValuesAccessor
+from reactk.model2.prop_model.prop import Prop
 from reactk.rendering.ui_state import RenderState
 
 from .future_actions import (
@@ -18,7 +20,7 @@ from .future_actions import (
     Update,
     Place,
 )
-from ..model import ShadowNode
+from ..model.shadow_node import ShadowNode
 
 
 from itertools import groupby, zip_longest
@@ -46,16 +48,24 @@ class _ComputeAction:
             return None
         return self.next
 
+    def _get_compatibility(self, older: AnyNode, newer: AnyNode) -> str:
+        from reactk.rendering.reconciler import ReconcilerAccessor
+
+        reconciler_class = ReconcilerAccessor(older).get()
+        return reconciler_class.get_compatibility(older, newer)
+
     def _get_inner_action(self):
         assert self.next
         if not self.prev:
             return Create(self.next_node, self.container)
-        if self.prev.node._get_compatibility(self.next_node) == "recreate":
+        if self._get_compatibility(self.prev.node, self.next_node) == "recreate":
             return Recreate(self.prev.resource, self.next_node, self.container)
         return Update(
             self.prev,
             self.next_node,
-            diff=self.prev.node.__PROP_VALUES__.diff(self.next_node.__PROP_VALUES__),
+            diff=PropValuesAccessor(self.prev.node)
+            .get()
+            .diff(PropValuesAccessor(self.next_node).get()),
         )
 
     def compute(self):
@@ -69,9 +79,9 @@ class _ComputeAction:
                 self.at,
                 inner_action,
             )
-        if self.prev.node.uid != self.next_node.uid:
+        if self.prev.node.__uid__ != self.next_node.__uid__:
             return Replace(self.container, self.prev, inner_action)
-        match self.prev.node._get_compatibility(self.next_node):
+        match self._get_compatibility(self.prev.node, self.next_node):
             case "update" if isinstance(inner_action, Update):
                 return inner_action
             case "replace":
@@ -89,7 +99,8 @@ class ComputeTreeActions:
     @staticmethod
     def _check_duplicates(rendering: Iterable[ShadowNode]):
         key_to_nodes = {
-            key: list(group) for key, group in groupby(rendering, key=lambda x: x.uid)
+            key: list(group)
+            for key, group in groupby(rendering, key=lambda x: x.__uid__)
         }
         messages = {
             key: f"Duplicates for {key} found: {group} "
@@ -100,37 +111,37 @@ class ComputeTreeActions:
             raise ValueError(messages)
 
     def _existing_children(self, parent: AnyNode) -> Iterable[RenderedNode]:
-        existing_parent = self.state.existing_resources.get(parent.uid)
+        existing_parent = self.state.existing_resources.get(parent.__uid__)
         if not existing_parent:
             return
-        for child in existing_parent.node.__CHILDREN__:
-            if child.uid not in self.state.placed:
-                existing_child = self.state.existing_resources.get(child.uid)
+        for child in existing_parent.node.KIDS:
+            if child.__uid__ not in self.state.placed:
+                existing_child = self.state.existing_resources.get(child.__uid__)
                 if existing_child:
                     yield existing_child
 
     def compute_actions(
         self, parent: AnyNode, is_creating_new=False
     ) -> Iterable["ReconcileAction"]:
-        self._check_duplicates(parent.__CHILDREN__)
+        self._check_duplicates(parent.KIDS)
         existing_children = self._existing_children(parent)
         pos = -1
-        for prev, next in zip_longest(
-            existing_children, parent.__CHILDREN__, fillvalue=None
-        ):
-            prev = self.state.existing_resources.get(prev.node.uid) if prev else None
+        for prev, next in zip_longest(existing_children, parent.KIDS, fillvalue=None):
+            prev = (
+                self.state.existing_resources.get(prev.node.__uid__) if prev else None
+            )
             if is_creating_new:
                 prev = None
             pos += 1
-            if not next and prev and prev.node.uid in self.state.placed:
+            if not next and prev and prev.node.__uid__ in self.state.placed:
                 continue
             if next:
-                self.state.placed.add(next.uid)
+                self.state.placed.add(next.__uid__)
             prev_resource = (
-                self.state.existing_resources.get(prev.node.uid) if prev else None
+                self.state.existing_resources.get(prev.node.__uid__) if prev else None
             )
             next_resource = (
-                self.state.existing_resources.get(next.uid) if next else None
+                self.state.existing_resources.get(next.__uid__) if next else None
             )
             action = _ComputeAction(
                 prev=prev_resource or prev,
@@ -139,7 +150,7 @@ class ComputeTreeActions:
                 container=parent,
             ).compute()
             yield action
-            if next and next.__CHILDREN__:
+            if next and next.KIDS:
                 yield from self.compute_actions(
                     next,
                     is_creating_new=not action.is_creating_new and not is_creating_new,

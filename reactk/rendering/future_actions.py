@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 
+from reactk.model.prop_value_accessor import PropValuesAccessor
 from reactk.model2.prop_model.prop import Prop_ComputedMapping
 from reactk.rendering.ui_state import RenderedNode
 
@@ -19,14 +20,14 @@ class Create[Res]:
         return self.next
 
     def __post_init__(self):
-        self.diff = self.next.__PROP_VALUES__.compute()
+        self.diff = PropValuesAccessor(self.next).get().compute()
 
     def __repr__(self) -> str:
         return f"🆕 {self.next}"
 
     @property
     def key(self) -> Any:
-        return self.next.uid
+        return self.next.__uid__
 
     @property
     def is_creating_new(self) -> bool:
@@ -51,7 +52,7 @@ class Update[Res]:
 
     @property
     def key(self) -> Any:
-        return self.next.uid
+        return self.next.__uid__
 
     @property
     def is_creating_new(self) -> bool:
@@ -68,15 +69,15 @@ class Recreate[Res]:
         return self.next
 
     def __post_init__(self):
-        self.diff = self.next.__PROP_VALUES__.compute()
+        self.diff = PropValuesAccessor(self.next).get().compute()
 
     @property
     def props(self):
-        return f"{self.old.node.uid} ♻️ {self.next.__PROP_VALUES__}"
+        return f"{self.old.node.__uid__} ♻️ {PropValuesAccessor(self.next).get()}"
 
     @property
     def key(self) -> Any:
-        return self.next.uid
+        return self.next.__uid__
 
     @property
     def is_creating_new(self) -> bool:
@@ -128,11 +129,11 @@ class Replace[Res]:
         return self.with_what.diff
 
     def __repr__(self) -> str:
-        return f"{self.replaces.node.uid} ↔️ {self.with_what.__repr__()}"
+        return f"{self.replaces.node.__uid__} ↔️ {self.with_what.__repr__()}"
 
     @property
     def uid(self) -> Any:
-        return self.replaces.node.uid
+        return self.replaces.node.__uid__
 
 
 @dataclass
@@ -149,8 +150,8 @@ class Unplace[Res]:
         return False
 
     def __repr__(self) -> str:
-        return f"🙈  {self.what.node.uid}"
+        return f"🙈  {self.what.node.__uid__}"
 
     @property
     def uid(self) -> Any:
-        return self.what.node.uid
+        return self.what.node.__uid__

@@ -27,10 +27,11 @@ class StuffComponent(Component[Widget]):
 @dataclass(kw_only=True)
 class WindowComponent(Component[Window]):
     def render(self, yld, ctx: Ctx):
+        x = StuffComponent(text=ctx.text)
         yld(
             Window(topmost=True, background="black", alpha=85).Geometry(
                 width=500, height=500, x=500, y=500, anchor_point="lt"
-            )[StuffComponent(text=ctx.text)]
+            )[x]
         )
 
 

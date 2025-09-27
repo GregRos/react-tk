@@ -15,6 +15,7 @@ from typing import (
     overload,
 )
 
+from reactk.model.prop_value_accessor import PropValuesAccessor
 from reactk.model2.prop_ants.prop_meta import prop_meta, schema_meta
 
 if TYPE_CHECKING:
@@ -26,12 +27,8 @@ if TYPE_CHECKING:
 
 
 class _HasMerge(Protocol):
-    __PROPS__: ClassVar["Prop_Schema"]
-    __PROP_VALUES__: "Prop_Mapping"
 
-    def __merge__(self, other: "KeyedValues") -> Self:
-        self.__PROP_VALUES__ = self.__PROP_VALUES__.update(other)
-        return self
+    def __merge__(self, other: "KeyedValues") -> Self: ...
 
 
 @dataclass
@@ -42,16 +39,15 @@ class MethodSetterTransformer:
 
     def _transform(self, f: Callable) -> Callable:
         def init_wrapper(self: _HasMerge, **kwargs: Any) -> None:
-
-            self.__merge__(kwargs)
+            result = self.__merge__(kwargs)
+            PropValuesAccessor(self).set_from(result)
             return None
 
         if f.__name__ == "__init__":
             return init_wrapper
 
         def wrapper(self: _HasMerge, **kwargs: Any) -> Any:
-            init_wrapper(self, **kwargs)
-            return self
+            return self.__merge__({f.__name__: kwargs})
 
         return wrapper
 
@@ -120,4 +116,4 @@ class prop_getter:
 class HasChildren[Kids: "ShadowNode[Any]"](_HasMerge):
 
     def __getitem__(self, *children: "Kids | Component[Kids]") -> Self:
-        return self.__merge__({"__CHILDREN__": children})
+        return self.__merge__({"KIDS": children})

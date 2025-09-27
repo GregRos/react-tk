@@ -12,29 +12,44 @@ from typing import (
     override,
 )
 
+from expression import Some
+
 
 from reactk.model.resource import Compat
 from reactk.model2.prop_ants import prop_meta, schema_meta, schema_setter, prop_setter
 from reactk.model.component import Component
 from reactk.model.shadow_node import (
-    InitPropsBase,
+    CoreProps,
     ShadowNode,
 )
 from reactk.rendering.reconciler import Reconciler
 from reactk.tk.nodes.widget import Widget
+from reactk.tk.reconcilers.widget_reconciler import WidgetReconciler
+from reactk.tk.reconcilers.window_reconciler import WindowReconciler
 from reactk.tk.types.geometry import Geometry
+from reactk.rendering.reconciler import reconciler
 
 
-class WindowProps(InitPropsBase):
-    topmost: Annotated[NotRequired[bool], prop_meta(subsection="attributes")]
-    background: Annotated[NotRequired[str], prop_meta(subsection="configure")]
-    transparent_color: Annotated[
-        NotRequired[str], prop_meta(subsection="attributes", name="transparentcolor")
+class WindowProps(CoreProps):
+    topmost: Annotated[
+        NotRequired[bool], prop_meta(subsection="attributes", no_value=False)
     ]
-    override_redirect: Annotated[NotRequired[bool], prop_meta()]
-    alpha: Annotated[NotRequired[float], prop_meta(subsection="attributes")]
+    background: Annotated[
+        NotRequired[str], prop_meta(subsection="configure", no_value=Some(None))
+    ]
+    transparent_color: Annotated[
+        NotRequired[str],
+        prop_meta(
+            subsection="attributes", name="transparentcolor", no_value=Some(None)
+        ),
+    ]
+    override_redirect: Annotated[NotRequired[bool], prop_meta(no_value=False)]
+    alpha: Annotated[
+        NotRequired[float], prop_meta(subsection="attributes", no_value=1.0)
+    ]
 
 
+@reconciler(WindowReconciler)
 class Window(ShadowNode[Widget]):
 
     @schema_setter()
@@ -42,13 +57,3 @@ class Window(ShadowNode[Widget]):
 
     @schema_setter()
     def Geometry(self, **props: Unpack[Geometry]) -> None: ...
-
-    @override
-    def _get_compatibility(self, other: "Window.This") -> Compat:
-        return "update"
-
-    @classmethod
-    def get_reconciler(cls) -> type[Reconciler[Any]]:
-        from reactk.tk.reconcilers.window_reconciler import WindowReconciler
-
-        return WindowReconciler

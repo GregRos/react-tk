@@ -284,7 +284,7 @@ class Prop_Mapping(VMappingBase[str, "SomePropValue"]):
                     section = _get_or_create_section(v.prop.subsection)
                     section[v.computed_name] = v_
                 case Prop_Mapping() as bv:
-                    result.update({bv.computed_name: bv.compute()})
+                    result.update({bv.computed_name: bv.compute().values})
         return Prop_ComputedMapping(values=result, source=self)
 
     def get_pv(self, key: str) -> Prop_Value[Any]:

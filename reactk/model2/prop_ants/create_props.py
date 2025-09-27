@@ -120,6 +120,8 @@ def _methods_to_props(path: tuple[str, ...], cls: type):
     for k, v in methods.items():
         if not callable(v):
             continue
+        if k.startswith("_") and k != "__init__":
+            continue
         p = _method_to_prop(path, shadow_reflector.method(v))
         if not p:
             continue

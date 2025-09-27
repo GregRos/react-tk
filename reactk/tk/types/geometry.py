@@ -1,12 +1,12 @@
 from tkinter import Tk
 from typing import Literal, Tuple, TypedDict
 
-from reactk.model.shadow_node import InitPropsBase
+from reactk.model.shadow_node import CoreProps
 
 type AnchorType = Literal["lt", "rt", "lb", "rb"]
 
 
-class Geometry(InitPropsBase):
+class Geometry(TypedDict):
     anchor_point: AnchorType
     width: int
     height: int

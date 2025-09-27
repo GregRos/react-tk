@@ -4,6 +4,8 @@ from types import FrameType
 from typing import TYPE_CHECKING, Literal
 from inspect import getframeinfo, stack, FrameInfo, currentframe
 
+from reactk.model2.ants.key_accessor import KeyAccessor
+
 from .key_tools import Display, render_delim
 from reactk.model.trace.render_frame import RenderFrame
 
@@ -37,3 +39,9 @@ class RenderTrace:
             result += part
 
         return result
+
+
+class RenderTraceAccessor(KeyAccessor[RenderTrace]):
+    @property
+    def key(self) -> str:
+        return "_TRACE"

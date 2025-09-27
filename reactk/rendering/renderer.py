@@ -3,22 +3,25 @@ from inspect import FrameInfo
 import sys
 from typing import Any, Callable, ClassVar, Generator, Iterable, Optional
 
-from reactk.model import ShadowNode, Ctx, Component
+from reactk.model.shadow_node import ShadowNode
+from reactk.model.context import Ctx
+
 from reactk.model.top import TopLevelNode
 from reactk.model.trace.render_frame import RenderFrame
 from reactk.pretty.format_superscript import format_superscript
-from reactk.model.trace.render_trace import RenderTrace
+from reactk.model.trace.render_trace import RenderTrace, RenderTraceAccessor
 from reactk.rendering.generate_actions import (
     AnyNode,
     ComputeTreeActions,
     ReconcileAction,
 )
-from reactk.rendering.reconciler import Reconciler
-from reactk.rendering.ui_state import RenderState
+from reactk.rendering.reconciler import Reconciler, ReconcilerAccessor
+from reactk.rendering.ui_state import RenderState, RenderedNode
+from reactk.model.component import Component
 
 
 def with_trace(node: ShadowNode[Any], trace: RenderTrace) -> ShadowNode[Any]:
-    return node.__merge__(__TRACE__=trace)
+    return RenderTraceAccessor(node).set(trace) or node
 
 
 class ComponentMount[Node: ShadowNode[Any] = ShadowNode[Any]]:
@@ -27,9 +30,9 @@ class ComponentMount[Node: ShadowNode[Any] = ShadowNode[Any]]:
 
     def __init__(self, mount: Component[Node], context: Ctx | None = None):
         self.context = context or Ctx()
+        self.context += lambda _: self.force_rerender()
         self._mounted = mount
         self.state = RenderState(existing_resources={})
-        self.mount(mount)
 
     @property
     def _compute_actions(self):
@@ -42,14 +45,14 @@ class ComponentMount[Node: ShadowNode[Any] = ShadowNode[Any]]:
     def _render_kids(
         self, node: ShadowNode[Any]
     ) -> Generator[ShadowNode[Any], None, None]:
-        for kid in node.__CHILDREN__:
+        for kid in node.KIDS:
             if isinstance(kid, ShadowNode):
                 yield kid
             elif isinstance(kid, Component):
                 yield from self._compute_render(kid)
             else:
                 raise TypeError(
-                    f"Expected __CHILDREN__ to contain ShadowNode or Component, but got {type(kid)}"
+                    f"Expected KIDS to contain ShadowNode or Component, but got {type(kid)}"
                 )
 
     def _compute_render(self, root: Component[Node]) -> tuple[ShadowNode[Any], ...]:
@@ -78,7 +81,7 @@ class ComponentMount[Node: ShadowNode[Any] = ShadowNode[Any]]:
                     occurence_by_line[line_no] += 1
 
                     if isinstance(node, ShadowNode):
-                        node.__merge__(__CHILDREN__=(*self._render_kids(node),))
+                        node = node.__merge__(KIDS=tuple(self._render_kids(node)))
                         rendering += (with_trace(node, my_trace),)
                     elif isinstance(node, Component):
                         node.render(on_yielded_for(my_trace), self.context)
@@ -98,12 +101,16 @@ class ComponentMount[Node: ShadowNode[Any] = ShadowNode[Any]]:
         self.force_rerender()
 
     def force_rerender(self):
-        nodes = self._compute_render(self._mounted)
-        actions = self._compute_actions.compute_actions(TopLevelNode()[*nodes])
-        reconciler_dict = dict()
-
+        self.state.placed = set()
+        nodes = [*self._compute_render(self._mounted)]
+        top_level_fake = TopLevelNode().__merge__(KIDS=nodes)
+        actions = [*self._compute_actions.compute_actions(top_level_fake)]
+        self.state.existing_resources[top_level_fake.__uid__] = RenderedNode(
+            object(),
+            top_level_fake,
+        )
         for action in actions:
-            Reconciler = action.node.get_reconciler()
+            Reconciler = ReconcilerAccessor(action.node).get()
             reconciler = Reconciler.create(self.state)
             if not reconciler:
                 raise ValueError(

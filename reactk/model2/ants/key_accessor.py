@@ -5,6 +5,7 @@ from reactk.model2.util.missing import MISSING
 
 
 class KeyAccessor[T]:
+    __match_args__ = ("key",)
     type Value = T
 
     def __str__(self) -> str:
@@ -15,9 +16,10 @@ class KeyAccessor[T]:
 
     @classmethod
     def decorate(cls: type[Self], value: T):
-        def wrapper(target: object) -> None:
+        def wrapper[X](target: X) -> X:
             accessor = cls(target)
             accessor.set(value)
+            return target
 
         return wrapper
 
@@ -33,6 +35,22 @@ class KeyAccessor[T]:
             setattr(self.target, self.key, value)
         except Exception:
             pass
+
+    def set_from(self, other: object) -> None:
+        match other:
+            case KeyAccessor(key) as accessor:
+                if accessor.key != self.key:
+                    raise ValueError(
+                        f"Cannot set from different key accessor {accessor.key} to {self.key}"
+                    )
+                self.set(accessor._get())
+            case obj:
+                accessor = type(self)(obj)
+                if not accessor:
+                    raise ValueError(
+                        f"Cannot set from object without {self.key} attribute to {self.key}"
+                    )
+                self.set(accessor._get())
 
     @property
     def has_key(self) -> bool:

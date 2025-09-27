@@ -1,6 +1,9 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from tkinter import Tk, Widget, Label as TkLabel
+from reactk.model.prop_value_accessor import PropValuesAccessor
+from reactk.model.resource import Compat
+from reactk.model.shadow_node import ShadowNode
 from reactk.model2.prop_model.prop import Prop_ComputedMapping
 from reactk.rendering.future_actions import (
     Create,
@@ -16,7 +19,7 @@ from reactk.rendering.ui_state import RenderState
 
 from reactk.rendering.reconciler import Reconciler
 
-from typing import Callable, Iterable
+from typing import Any, Callable, Iterable, override
 
 from reactk.tk.types.font import to_tk_font
 
@@ -28,6 +31,16 @@ class WidgetReconciler(Reconciler[Widget]):
     @classmethod
     def create(cls, state: RenderState) -> "WidgetReconciler":
         return cls(state)
+
+    @classmethod
+    @override
+    def get_compatibility(cls, older: AnyNode, newer: AnyNode) -> Compat:
+        if older.__class__.__name__ != newer.__class__.__name__:
+            return "recreate"
+        elif PropValuesAccessor(older).get().diff(PropValuesAccessor(newer).get()):
+            return "replace"
+        else:
+            return "update"
 
     @abstractmethod
     def _create(self, container: Widget, node: AnyNode) -> RenderedNode[Widget]: ...
@@ -73,15 +86,15 @@ class WidgetReconciler(Reconciler[Widget]):
                 return existing.resource
             case x:
                 container = x.container
-                return self.state.existing_resources[container.uid].resource
+                return self.state.existing_resources[container.__uid__].resource
 
     def _do_create_action(self, action: Update[Widget] | Create[Widget]):
         match action:
             case Create(next, container) as c:
-                parent = self.state.existing_resources[container.uid].resource
+                parent = self.state.existing_resources[container.__uid__].resource
                 new_resource = self._create(parent, next)
-
-                self.state.existing_resources[next.uid] = new_resource
+                self._register(next, new_resource.resource)
+                self.state.existing_resources[next.__uid__] = new_resource
                 return new_resource
             case Update(existing, next, diff):
                 if diff:
