@@ -4,6 +4,7 @@ import logging
 import threading
 from tkinter import Tk
 from typing import Any
+from reactk.model.resource import Compat
 from reactk.model.shadow_node import ShadowNode
 from reactk.model2.prop_model.prop import Prop_ComputedMapping
 from reactk.rendering.future_actions import (
@@ -32,7 +33,9 @@ class WindowReconciler(Reconciler[Tk]):
         return cls(state)
 
     @classmethod
-    def get_compatibility(cls, older: ShadowNode[Any], newer: ShadowNode[Any]) -> str:
+    def get_compatibility(
+        cls, older: ShadowNode[Any], newer: ShadowNode[Any]
+    ) -> Compat:
         return "update"
 
     def _normalize_geo(self, existing: Tk, geo: Geometry) -> str:

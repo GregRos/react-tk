@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from reactk.model.resource import Compat
 from reactk.model2.ants.key_accessor import KeyAccessor
 from reactk.model2.prop_model import prop
 from reactk.rendering.future_actions import (
@@ -28,7 +29,7 @@ class Reconciler[Res](ABC):
 
     @classmethod
     @abstractmethod
-    def get_compatibility(cls, older: AnyNode, newer: AnyNode) -> str: ...
+    def get_compatibility(cls, older: AnyNode, newer: AnyNode) -> Compat: ...
 
     @classmethod
     @abstractmethod

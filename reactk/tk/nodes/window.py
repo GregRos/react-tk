@@ -15,7 +15,6 @@ from typing import (
 from expression import Some
 
 
-from reactk.model.resource import Compat
 from reactk.model2.prop_ants import prop_meta, schema_meta, schema_setter, prop_setter
 from reactk.model.component import Component
 from reactk.model.shadow_node import (

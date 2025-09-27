@@ -21,7 +21,7 @@ from typing import (
 
 from expression import Some
 from reactk.model.prop_value_accessor import PropValuesAccessor
-from reactk.model.resource import Compat
+
 from reactk.model2.prop_ants import prop_meta, schema_meta, schema_setter
 from reactk.rendering.reconciler import Reconciler
 from reactk.tk.reconcilers.widget_reconciler import LabelReconciler, WidgetReconciler
