@@ -1,6 +1,6 @@
 import sys
 from typing import Callable, Mapping, get_type_hints
-from reactk.model2.util.core_reflection import get_mro_up_to, type_reference
+from reactk.util.core_reflection import get_mro_up_to, type_reference
 
 
 def _collect_raw_annotations(classes: list[type]) -> dict[str, object]:

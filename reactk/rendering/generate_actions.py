@@ -8,7 +8,7 @@ from typing import (
 
 from reactk.model.renderable.component import Component
 from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
-from reactk.model2.prop_model.prop import Prop
+from reactk.model.props.impl.prop import Prop
 from reactk.rendering.ui_state import RenderState
 
 from .future_actions import (

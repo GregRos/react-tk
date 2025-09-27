@@ -6,7 +6,7 @@ from tkinter import Tk
 from typing import Any
 from reactk.rendering.reconciler import Compat
 from reactk.model.renderable.node.shadow_node import ShadowNode
-from reactk.model2.prop_model.prop import Prop_ComputedMapping
+from reactk.model.props.impl.prop import Prop_ComputedMapping
 from reactk.rendering.future_actions import (
     Create,
     Recreate,

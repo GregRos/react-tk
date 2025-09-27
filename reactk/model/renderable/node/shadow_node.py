@@ -25,13 +25,13 @@ from reactk.model.renderable.node.prop_value_accessor import (
     PropsAccessor,
 )
 from reactk.model.renderable.trace import RenderTrace, RenderTraceAccessor
-from reactk.model2.prop_ants.prop_meta import prop_meta
-from reactk.model2.prop_ants.decorators import HasChildren, prop_getter
-from reactk.model2.prop_ants.create_props import (
+from reactk.model.props.annotations.prop_meta import prop_meta
+from reactk.model.props.annotations.decorators import HasChildren, prop_getter
+from reactk.model.props.annotations.create_props import (
     read_props_from_top_class,
 )
-from reactk.model2.prop_model.common import KeyedValues
-from reactk.model2.prop_model.prop import Prop_Mapping
+from reactk.model.props.impl.common import KeyedValues
+from reactk.model.props.impl.prop import Prop_Mapping
 
 if TYPE_CHECKING:
     from reactk.rendering.reconciler import Reconciler

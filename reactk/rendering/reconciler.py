@@ -5,7 +5,7 @@ from typing import Literal
 # Compat moved here from reactk.model.resource to centralize reconciler types
 type Compat = Literal["update", "replace", "recreate"]
 from reactk.reflect.key_accessor import KeyAccessor
-from reactk.model2.prop_model import prop
+from reactk.model.props.impl import prop
 from reactk.rendering.future_actions import (
     Create,
     Place,

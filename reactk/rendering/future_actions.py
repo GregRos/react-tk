@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any
 
 
 from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
-from reactk.model2.prop_model.prop import Prop_ComputedMapping
+from reactk.model.props.impl.prop import Prop_ComputedMapping
 from reactk.rendering.ui_state import RenderedNode
 
 if TYPE_CHECKING:

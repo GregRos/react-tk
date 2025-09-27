@@ -1,10 +1,10 @@
 from typing import Annotated, TypedDict
 
 from expression import Nothing, Some
-from reactk.model2.prop_ants import prop_meta, schema_meta
-from reactk.model2.prop_ants.create_props import read_props_from_top_class
-from reactk.model2.prop_model.prop import Prop, Prop_Schema, Prop_Value
-from reactk.model2.util.dict import dict_equal
+from reactk.model.props.annotations import prop_meta, schema_meta
+from reactk.model.props.annotations.create_props import read_props_from_top_class
+from reactk.model.props.impl.prop import Prop, Prop_Schema, Prop_Value
+from reactk.util.dict import dict_equal
 
 
 class One_Annotated_Prop(TypedDict):

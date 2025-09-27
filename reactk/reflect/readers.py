@@ -20,10 +20,10 @@ from reactk.reflect.args_accessor import (
     UnderscoreNameAccessor,
 )
 from reactk.reflect.base import Reader_Base
-from reactk.model2.util.core_reflection import get_attrs_downto
+from reactk.util.core_reflection import get_attrs_downto
 from reactk.reflect.key_accessor import KeyAccessor
-from reactk.model2.util.str import format_signature
-from reactk.model2.util.type_hints import get_type_hints_up_to
+from reactk.util.str import format_signature
+from reactk.util.type_hints import get_type_hints_up_to
 
 if TYPE_CHECKING:
     from reactk.reflect.generic_reader import SomeTypeVarReader, Reader_Generic

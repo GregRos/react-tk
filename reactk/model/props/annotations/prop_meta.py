@@ -17,7 +17,7 @@ from typing import (
 from expression import Nothing
 
 from reactk.reflect.readers import OrigAccessor
-from reactk.model2.prop_model.common import (
+from reactk.model.props.impl.common import (
     Converter,
     DiffMode,
     KeyedValues,

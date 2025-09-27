@@ -1,6 +1,6 @@
 from typing import Annotated, NotRequired, TypedDict
 
-from reactk.model2.prop_ants import prop_meta
+from reactk.model.props.annotations import prop_meta
 
 
 class Font(TypedDict):

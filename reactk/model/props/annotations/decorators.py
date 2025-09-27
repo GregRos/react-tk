@@ -14,14 +14,13 @@ from typing import (
     Self,
     overload,
 )
-
 from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
-from reactk.model2.prop_ants.prop_meta import prop_meta, schema_meta
+from reactk.model.props.annotations.prop_meta import prop_meta, schema_meta
 
 if TYPE_CHECKING:
-    from reactk.model2.prop_model.prop import Prop_Schema, Prop_Mapping
-    from reactk.model2.prop_model.common import KeyedValues
-    from reactk.model2.prop_ants.prop_meta import some_meta
+    from reactk.model.props.impl.prop import Prop_Schema, Prop_Mapping
+    from reactk.model.props.impl.common import KeyedValues
+    from reactk.model.props.annotations.prop_meta import some_meta
     from reactk.model.renderable.component import Component
     from reactk.model.renderable.node.shadow_node import ShadowNode
 
@@ -69,7 +68,7 @@ class MethodSetterTransformer:
             transformed = self._transform(f)
             # perform runtime imports here to avoid circular imports at module import time
             from reactk.reflect.readers import OrigAccessor
-            from reactk.model2.prop_ants.create_props import MetaAccessor
+            from reactk.model.props.annotations.create_props import MetaAccessor
 
             OrigAccessor(transformed).set(f)
             MetaAccessor(f).set(self.self_meta)

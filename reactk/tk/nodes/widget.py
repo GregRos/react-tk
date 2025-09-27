@@ -22,7 +22,7 @@ from typing import (
 from expression import Some
 from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
 
-from reactk.model2.prop_ants import prop_meta, schema_meta, schema_setter
+from reactk.model.props.annotations import prop_meta, schema_meta, schema_setter
 from reactk.rendering.reconciler import Reconciler
 from reactk.tk.reconcilers.widget_reconciler import LabelReconciler, WidgetReconciler
 from reactk.tk.types.font import Font

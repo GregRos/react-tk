@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from reactk.reflect.base import unpack_reader
 from reactk.reflect.generic_reader import Reader_BoundTypeVar
-from reactk.model2.util.core_reflection import none_match_ref
+from reactk.util.core_reflection import none_match_ref
 
 if TYPE_CHECKING:
-    from reactk.model2.util.type_hints import type_reference
+    from reactk.util.type_hints import type_reference
     from reactk.reflect.generic_reader import SomeTypeVarReader
 
 
@@ -95,7 +95,7 @@ class Reflector:
     def get_type_hints(
         self, cls: builtins.type, **defaults: builtins.type
     ) -> dict[str, object]:
-        from reactk.model2.util.type_hints import get_type_hints_up_to
+        from reactk.util.type_hints import get_type_hints_up_to
 
         inspect_up_to = (
             self.inspect_up_to
