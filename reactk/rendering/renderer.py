@@ -7,9 +7,9 @@ from reactk.model.shadow_node import ShadowNode
 from reactk.model.context import Ctx
 
 from reactk.model.top import TopLevelNode
-from reactk.model.trace.render_frame import RenderFrame
+from reactk.model.trace2 import RenderFrame
 from reactk.pretty.format_superscript import format_superscript
-from reactk.model.trace.render_trace import RenderTrace, RenderTraceAccessor
+from reactk.model.trace2 import RenderTrace, RenderTraceAccessor
 from reactk.rendering.generate_actions import (
     AnyNode,
     ComputeTreeActions,

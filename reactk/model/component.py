@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from typing import Annotated, Any, Callable, NotRequired, Self, Tuple
 
 from reactk.model.context import Ctx
-from reactk.model.shadow_node import CoreProps, ShadowNode
+from reactk.model.shadow_node import NodeProps, ShadowNode
 
 
 type RenderResult[Node: ShadowNode] = Component[Node] | Node

@@ -6,7 +6,7 @@ from inspect import getframeinfo, stack, FrameInfo, currentframe
 
 from reactk.model2.ants.key_accessor import KeyAccessor
 
-from reactk.model.trace.render_frame import Display, RenderFrame
+from reactk.model.trace2 import Display, RenderFrame
 
 
 starts_with_non_breaking = re.compile(r"^[^a-zA-Z0-9_]")

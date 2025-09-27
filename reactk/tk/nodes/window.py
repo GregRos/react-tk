@@ -19,7 +19,7 @@ from reactk.model.resource import Compat
 from reactk.model2.prop_ants import prop_meta, schema_meta, schema_setter, prop_setter
 from reactk.model.component import Component
 from reactk.model.shadow_node import (
-    CoreProps,
+    NodeProps,
     ShadowNode,
 )
 from reactk.rendering.reconciler import Reconciler
@@ -30,7 +30,7 @@ from reactk.tk.types.geometry import Geometry
 from reactk.rendering.reconciler import reconciler
 
 
-class WindowProps(CoreProps):
+class WindowProps(NodeProps):
     topmost: Annotated[
         NotRequired[bool], prop_meta(subsection="attributes", no_value=False)
     ]

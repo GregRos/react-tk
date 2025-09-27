@@ -26,11 +26,11 @@ from reactk.model2.prop_ants import prop_meta, schema_meta, schema_setter
 from reactk.rendering.reconciler import Reconciler
 from reactk.tk.reconcilers.widget_reconciler import LabelReconciler, WidgetReconciler
 from reactk.tk.types.font import Font
-from reactk.model.shadow_node import CoreProps, ShadowNode
+from reactk.model.shadow_node import NodeProps, ShadowNode
 from reactk.rendering.reconciler import reconciler
 
 
-class WidgetProps(CoreProps):
+class WidgetProps(NodeProps):
     text: Annotated[NotRequired[str], prop_meta(no_value="", subsection="configure")]
     font: Annotated[NotRequired[Font], schema_meta(repr="simple", name="font")]
     borderwidth: Annotated[
@@ -73,10 +73,8 @@ class PackProps(TypedDict):
 
 @reconciler(WidgetReconciler)
 class Widget[Kids: ShadowNode[Any]](ShadowNode[Kids]):
-
     @schema_setter()
     def __init__(self, **props: Unpack[WidgetProps]) -> None: ...
-
     @schema_setter(repr="simple")
     def Pack(self, **props: Unpack[PackProps]) -> None: ...
 

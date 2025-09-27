@@ -16,12 +16,13 @@ from typing import (
     Required,
     Self,
     TypedDict,
+    Unpack,
 )
 
 from expression import Some
 from reactk.model.prop_value_accessor import PropValuesAccessor, PropsAccessor
 from reactk.model.resource import Compat
-from reactk.model.trace.render_trace import RenderTrace, RenderTraceAccessor
+from reactk.model.trace2 import RenderTrace, RenderTraceAccessor
 from reactk.model2.prop_ants.prop_meta import prop_meta
 from reactk.model2.prop_ants.decorators import HasChildren, prop_getter
 from reactk.model2.prop_ants.create_props import (
@@ -34,10 +35,6 @@ if TYPE_CHECKING:
     from reactk.rendering.reconciler import Reconciler
 
 
-class _WithDefaults(TypedDict):
-    KIDS: Annotated[NotRequired[Iterable[Any]], prop_meta(no_value=())]
-
-
 class HasPropsSchema:
 
     def __init_subclass__(cls) -> None:
@@ -45,8 +42,6 @@ class HasPropsSchema:
             return
 
         props_block = read_props_from_top_class(cls)
-        has_trace = read_props_from_top_class(_WithDefaults)
-        props_block = props_block.update(has_trace)
         PropsAccessor(cls).set(props_block)
 
     def __merge__(self, input_values: KeyedValues = {}, **kwargs: Any) -> Self:
@@ -66,8 +61,9 @@ class HasPropsSchema:
         return clone
 
 
-class CoreProps(TypedDict):
+class NodeProps(TypedDict):
     key: Annotated[NotRequired[str], prop_meta(no_value=Some(None))]
+    KIDS: Annotated[NotRequired[Iterable[Any]], prop_meta(no_value=())]
 
 
 @dataclass
