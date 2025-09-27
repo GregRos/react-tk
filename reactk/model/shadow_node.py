@@ -21,7 +21,6 @@ from typing import (
 from expression import Some
 from reactk.model.prop_value_accessor import PropValuesAccessor, PropsAccessor
 from reactk.model.resource import Compat
-from reactk.model.trace.key_tools import Display
 from reactk.model.trace.render_trace import RenderTrace, RenderTraceAccessor
 from reactk.model2.prop_ants.prop_meta import prop_meta
 from reactk.model2.prop_ants.decorators import HasChildren, prop_getter

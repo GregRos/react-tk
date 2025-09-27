@@ -6,11 +6,11 @@ from inspect import getframeinfo, stack, FrameInfo, currentframe
 
 from reactk.model2.ants.key_accessor import KeyAccessor
 
-from .key_tools import Display, render_delim
-from reactk.model.trace.render_frame import RenderFrame
+from reactk.model.trace.render_frame import Display, RenderFrame
 
 
 starts_with_non_breaking = re.compile(r"^[^a-zA-Z0-9_]")
+render_delim = "."
 
 
 class RenderTrace:

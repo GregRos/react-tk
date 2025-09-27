@@ -20,7 +20,7 @@ from reactk.model2.util.maybe import MaybeOption, maybe_normalize
 from reactk.model2.util.missing import MISSING_TYPE, MISSING
 
 if TYPE_CHECKING:
-    from reactk.model.trace.key_tools import Display
+    from reactk.model.trace.render_frame import Display
     from reactk.model.trace.render_trace import RenderTrace
 from reactk.model2.prop_model.common import (
     Converter,

@@ -1,10 +1,14 @@
-from typing import TYPE_CHECKING
-from reactk.model.trace.key_tools import replace_chars_in_key, Display
+import re
+from typing import TYPE_CHECKING, Literal
 from reactk.pretty.format_subscript import format_subscript
 
 if TYPE_CHECKING:
     from reactk.model.component import Component
     from reactk.model.shadow_node import ShadowNode
+
+replace_chars_in_key = re.compile(r"[^a-zA-Z0-9_]+")
+
+type Display = Literal["log", "safe", "id"]
 
 
 class RenderFrame:

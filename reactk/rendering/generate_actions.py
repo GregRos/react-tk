@@ -33,14 +33,9 @@ type ReconcileAction[Res] = Place[Res] | Replace[Res] | Unplace[Res] | Update[Re
 @dataclass
 class _ComputeAction:
     prev: RenderedNode | None
-    next: RenderedNode | ShadowNode | None
+    next: ShadowNode | None
     container: AnyNode
     at: int
-
-    @property
-    def next_node(self) -> AnyNode:
-        assert self.next, "next is None"
-        return self.next if isinstance(self.next, ShadowNode) else self.next.node  # type: ignore
 
     @property
     def next_resource(self) -> RenderedNode | None:
@@ -57,15 +52,15 @@ class _ComputeAction:
     def _get_inner_action(self):
         assert self.next
         if not self.prev:
-            return Create(self.next_node, self.container)
-        if self._get_compatibility(self.prev.node, self.next_node) == "recreate":
-            return Recreate(self.prev.resource, self.next_node, self.container)
+            return Create(self.next, self.container)
+        if self._get_compatibility(self.prev.node, self.next) == "recreate":
+            return Recreate(self.prev.resource, self.next, self.container)
         return Update(
             self.prev,
-            self.next_node,
+            self.next,
             diff=PropValuesAccessor(self.prev.node)
             .get()
-            .diff(PropValuesAccessor(self.next_node).get()),
+            .diff(PropValuesAccessor(self.next).get()),
         )
 
     def compute(self):
@@ -79,9 +74,9 @@ class _ComputeAction:
                 self.at,
                 inner_action,
             )
-        if self.prev.node.__uid__ != self.next_node.__uid__:
+        if self.prev.node.__uid__ != self.next.__uid__:
             return Replace(self.container, self.prev, inner_action)
-        match self._get_compatibility(self.prev.node, self.next_node):
+        match self._get_compatibility(self.prev.node, self.next):
             case "update" if isinstance(inner_action, Update):
                 return inner_action
             case "replace":
@@ -145,7 +140,7 @@ class ComputeTreeActions:
             )
             action = _ComputeAction(
                 prev=prev_resource or prev,
-                next=next_resource or next,
+                next=next,
                 at=pos,
                 container=parent,
             ).compute()
@@ -153,5 +148,5 @@ class ComputeTreeActions:
             if next and next.KIDS:
                 yield from self.compute_actions(
                     next,
-                    is_creating_new=not action.is_creating_new and not is_creating_new,
+                    is_creating_new=action.is_creating_new or is_creating_new,
                 )

@@ -93,8 +93,8 @@ class WidgetReconciler(Reconciler[Widget]):
             case Create(next, container) as c:
                 parent = self.state.existing_resources[container.__uid__].resource
                 new_resource = self._create(parent, next)
+                self._update(new_resource.resource, c.diff)
                 self._register(next, new_resource.resource)
-                self.state.existing_resources[next.__uid__] = new_resource
                 return new_resource
             case Update(existing, next, diff):
                 if diff:
