@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any
 
-from reactk.reflect.key_accessor import KeyAccessor
+from reactk.reflect.accessor.key_accessor import KeyAccessor
 
 
 if TYPE_CHECKING:

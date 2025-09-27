@@ -15,7 +15,7 @@ from reactk.reflect.readers import (
     Reader_Class,
     Reader_Method,
 )
-from reactk.reflect.key_accessor import KeyAccessor
+from reactk.reflect.accessor.key_accessor import KeyAccessor
 from reactk.model.props.annotations.prop_meta import prop_meta, schema_meta, some_meta
 from reactk.model.props.impl.prop import Prop_Any
 import funcy

@@ -5,12 +5,12 @@ from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from reactk.reflect.base import unpack_reader
-from reactk.reflect.generic_reader import Reader_BoundTypeVar
+from reactk.reflect.generic_readers import Reader_BoundTypeVar
 from reactk.util.core_reflection import none_match_ref
 
 if TYPE_CHECKING:
     from reactk.util.type_hints import type_reference
-    from reactk.reflect.generic_reader import SomeTypeVarReader
+    from reactk.reflect.generic_readers import SomeTypeVarReader
 
 
 @dataclass
@@ -40,7 +40,7 @@ class Reflector:
         return Reader_Annotation(target=unpack_reader(target), reflector=self)
 
     def _get_generic_signature(self, t: Any) -> tuple["SomeTypeVarReader", ...]:
-        from reactk.reflect.generic_reader import (
+        from reactk.reflect.generic_readers import (
             TypeParamsAccessor,
             ArgsAccessor,
         )
@@ -111,12 +111,12 @@ class Reflector:
 
     def generic(self, target: Any):
         """Create a Reader_Generic for the given target using this reflector."""
-        from reactk.reflect.generic_reader import Reader_Generic
+        from reactk.reflect.generic_readers import Reader_Generic
 
         return Reader_Generic(target=unpack_reader(target), reflector=self)
 
     def type_var(self, target: TypeVar, *, is_undeclared=False):
-        from reactk.reflect.generic_reader import Reader_TypeVar
+        from reactk.reflect.generic_readers import Reader_TypeVar
 
         return Reader_TypeVar(
             target=unpack_reader(target), reflector=self, is_undeclared=is_undeclared
@@ -125,7 +125,7 @@ class Reflector:
     def type_arg(
         self, target: TypeVar, value: Any, *, is_undeclared=False, is_defaulted=False
     ):
-        from reactk.reflect.generic_reader import Reader_BoundTypeVar
+        from reactk.reflect.generic_readers import Reader_BoundTypeVar
 
         return Reader_BoundTypeVar(
             target=unpack_reader(target),

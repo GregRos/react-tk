@@ -1,6 +1,6 @@
 from typing import Any, TypeVar
 
-from reactk.reflect.key_accessor import KeyAccessor
+from reactk.reflect.accessor.key_accessor import KeyAccessor
 
 
 class ArgsAccessor(KeyAccessor[tuple]):
