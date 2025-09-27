@@ -14,7 +14,7 @@ from reactk.rendering.actions import (
     Update,
 )
 from reactk.rendering.compute_actions import AnyNode, ReconcileAction, logger
-from reactk.rendering.ui_state import RenderState, RenderedNode
+from reactk.rendering.render_state import RenderState, RenderedNode
 
 
 from typing import Callable, Iterable, Protocol
@@ -33,7 +33,7 @@ class ReconcilerBase[Res](ABC):
 
     @classmethod
     @abstractmethod
-    def get_compatibility(cls, older: AnyNode, newer: AnyNode) -> Compat: ...
+    def get_compatibility(cls, older: RenderedNode[Res], newer: AnyNode) -> Compat: ...
 
     @classmethod
     @abstractmethod

@@ -18,7 +18,7 @@ from reactk.rendering.actions import (
 )
 from reactk.rendering.compute_actions import ReconcileAction
 from reactk.rendering.reconciler import ReconcilerBase
-from reactk.rendering.ui_state import RenderState
+from reactk.rendering.render_state import RenderState
 from reactk.tk.types.geometry import Geometry
 from reactk.tk.reconcilers.widget_reconciler import WidgetReconciler
 
@@ -34,7 +34,7 @@ class WindowReconciler(ReconcilerBase[Tk]):
 
     @classmethod
     def get_compatibility(
-        cls, older: ShadowNode[Any], newer: ShadowNode[Any]
+        cls, older: RenderedNode[Tk], newer: ShadowNode[Any]
     ) -> Compat:
         return "update"
 

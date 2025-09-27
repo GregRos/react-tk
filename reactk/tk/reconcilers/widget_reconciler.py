@@ -15,7 +15,7 @@ from reactk.rendering.actions import (
     Update,
 )
 from reactk.rendering.compute_actions import AnyNode, ReconcileAction, logger
-from reactk.rendering.ui_state import RenderState
+from reactk.rendering.render_state import RenderState
 
 from reactk.rendering.reconciler import ReconcilerBase
 
@@ -34,7 +34,7 @@ class WidgetReconciler(ReconcilerBase[Widget]):
 
     @classmethod
     @override
-    def get_compatibility(cls, older: AnyNode, newer: AnyNode) -> Compat:
+    def get_compatibility(cls, older: RenderedNode[Widget], newer: AnyNode) -> Compat:
         if older.__class__.__name__ != newer.__class__.__name__:
             return "recreate"
         elif PropValuesAccessor(older).get().diff(PropValuesAccessor(newer).get()):

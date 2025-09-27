@@ -9,7 +9,7 @@ from typing import (
 from reactk.model.renderable.component import Component
 from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
 from reactk.model.props.impl.prop import Prop
-from reactk.rendering.ui_state import RenderState
+from reactk.rendering.render_state import RenderState
 
 from .actions import (
     Create,
@@ -43,7 +43,7 @@ class _ComputeAction:
             return None
         return self.next
 
-    def _get_compatibility(self, older: AnyNode, newer: AnyNode) -> str:
+    def _get_compatibility(self, older: RenderedNode, newer: AnyNode) -> str:
         from reactk.rendering.reconciler import ReconcilerAccessor
 
         reconciler_class = ReconcilerAccessor(older).get()
@@ -53,7 +53,7 @@ class _ComputeAction:
         assert self.next
         if not self.prev:
             return Create(self.next, self.container)
-        if self._get_compatibility(self.prev.node, self.next) == "recreate":
+        if self._get_compatibility(self.prev, self.next) == "recreate":
             return Recreate(self.prev.resource, self.next, self.container)
         return Update(
             self.prev,
@@ -76,7 +76,7 @@ class _ComputeAction:
             )
         if self.prev.node.__uid__ != self.next.__uid__:
             return Replace(self.container, self.prev, inner_action)
-        match self._get_compatibility(self.prev.node, self.next):
+        match self._get_compatibility(self.prev, self.next):
             case "update" if isinstance(inner_action, Update):
                 return inner_action
             case "replace":
@@ -135,9 +135,7 @@ class ComputeTreeActions:
             prev_resource = (
                 self.state.existing_resources.get(prev.node.__uid__) if prev else None
             )
-            next_resource = (
-                self.state.existing_resources.get(next.__uid__) if next else None
-            )
+
             action = _ComputeAction(
                 prev=prev_resource or prev,
                 next=next,
