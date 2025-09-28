@@ -15,9 +15,9 @@ from typing import (
     override,
 )
 
-from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
+from reactk.renderable.node.prop_value_accessor import PropValuesAccessor
 
-from reactk.model.props.annotations import schema_meta, schema_setter
+from reactk.props.annotations import schema_meta, schema_setter
 from reactk.rendering.actions.node_reconciler import ReconcilerBase
 from reactk.tk.props.pack import PackProps
 from reactk.tk.props.text import TextProps
@@ -30,7 +30,7 @@ from reactk.tk.reconcilers.widget_reconciler import (
     WidgetReconciler,
 )
 from reactk.tk.types.font import Font
-from reactk.model.renderable.node.shadow_node import NodeProps, ShadowNode
+from reactk.renderable.node.shadow_node import NodeProps, ShadowNode
 from reactk.rendering.actions.node_reconciler import reconciler
 
 

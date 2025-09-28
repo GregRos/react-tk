@@ -15,14 +15,14 @@ from typing import (
 from expression import Some
 
 
-from reactk.model.props.annotations import (
+from reactk.props.annotations import (
     prop_meta,
     schema_meta,
     schema_setter,
     prop_setter,
 )
-from reactk.model.renderable.component import Component
-from reactk.model.renderable.node.shadow_node import (
+from reactk.renderable.component import Component
+from reactk.renderable.node.shadow_node import (
     NodeProps,
     ShadowNode,
 )

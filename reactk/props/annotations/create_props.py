@@ -1,7 +1,7 @@
 from collections.abc import Iterable, Mapping
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Annotated, Any, Required, is_typeddict
-from reactk.model.props.annotations.shadow_reflector import shadow_reflector
+from reactk.props.annotations.shadow_reflector import shadow_reflector
 from reactk.util.core_reflection import get_attrs_downto
 from typing import TYPE_CHECKING
 from expression import Nothing, Some, Option
@@ -9,20 +9,20 @@ from expression import Nothing, Some, Option
 from reactk.util.maybe import maybe_normalize
 
 if TYPE_CHECKING:
-    from reactk.model.renderable.trace import RenderTrace
+    from reactk.renderable.trace import RenderTrace
 from reactk.reflect.reader.type import (
     Reader_Annotation,
     Reader_Class,
     Reader_Method,
 )
 from reactk.reflect.accessor.base import KeyAccessor
-from reactk.model.props.annotations.prop_meta import prop_meta, schema_meta, some_meta
-from reactk.model.props.impl.prop import Prop_Any
+from reactk.props.annotations.prop_meta import prop_meta, schema_meta, some_meta
+from reactk.props.impl.prop import Prop_Any
 import funcy
 
-from reactk.model.props.impl.v_mapping import VMappingBase
+from reactk.props.impl.v_mapping import VMappingBase
 
-from reactk.model.props.impl.prop import Prop, Prop_Schema
+from reactk.props.impl.prop import Prop, Prop_Schema
 
 
 class MetaAccessor(KeyAccessor[some_meta]):
@@ -34,7 +34,7 @@ class MetaAccessor(KeyAccessor[some_meta]):
 def _create_prop(
     path: tuple[str, ...], name: str, annotation: Reader_Annotation, meta: prop_meta
 ):
-    from reactk.model.props.impl.prop import Prop
+    from reactk.props.impl.prop import Prop
 
     x: Any = annotation.inner_type
     return Prop[x](
@@ -53,7 +53,7 @@ def _create_prop(
 def _create_schema(
     path: tuple[str, ...], name: str, annotation: Reader_Annotation, meta: schema_meta
 ):
-    from reactk.model.props.impl.prop import Prop_Schema
+    from reactk.props.impl.prop import Prop_Schema
 
     return Prop_Schema(
         path=path,

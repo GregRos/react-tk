@@ -2,10 +2,10 @@ from typing import Annotated, TypedDict, Unpack
 
 from expression import Some
 
-from reactk.model.props.annotations import prop_meta
-from reactk.model.props.annotations.create_props import read_props_from_top_class
-from reactk.model.props.annotations.decorators import _HasMerge, schema_setter
-from reactk.model.props.impl.prop import Prop, Prop_Schema
+from reactk.props.annotations import prop_meta
+from reactk.props.annotations.create_props import read_props_from_top_class
+from reactk.props.annotations.decorators import _HasMerge, schema_setter
+from reactk.props.impl.prop import Prop, Prop_Schema
 from reactk.util.dict import dict_equal
 
 

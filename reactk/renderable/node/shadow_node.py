@@ -21,23 +21,23 @@ from typing import (
 )
 
 from expression import Some
-from reactk.model.renderable.node.prop_value_accessor import (
+from reactk.renderable.node.prop_value_accessor import (
     PropValuesAccessor,
     PropsAccessor,
 )
-from reactk.model.renderable.renderable_base import RenderableBase
-from reactk.model.renderable.trace import (
+from reactk.renderable.renderable_base import RenderableBase
+from reactk.renderable.trace import (
     ConstructTraceAccessor,
     RenderTrace,
     RenderTraceAccessor,
 )
-from reactk.model.props.annotations.prop_meta import prop_meta
-from reactk.model.props.annotations.decorators import HasChildren, prop_getter
-from reactk.model.props.annotations.create_props import (
+from reactk.props.annotations.prop_meta import prop_meta
+from reactk.props.annotations.decorators import HasChildren, prop_getter
+from reactk.props.annotations.create_props import (
     read_props_from_top_class,
 )
-from reactk.model.props.impl.common import KeyedValues
-from reactk.model.props.impl.prop import Prop_Mapping
+from reactk.props.impl.common import KeyedValues
+from reactk.props.impl.prop import Prop_Mapping
 
 if TYPE_CHECKING:
     from reactk.rendering.actions.node_reconciler import ReconcilerBase

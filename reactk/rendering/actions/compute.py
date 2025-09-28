@@ -6,9 +6,9 @@ from typing import (
     Iterable,
 )
 
-from reactk.model.renderable.component import Component
-from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
-from reactk.model.props.impl.prop import Prop
+from reactk.renderable.component import Component
+from reactk.renderable.node.prop_value_accessor import PropValuesAccessor
+from reactk.props.impl.prop import Prop
 from reactk.rendering.actions.reconcile_state import (
     PersistentReconcileState,
     TransientReconcileState,
@@ -23,7 +23,7 @@ from .actions import (
     Update,
     Place,
 )
-from reactk.model.renderable.node.shadow_node import ShadowNode
+from reactk.renderable.node.shadow_node import ShadowNode
 
 
 from itertools import groupby, zip_longest

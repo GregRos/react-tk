@@ -2,7 +2,7 @@ from abc import ABC
 import sys
 from typing import Any
 
-from reactk.model.renderable.trace import ConstructTraceAccessor
+from reactk.renderable.trace import ConstructTraceAccessor
 from reactk.util.stack import get_first_non_ctor_frame_info
 
 

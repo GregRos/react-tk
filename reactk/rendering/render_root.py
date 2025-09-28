@@ -1,7 +1,7 @@
 from typing import Any
-from reactk.model.renderable.component import Component
-from reactk.model.renderable.context import Ctx, ctx_freeze
-from reactk.model.renderable.node.shadow_node import ShadowNode
+from reactk.renderable.component import Component
+from reactk.renderable.context import Ctx, ctx_freeze
+from reactk.renderable.node.shadow_node import ShadowNode
 from reactk.rendering.actions.reconcile_state import PersistentReconcileState
 from reactk.rendering.actions.top_reconciler import RootReconciler
 from reactk.rendering.component.render_sink import RenderSink, RenderState

@@ -14,15 +14,15 @@ from typing import (
     Self,
     overload,
 )
-from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
-from reactk.model.props.annotations.prop_meta import prop_meta, schema_meta
+from reactk.renderable.node.prop_value_accessor import PropValuesAccessor
+from reactk.props.annotations.prop_meta import prop_meta, schema_meta
 
 if TYPE_CHECKING:
-    from reactk.model.props.impl.prop import Prop_Schema, Prop_Mapping
-    from reactk.model.props.impl.common import KeyedValues
-    from reactk.model.props.annotations.prop_meta import some_meta
-    from reactk.model.renderable.component import Component
-    from reactk.model.renderable.node.shadow_node import ShadowNode
+    from reactk.props.impl.prop import Prop_Schema, Prop_Mapping
+    from reactk.props.impl.common import KeyedValues
+    from reactk.props.annotations.prop_meta import some_meta
+    from reactk.renderable.component import Component
+    from reactk.renderable.node.shadow_node import ShadowNode
 
 
 class _HasMerge(Protocol):
@@ -68,7 +68,7 @@ class MethodSetterTransformer:
             transformed = self._transform(f)
             # perform runtime imports here to avoid circular imports at module import time
             from reactk.reflect.reader.type import OrigAccessor
-            from reactk.model.props.annotations.create_props import MetaAccessor
+            from reactk.props.annotations.create_props import MetaAccessor
 
             OrigAccessor(transformed).set(f)
             MetaAccessor(f).set(self.self_meta)

@@ -15,8 +15,8 @@ from typing import (
     overload,
 )
 
-from reactk.model.renderable.node.shadow_node import NodeProps, ShadowNode
-from reactk.model.renderable.renderable_base import RenderableBase
+from reactk.renderable.node.shadow_node import NodeProps, ShadowNode
+from reactk.renderable.renderable_base import RenderableBase
 
 
 type RenderElement[Node: ShadowNode[Any]] = Node | Component[Node]

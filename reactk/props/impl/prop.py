@@ -14,19 +14,19 @@ from typing import Any, Iterable, Literal, Self
 
 from typeguard import TypeCheckError, check_type
 
-from reactk.model.props.impl.common import DiffMode
+from reactk.props.impl.common import DiffMode
 from reactk.util.dict import deep_diff, deep_merge, dict_equal
 from reactk.util.maybe import MaybeOption, maybe_normalize
 from reactk.util.missing import MISSING_TYPE, MISSING
 
 if TYPE_CHECKING:
-    from reactk.model.renderable.trace import Display
-    from reactk.model.renderable.trace import RenderTrace
-from reactk.model.props.impl.common import (
+    from reactk.renderable.trace import Display
+    from reactk.renderable.trace import RenderTrace
+from reactk.props.impl.common import (
     Converter,
     KeyedValues,
 )
-from reactk.model.props.impl.v_mapping import (
+from reactk.props.impl.v_mapping import (
     VMappingBase,
 )
 from reactk.util.str import join_truncate

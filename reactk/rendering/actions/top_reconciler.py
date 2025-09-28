@@ -4,12 +4,12 @@ from inspect import FrameInfo
 import sys
 from typing import Any, Callable, ClassVar, Generator, Iterable, Optional
 
-from reactk.model.renderable.node.shadow_node import ShadowNode
-from reactk.model.renderable.context import Ctx
+from reactk.renderable.node.shadow_node import ShadowNode
+from reactk.renderable.context import Ctx
 
-from reactk.model.renderable.node.top import TopLevelNode
-from reactk.model.renderable.trace import RenderFrame
-from reactk.model.renderable.trace import RenderTrace, RenderTraceAccessor
+from reactk.renderable.node.top import TopLevelNode
+from reactk.renderable.trace import RenderFrame
+from reactk.renderable.trace import RenderTrace, RenderTraceAccessor
 from reactk.rendering.actions.compute import (
     AnyNode,
     ComputeTreeActions,
@@ -21,7 +21,7 @@ from reactk.rendering.actions.reconcile_state import (
     RenderedNode,
     TransientReconcileState,
 )
-from reactk.model.renderable.component import Component
+from reactk.renderable.component import Component
 
 
 def _with_trace(node: ShadowNode[Any], trace: RenderTrace) -> ShadowNode[Any]:

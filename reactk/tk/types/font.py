@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Annotated, NotRequired, TypedDict
 
-from reactk.model.props.annotations import prop_meta
+from reactk.props.annotations import prop_meta
 
 
 @dataclass

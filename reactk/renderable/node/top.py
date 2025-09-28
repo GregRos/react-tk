@@ -1,7 +1,7 @@
 from typing import Any, Unpack
 
-from reactk.model.renderable.node.shadow_node import NodeProps, ShadowNode
-from reactk.model.props.annotations.decorators import schema_setter
+from reactk.renderable.node.shadow_node import NodeProps, ShadowNode
+from reactk.props.annotations.decorators import schema_setter
 
 
 # does not need a reconciler since it is never diffed or updated

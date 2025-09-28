@@ -4,8 +4,8 @@ from collections.abc import Callable, Generator
 from dataclasses import dataclass, field
 import sys
 from typing import Any, Iterable, overload
-from reactk.model.props.impl import prop
-from reactk.model.renderable.component import (
+from reactk.props.impl import prop
+from reactk.renderable.component import (
     AbsCtx,
     AbsSink,
     Component,
@@ -13,9 +13,9 @@ from reactk.model.renderable.component import (
     RenderResult,
     is_render_element,
 )
-from reactk.model.renderable.context import Ctx
-from reactk.model.renderable.node.shadow_node import ShadowNode
-from reactk.model.renderable.trace import (
+from reactk.renderable.context import Ctx
+from reactk.renderable.node.shadow_node import ShadowNode
+from reactk.renderable.trace import (
     ConstructTraceAccessor,
     RenderFrame,
     RenderTrace,

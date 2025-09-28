@@ -1,5 +1,5 @@
 from reactk.reflect.accessor.base import KeyAccessor
-from reactk.model.props.impl.prop import Prop_Mapping, Prop_Schema
+from reactk.props.impl.prop import Prop_Mapping, Prop_Schema
 
 
 class PropValuesAccessor(KeyAccessor[Prop_Mapping]):

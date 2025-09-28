@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Self
-from reactk.model.renderable.component import AbsCtx, Component, RenderResult
-from reactk.model.renderable.context import Ctx
+from reactk.renderable.component import AbsCtx, Component, RenderResult
+from reactk.renderable.context import Ctx
 from reactk.tk.nodes.widget import Label, Widget
 from reactk.tk.nodes.window import Window
 from reactk.tk.types.font import Font

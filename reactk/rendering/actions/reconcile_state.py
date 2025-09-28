@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
-from reactk.model.renderable.node.shadow_node import ShadowNode
-from reactk.model.renderable.trace import RenderTrace, RenderTraceAccessor
+from reactk.renderable.node.prop_value_accessor import PropValuesAccessor
+from reactk.renderable.node.shadow_node import ShadowNode
+from reactk.renderable.trace import RenderTrace, RenderTraceAccessor
 
 if TYPE_CHECKING:
     from reactk.rendering.actions.compute import AnyNode

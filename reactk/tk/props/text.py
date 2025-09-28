@@ -2,7 +2,7 @@ from typing import NotRequired, TypedDict
 from expression import Some
 from typing_extensions import Annotated
 
-from reactk.model.props.annotations.prop_meta import prop_meta
+from reactk.props.annotations.prop_meta import prop_meta
 from reactk.tk.types.font import Font
 
 

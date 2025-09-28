@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 
-from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
-from reactk.model.props.impl.prop import Prop_ComputedMapping
+from reactk.renderable.node.prop_value_accessor import PropValuesAccessor
+from reactk.props.impl.prop import Prop_ComputedMapping
 from reactk.rendering.actions.reconcile_state import RenderedNode
 
 if TYPE_CHECKING:

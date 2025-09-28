@@ -9,8 +9,8 @@ from reactk.util.stack import ReactkFrameInfo
 from reactk.util.str import format_subscript
 
 if TYPE_CHECKING:
-    from reactk.model.renderable.component import Component, RenderElement, RenderResult
-    from reactk.model.renderable.node.shadow_node import ShadowNode
+    from reactk.renderable.component import Component, RenderElement, RenderResult
+    from reactk.renderable.node.shadow_node import ShadowNode
 
 replace_chars_in_key = re.compile(r"[^a-zA-Z0-9_]+")
 starts_with_non_breaking = re.compile(r"^[^a-zA-Z0-9_]")

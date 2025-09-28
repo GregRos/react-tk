@@ -5,8 +5,8 @@ import threading
 from tkinter import Tk
 from typing import Any
 from reactk.rendering.actions.node_reconciler import Compat
-from reactk.model.renderable.node.shadow_node import ShadowNode
-from reactk.model.props.impl.prop import Prop_ComputedMapping
+from reactk.renderable.node.shadow_node import ShadowNode
+from reactk.props.impl.prop import Prop_ComputedMapping
 from reactk.rendering.actions.actions import (
     Create,
     Recreate,

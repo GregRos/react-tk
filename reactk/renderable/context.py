@@ -8,7 +8,7 @@ from typing import Any, Callable, Self
 
 from expression import Nothing
 
-from reactk.model.renderable.component import AbsCtx
+from reactk.renderable.component import AbsCtx
 from reactk.util.core_reflection import get_attr_skip_hook, has_attr_skip_hook
 
 logger = getLogger("ui")
