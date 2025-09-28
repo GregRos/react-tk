@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
 from reactk.model.props.impl.prop import Prop_ComputedMapping
-from reactk.rendering.render_state import RenderedNode
+from reactk.rendering.actions.reconcile_state import RenderedNode
 
 if TYPE_CHECKING:
     from reactk.rendering.actions.compute import AnyNode

@@ -37,13 +37,14 @@ class MethodSetterTransformer:
     def self_meta(self) -> "some_meta": ...
 
     def _transform(self, f: Callable) -> Callable:
-        def init_wrapper(self: _HasMerge, **kwargs: Any) -> None:
+        def __init__(self: _HasMerge, *args, **kwargs: Any) -> None:
+            self.__init__(*args, **kwargs)
             result = self.__merge__(kwargs)
             PropValuesAccessor(self).set_from(result)
             return None
 
         if f.__name__ == "__init__":
-            return init_wrapper
+            return __init__
 
         def wrapper(self: _HasMerge, **kwargs: Any) -> Any:
             return self.__merge__({f.__name__: kwargs})

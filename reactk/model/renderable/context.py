@@ -5,6 +5,9 @@ import threading
 from time import sleep
 from typing import Any, Callable, Self
 
+from reactk.model.renderable.component import AbsCtx
+from reactk.util.core_reflection import has_attr_skip_hook
+
 logger = getLogger("ui")
 
 
@@ -15,7 +18,7 @@ logger = getLogger("ui")
 # - Consider coolass API for schedule, like ctx(lambda x: x + 1, 10)
 # - Probably do away with setattr and leave getattr
 # - Improve context equality mechanism
-class Ctx:
+class Ctx(AbsCtx):
     _listeners: list[Callable[[Self], None]] = []
     _map: dict[str, Any] = {}
     _executor = ThreadPoolExecutor(4)
@@ -61,17 +64,14 @@ class Ctx:
 
         self._executor.submit(do, self.snapshot())
 
-    def __getattr__(self, key: str) -> Any:
-        if key in ["_map", "_listeners", "__annotations__", "id"]:
-            return super().__getattribute__(key)
-        if key in self.__annotations__:
-            return super().__getattribute__(key)
-        if not key in self._map:
+    def __getattr__(self, name: str) -> Any:
+        if own := self.__dict__.get(name):
+            return own
+        if inherited := getattr(type(self), name, None):
+            return inherited
+        if not name in self._map:
             return None
-        return self._map[key]
-
-    def __contains__(self, key: str) -> bool:
-        return key in self._map
+        return self._map[name]
 
     def __iadd__(self, listener: Callable[[Self], Any]) -> Self:
         self._listeners.append(listener)
@@ -85,14 +85,14 @@ class Ctx:
             listener(self)
 
     def _try_set(self, key: str, value: Any) -> None:
-        if key in ["_map", "_listeners", "__annotations__", "id"]:
-            return super().__setattr__(key, value)
-        if key in self.__annotations__:
+        if has_attr_skip_hook(self, key):
             return super().__setattr__(key, value)
 
         self._map[key] = value
 
-    def __call__(self, **kwargs: Any) -> Self:
+    def __call__(self, *args: Any, **kwargs: Any) -> Self:
+        if args and kwargs:
+            raise ValueError("Ctx can be called with either args or kwargs, not both")
         for k, v in kwargs.items():
             self._try_set(k, v)
         self._notify()

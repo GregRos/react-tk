@@ -9,7 +9,10 @@ from typing import (
 from reactk.model.renderable.component import Component
 from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
 from reactk.model.props.impl.prop import Prop
-from reactk.rendering.render_state import RenderState
+from reactk.rendering.actions.reconcile_state import (
+    PersistentReconcileState,
+    TransientReconcileState,
+)
 
 from .actions import (
     Create,
@@ -89,7 +92,7 @@ class _ComputeAction:
 
 @dataclass
 class ComputeTreeActions:
-    state: RenderState
+    state: TransientReconcileState
 
     @staticmethod
     def _check_duplicates(rendering: Iterable[ShadowNode]):

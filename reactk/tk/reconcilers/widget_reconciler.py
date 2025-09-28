@@ -15,7 +15,7 @@ from reactk.rendering.actions.actions import (
     Update,
 )
 from reactk.rendering.actions.compute import AnyNode, ReconcileAction, logger
-from reactk.rendering.render_state import RenderState
+from reactk.rendering.actions.reconcile_state import PersistentReconcileState
 
 from reactk.rendering.actions.reconciler import ReconcilerBase
 
@@ -26,10 +26,10 @@ from reactk.tk.types.font import to_tk_font
 
 @dataclass
 class WidgetReconciler(ReconcilerBase[Widget]):
-    state: RenderState
+    state: PersistentReconcileState
 
     @classmethod
-    def create(cls, state: RenderState) -> "WidgetReconciler":
+    def create(cls, state: PersistentReconcileState) -> "WidgetReconciler":
         return cls(state)
 
     @classmethod

@@ -18,7 +18,7 @@ from reactk.rendering.actions.actions import (
 )
 from reactk.rendering.actions.compute import ReconcileAction
 from reactk.rendering.actions.reconciler import ReconcilerBase
-from reactk.rendering.render_state import RenderState
+from reactk.rendering.actions.reconcile_state import PersistentReconcileState
 from reactk.tk.types.geometry import Geometry
 from reactk.tk.reconcilers.widget_reconciler import WidgetReconciler
 
@@ -29,7 +29,7 @@ logger = logging.getLogger("ui").getChild("diff")
 class WindowReconciler(ReconcilerBase[Tk]):
 
     @classmethod
-    def create(cls, state: RenderState) -> "WindowReconciler":
+    def create(cls, state: PersistentReconcileState) -> "WindowReconciler":
         return cls(state)
 
     @classmethod

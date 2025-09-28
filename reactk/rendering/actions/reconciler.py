@@ -14,7 +14,11 @@ from reactk.rendering.actions.actions import (
     Update,
 )
 from reactk.rendering.actions.compute import AnyNode, ReconcileAction, logger
-from reactk.rendering.render_state import RenderState, RenderedNode
+from reactk.rendering.actions.reconcile_state import (
+    PersistentReconcileState,
+    RenderedNode,
+    TransientReconcileState,
+)
 
 
 from typing import Callable, Iterable, Protocol
@@ -24,7 +28,7 @@ type Compat = Literal["update", "replace", "recreate"]
 
 @dataclass
 class ReconcilerBase[Res](ABC):
-    state: RenderState
+    state: PersistentReconcileState
 
     def _register(self, node: AnyNode, resource: Res) -> RenderedNode[Res]:
         rendered = RenderedNode(resource, node)
@@ -37,7 +41,7 @@ class ReconcilerBase[Res](ABC):
 
     @classmethod
     @abstractmethod
-    def create(cls, state: RenderState) -> "ReconcilerBase[Res]": ...
+    def create(cls, state: TransientReconcileState) -> "ReconcilerBase[Res]": ...
 
     @abstractmethod
     def run_action(self, action: ReconcileAction[Res]) -> None: ...

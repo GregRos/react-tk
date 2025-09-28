@@ -15,7 +15,11 @@ from reactk.rendering.actions.compute import (
     ReconcileAction,
 )
 from reactk.rendering.actions.reconciler import ReconcilerBase, ReconcilerAccessor
-from reactk.rendering.render_state import RenderState, RenderedNode
+from reactk.rendering.actions.reconcile_state import (
+    PersistentReconcileState,
+    RenderedNode,
+    TransientReconcileState,
+)
 from reactk.model.renderable.component import Component
 
 
@@ -25,17 +29,16 @@ def _with_trace(node: ShadowNode[Any], trace: RenderTrace) -> ShadowNode[Any]:
 
 class RootRenderer[Node: ShadowNode[Any] = ShadowNode[Any]]:
     _mounted: Component[Node]
-    state: RenderState
+    state: PersistentReconcileState
 
     def __init__(self, mount: Component[Node], context: Ctx | None = None):
         self.context = context or Ctx()
         self.context += lambda _: self.force_rerender()
         self._mounted = mount
-        self.state = RenderState(existing_resources={})
+        self.state = PersistentReconcileState(existing_resources={})
 
-    @property
-    def _compute_actions(self):
-        return ComputeTreeActions(self.state)
+    def _compute_actions(self, transient_state: TransientReconcileState, root):
+        return ComputeTreeActions(transient_state).compute_actions(root)
 
     def __call__(self, **ctx_args: Any):
         self.context(**ctx_args)
@@ -83,7 +86,7 @@ class RootRenderer[Node: ShadowNode[Any] = ShadowNode[Any]]:
                         node = node.__merge__(KIDS=tuple(self._render_kids(node)))
                         rendering += (_with_trace(node, my_trace),)
                     elif isinstance(node, Component):
-                        node.render(on_yielded_for(my_trace), self.context)
+                        node.render(on_yielded_for(my_trace), self.context)  # type: ignore
                     else:
                         raise TypeError(
                             f"Expected render method to return {node_type} or Component, but got {type(node)}"
@@ -96,17 +99,15 @@ class RootRenderer[Node: ShadowNode[Any] = ShadowNode[Any]]:
         return rendering
 
     def force_rerender(self):
-        self.state.placed = set()
         nodes = [*self._compute_render(self._mounted)]
         top_level_fake = TopLevelNode().__merge__(KIDS=nodes)
-        actions = [*self._compute_actions.compute_actions(top_level_fake)]
-        self.state.existing_resources[top_level_fake.__uid__] = RenderedNode(
-            object(),
-            top_level_fake,
-        )
+        self.state.overwrite(RenderedNode(object(), top_level_fake))
+        transient_state = self.state.new_transient()
+        actions = [*self._compute_actions(transient_state, top_level_fake)]
+
         for action in actions:
             Reconciler = ReconcilerAccessor(action.node).get()
-            reconciler = Reconciler.create(self.state)
+            reconciler = Reconciler.create(transient_state)
             if not reconciler:
                 raise ValueError(
                     f"No reconciler found for action type {type(action.node)}"

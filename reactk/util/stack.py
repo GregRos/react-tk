@@ -1,0 +1,42 @@
+from dataclasses import dataclass
+import sys
+from types import FrameType
+
+from funcy import first
+
+
+@dataclass
+class ReactkFrameInfo:
+    filename: str
+    line: int
+    column: int
+    function_name: str
+
+
+def get_reactk_frame_info(frame: FrameType) -> ReactkFrameInfo:
+    co_positions = frame.f_code.co_positions()
+    first_co_position = first(co_positions)
+    if first_co_position is None:
+        raise RuntimeError("No code positions found")
+    start_line, end_line, start_col, end_col = first_co_position
+    start_line = start_line or frame.f_lineno
+    return ReactkFrameInfo(
+        filename=frame.f_code.co_filename,
+        line=start_line,
+        column=start_col or 0,
+        function_name=frame.f_code.co_name,
+    )
+
+
+def get_first_non_init_frame(skip: int = 0):
+    frame = sys._getframe(1 + skip)
+    while frame and frame.f_code.co_name == "__init__":
+        frame = frame.f_back
+    if frame is None:
+        raise RuntimeError("No non-__init__ frame found")
+    return frame
+
+
+def get_first_non_init_frame_info(skip: int = 0) -> ReactkFrameInfo:
+    frame = get_first_non_init_frame(skip + 1)
+    return get_reactk_frame_info(frame)

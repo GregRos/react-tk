@@ -1,5 +1,7 @@
 from inspect import isfunction
+from typing import Any
 
+from expression import Nothing, Option
 from funcy import first, takewhile
 
 
@@ -55,3 +57,25 @@ def get_mro_up_to(
         return [cls]
     mro = list(cls.__mro__)
     return [*takewhile(none_match_ref(*top), mro)]
+
+
+def has_attr_skip_hook(obj: object, name: str) -> bool:
+    """Check if obj has attribute name, ignoring __getattr__ and __getattribute__."""
+    attr = get_attr_skip_hook(obj, name)
+    if attr is not Nothing:
+        return True
+
+    annotations = get_attr_skip_hook(obj, "__annotations__")
+    if annotations is not Nothing and name in annotations:
+        return True
+    return False
+
+
+def get_attr_skip_hook(obj: object, name: str) -> Option[Any]:
+    """Check if obj has attribute name, ignoring __getattr__ and __getattribute__."""
+    if own := obj.__dict__.get(name):
+        return own
+    if inherited := getattr(type(obj), name, None):
+        return inherited
+
+    return Nothing

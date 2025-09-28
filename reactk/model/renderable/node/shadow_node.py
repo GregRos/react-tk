@@ -4,6 +4,7 @@ from copy import copy
 from dataclasses import dataclass, is_dataclass
 from inspect import isabstract
 from pyclbr import Class
+import sys
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -24,7 +25,12 @@ from reactk.model.renderable.node.prop_value_accessor import (
     PropValuesAccessor,
     PropsAccessor,
 )
-from reactk.model.renderable.trace import RenderTrace, RenderTraceAccessor
+from reactk.model.renderable.renderable_base import RenderableBase
+from reactk.model.renderable.trace import (
+    ConstructTraceAccessor,
+    RenderTrace,
+    RenderTraceAccessor,
+)
 from reactk.model.props.annotations.prop_meta import prop_meta
 from reactk.model.props.annotations.decorators import HasChildren, prop_getter
 from reactk.model.props.annotations.create_props import (
@@ -68,14 +74,16 @@ class NodeProps(TypedDict):
     KIDS: Annotated[NotRequired[Iterable[Any]], prop_meta(no_value=())]
 
 
-@dataclass
-class ShadowNode[Kids: ShadowNode = Never](HasPropsSchema, HasChildren[Kids], ABC):
+class ShadowNode[Kids: ShadowNode[Any] = Never](
+    RenderableBase, HasPropsSchema, HasChildren[Kids], ABC
+):
+
     @property
     def PROPS(self) -> Prop_Mapping:
         return PropValuesAccessor(self).get()
 
     @prop_getter()
-    def KIDS(self) -> Iterable[Kids]: ...
+    def KIDS(self) -> Iterable["ShadowNode[Any]"]: ...
 
     @prop_getter()
     def key(self) -> str: ...

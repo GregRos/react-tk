@@ -11,27 +11,23 @@ from reactk import Ctx, Window, Label, Widget, Component, Window, Font, WindowRe
 class StuffComponent(Component[Widget]):
     text: str
 
-    def render(self, yld, _):
-        yld(
-            Label(
-                text=self.text,
-                background="#000001",
-                foreground="#ffffff",
-                font=Font(family="Arial", size=20, style="bold"),
-            ).Pack(ipadx=20, ipady=15, fill="both")
-        )
+    def render(self):
+        return Label(
+            text=self.text,
+            background="#000001",
+            foreground="#ffffff",
+            font=Font(family="Arial", size=20, style="bold"),
+        ).Pack(ipadx=20, ipady=15, fill="both")
 
 
 @dataclass(kw_only=True)
 class WindowComponent(Component[Window]):
-    def render(self, yld, ctx: Ctx):
-        x = StuffComponent(text=ctx.text)
+    def render(self):
+        x = StuffComponent(text=self.ctx.text)
 
-        yld(
-            Window(topmost=True, background="black", alpha=85).Geometry(
-                width=500, height=500, x=500, y=500, anchor_point="lt"
-            )[x]
-        )
+        return Window(topmost=True, background="black", alpha=85).Geometry(
+            width=500, height=500, x=500, y=500, anchor_point="lt"
+        )[x]
 
 
 MyTK = WindowRenderer(WindowComponent())
