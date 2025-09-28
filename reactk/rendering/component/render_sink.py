@@ -4,6 +4,7 @@ from collections.abc import Callable, Generator
 from dataclasses import dataclass, field
 import sys
 from typing import Any, Iterable, overload
+from reactk.model.props.impl import prop
 from reactk.model.renderable.component import (
     AbsCtx,
     AbsSink,
@@ -24,16 +25,20 @@ from reactk.model.renderable.trace import (
 
 
 class RenderState:
-    next_render_trace_seq_id: dict[tuple[RenderTrace, RenderFrame], int]
+    _next_render_trace_seq_id: dict[tuple[RenderTrace, RenderFrame], int]
 
-    def __init__(self):
-        self.next_render_trace_seq_id = defaultdict(lambda: 0)
+    def __init__(self, ctx: AbsCtx) -> None:
+        self._next_render_trace_seq_id = defaultdict(lambda: 0)
+        self.ctx = ctx
+
+    def create_empty_sink(self) -> "RenderSink":
+        return RenderSink(state=self, trace_root=RenderTrace())
 
     def produce_sequenced(
         self, trace: RenderTrace, frame: RenderFrame
     ) -> SequencedRenderFrame:
-        free_seq_id = self.next_render_trace_seq_id[(trace, frame)]
-        self.next_render_trace_seq_id[(trace, frame)] += 1
+        free_seq_id = self._next_render_trace_seq_id[(trace, frame)]
+        self._next_render_trace_seq_id[(trace, frame)] += 1
         return frame.to_sequenced(free_seq_id)
 
 
@@ -41,8 +46,10 @@ class RenderState:
 class RenderSink[Node: ShadowNode[Any] = ShadowNode[Any]](AbsSink[Node]):
     state: RenderState
     trace_root: RenderTrace
-    ctx: Ctx
-    rendered: list[Node] = field(default_factory=list, init=False)
+
+    @property
+    def ctx(self) -> AbsCtx:
+        return self.state.ctx
 
     def _get_construct_trace(self, node: RenderElement[Node]):
         if not is_render_element[Node](node):
@@ -61,10 +68,9 @@ class RenderSink[Node: ShadowNode[Any] = ShadowNode[Any]](AbsSink[Node]):
         return RenderSink(
             state=self.state,
             trace_root=trace,
-            ctx=self.ctx,
         )
 
-    def _send_one(self, node: RenderElement[Node]) -> None:
+    def _render_one(self, node: RenderElement[Node]) -> RenderResult[Node]:
         construct_trace = self._get_construct_trace(node)
         frame_base = RenderFrame.create(node, construct_trace)
         sequenced = self.state.produce_sequenced(self.trace_root, frame_base)
@@ -73,43 +79,27 @@ class RenderSink[Node: ShadowNode[Any] = ShadowNode[Any]](AbsSink[Node]):
         new_sink = self._child_sink(new_trace)
         match node:
             case ShadowNode():
-                new_sink.push(node.KIDS)
-                node = node.__merge__(KIDS=tuple(new_sink.rendered))
-                self.rendered.append(node)
+                node = node.__merge__(KIDS=new_sink.run(node.KIDS))
+                return node
             case Component():
-                new_sink._run_component_render(node)
-                self.rendered.extend(new_sink.rendered)
+                return new_sink._run_component_render(node)
             case _:
                 raise TypeError(
                     f"Expected node to be ShadowNode or Component, but got {type(node)}"
                 )
 
-    def push(self, node: RenderResult[Node], /) -> None:
+    def run(self, node: RenderResult[Node], /) -> tuple[Node, ...]:
+        rendered = []
         nodes = list(node) if isinstance(node, Iterable) else [node]
         for node in nodes:
-            self._send_one(node)
+            result = self._render_one(node)
+            if isinstance(result, Iterable):
+                rendered.extend(result)
+            else:
+                rendered.append(result)
+        return tuple(rendered)
 
-    def _run_component_render(self, component: Component[Node]) -> None:
-        component.__sink__ = self
-        component.render()
-
-    def _run_render(self, component: RenderElement[Node]) -> Iterable[Node]:
-        if isinstance(component, ShadowNode):
-            self._run_component_render(component)
-
-    def run(self, component: "RenderElement[Node]") -> Iterable[Node]:
-        self._run_render(component)
-        return self.rendered
-
-
-@dataclass
-class RenderEnv[Node: ShadowNode[Any] = ShadowNode[Any]]:
-    sink: AbsSink[Node]
-    component: Component[Node]
-
-    def __enter__(self) -> Component[Node]:
-        self.component.__sink__ = self.sink
-        return self.component
-
-    def __exit__(self, *args: Any) -> None:
-        self.component.__sink__ = None  # type: ignore
+    def _run_component_render(self, component: Component[Node]) -> RenderResult[Node]:
+        component.ctx = self.ctx
+        results = component.render()
+        return self.run(results)

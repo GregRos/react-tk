@@ -1,14 +1,28 @@
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from logging import getLogger
 from threading import Lock
 import threading
 from time import sleep
 from typing import Any, Callable, Self
 
+from expression import Nothing
+
 from reactk.model.renderable.component import AbsCtx
-from reactk.util.core_reflection import has_attr_skip_hook
+from reactk.util.core_reflection import get_attr_skip_hook, has_attr_skip_hook
 
 logger = getLogger("ui")
+
+
+@dataclass
+class CtxLock:
+    _parent: "Ctx"
+
+    def __enter__(self):
+        self._parent._frozen = True
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._parent._frozen = False
 
 
 # FIXME: Multiple issues, including:
@@ -21,64 +35,22 @@ logger = getLogger("ui")
 class Ctx(AbsCtx):
     _listeners: list[Callable[[Self], None]] = []
     _map: dict[str, Any] = {}
-    _executor = ThreadPoolExecutor(4)
+    _frozen: bool = False
 
     def __init__(self, **attrs: Any):
         self._map = dict[str, Any](**attrs)
         self._listeners = []
 
-    def snapshot(self) -> "Self":
-        return self.__class__(**self._map.copy())
-
-    @property
-    def id(self) -> int:
-        return self._map.get("refresh_id", 0)
-
-    def __eq__(self, other: Any) -> bool:
-        return (
-            isinstance(other, self.__class__)
-            and self._map == other._map
-            and self.id == other.id
-        )
-
-    def schedule(
-        self,
-        action: Callable[[Self], Any],
-        delay: float = 0,
-        *,
-        name: str | None = None,
-    ) -> None:
-        name = name or action.__name__
-
-        def do(x: Self):
-            # FIXME Improved handling of stale context
-            logger.info("Running scheduled '%s:%d'", name, self.id)
-            if x != self:
-                logger.debug(f"Skipping scheduled '{name}#{self.id}' - stale context.")
-                return
-            sleep(delay)
-            if x != self:
-                logger.debug(f"Skipping scheduled '{name}#{self.id}' - stale context.")
-                return
-            action(x)
-
-        self._executor.submit(do, self.snapshot())
-
     def __getattr__(self, name: str) -> Any:
-        if own := self.__dict__.get(name):
-            return own
-        if inherited := getattr(type(self), name, None):
-            return inherited
-        if not name in self._map:
-            return None
-        return self._map[name]
+        attr = get_attr_skip_hook(self, name)
+        if not attr is Nothing:
+            return attr.value
+
+        return self._map.get(name, None)
 
     def __iadd__(self, listener: Callable[[Self], Any]) -> Self:
         self._listeners.append(listener)
         return self
-
-    def clone(self) -> Self:
-        return self.__class__(**self._map)
 
     def _notify(self) -> None:
         for listener in self._listeners:
@@ -99,8 +71,17 @@ class Ctx(AbsCtx):
         return self
 
     def __setattr__(self, key: str, value: Any) -> None:
-        if key in {"_map", "_listeners", "__annotations__", "id"}:
+        if has_attr_skip_hook(self, key):
             super().__setattr__(key, value)
             return
+
         self._try_set(key, value)
         self._notify()
+
+
+def ctx_snapshot(ctx: "Ctx") -> "Ctx":
+    return Ctx(**ctx._map.copy())
+
+
+def ctx_freeze(ctx: "Ctx") -> "CtxLock":
+    return CtxLock(ctx)

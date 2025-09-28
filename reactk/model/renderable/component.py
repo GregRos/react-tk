@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from sre_constants import ANY
@@ -31,60 +31,20 @@ class AbsCtx:
 
 
 class AbsSink[Node: ShadowNode[Any] = ShadowNode[Any]](Protocol):
-    ctx: AbsCtx
-
-    def push(self, node: RenderResult[Node], /) -> None: ...
-
-
-@dataclass
-class InactiveSink[Node: ShadowNode[Any] = ShadowNode[Any]](AbsSink[Node]):
-    component_class: type["Component[Node]"]
-
     @property
-    def _component_name(self) -> str:
-        return self.component_class.__name__
+    @abstractmethod
+    def ctx(self) -> AbsCtx: ...
 
-    @property
-    def ctx(self) -> AbsCtx:  # type: ignore
-        raise RuntimeError(
-            f"Accessed ctx outside of render cycle for {self._component_name}, which is illegal."
-        )
-
-    def push(self, node: RenderResult[Node], /) -> None:
-        raise RuntimeError(
-            f"Pushed nodes outside of render cycle for {self._component_name}, which is illegal."
-        )
+    def run(self, node: RenderResult[Node], /) -> tuple[Node, ...]: ...
 
 
 @dataclass(kw_only=True)
-class Component[Node: ShadowNode[Any] = ShadowNode[Any]](RenderableBase, ABC):
+class Component[Node: ShadowNode[Any] = ShadowNode[Any]](RenderableBase):
     key: str = field(default="")
-    __sink__: AbsSink[Any]
+    ctx: AbsCtx = field(init=False)
 
-    def __init_subclass__(cls) -> None:
-        super().__init_subclass__()
-        setattr(cls, "__sink__", InactiveSink(cls))
-
-    @property
-    def ctx(self) -> AbsCtx:
-        return self.__sink__.ctx
-
+    @abstractmethod
     def render(self, /) -> "RenderResult[Node]": ...
-
-
-@dataclass
-class RenderSetup[X: Component[Any]](ABC):
-    component: X
-    sink: AbsSink
-    _original_sink: AbsSink = field(init=False)
-
-    def __enter__(self) -> X:
-        self._original_sink = self.component.__sink__
-        self.component.__sink__ = self.sink
-        return self.component
-
-    def __exit__(self, *args: Any) -> None:
-        self.component.__sink__ = self._original_sink
 
 
 class is_render_element[T: ShadowNode[Any]]:  # type: ignore

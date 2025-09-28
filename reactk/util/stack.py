@@ -28,15 +28,18 @@ def get_reactk_frame_info(frame: FrameType) -> ReactkFrameInfo:
     )
 
 
-def get_first_non_init_frame(skip: int = 0):
+def get_first_non_ctor_frame(skip: int = 0):
     frame = sys._getframe(1 + skip)
-    while frame and frame.f_code.co_name == "__init__":
+    if not frame:
+        raise RuntimeError("No frame found")
+    while frame.f_code.co_name in ("__init__", "__new__"):
         frame = frame.f_back
-    if frame is None:
-        raise RuntimeError("No non-__init__ frame found")
+        if not frame:
+            raise RuntimeError("No non-__init__ frame found")
+
     return frame
 
 
-def get_first_non_init_frame_info(skip: int = 0) -> ReactkFrameInfo:
-    frame = get_first_non_init_frame(skip + 1)
+def get_first_non_ctor_frame_info(skip: int = 0) -> ReactkFrameInfo:
+    frame = get_first_non_ctor_frame(skip + 1)
     return get_reactk_frame_info(frame)

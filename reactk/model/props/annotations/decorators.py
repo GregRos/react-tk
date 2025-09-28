@@ -38,7 +38,6 @@ class MethodSetterTransformer:
 
     def _transform(self, f: Callable) -> Callable:
         def __init__(self: _HasMerge, *args, **kwargs: Any) -> None:
-            self.__init__(*args, **kwargs)
             result = self.__merge__(kwargs)
             PropValuesAccessor(self).set_from(result)
             return None

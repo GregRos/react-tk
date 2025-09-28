@@ -2,7 +2,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from tkinter import Tk, Widget, Label as TkLabel
 from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
-from reactk.rendering.actions.reconciler import Compat
+from reactk.rendering.actions.node_reconciler import Compat
 from reactk.model.renderable.node.shadow_node import ShadowNode
 from reactk.model.props.impl.prop import Prop_ComputedMapping
 from reactk.rendering.actions.actions import (
@@ -17,7 +17,7 @@ from reactk.rendering.actions.actions import (
 from reactk.rendering.actions.compute import AnyNode, ReconcileAction, logger
 from reactk.rendering.actions.reconcile_state import PersistentReconcileState
 
-from reactk.rendering.actions.reconciler import ReconcilerBase
+from reactk.rendering.actions.node_reconciler import ReconcilerBase
 
 from typing import Any, Callable, Iterable, override
 
@@ -35,9 +35,9 @@ class WidgetReconciler(ReconcilerBase[Widget]):
     @classmethod
     @override
     def get_compatibility(cls, older: RenderedNode[Widget], newer: AnyNode) -> Compat:
-        if older.__class__.__name__ != newer.__class__.__name__:
+        if older.node.__class__.__name__ != newer.__class__.__name__:
             return "recreate"
-        elif PropValuesAccessor(older).get().diff(PropValuesAccessor(newer).get()):
+        elif PropValuesAccessor(older.node).get().diff(PropValuesAccessor(newer).get()):
             return "replace"
         else:
             return "update"

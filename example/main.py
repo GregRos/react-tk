@@ -22,6 +22,7 @@ class StuffComponent(Component[Widget]):
 
 @dataclass(kw_only=True)
 class WindowComponent(Component[Window]):
+
     def render(self):
         x = StuffComponent(text=self.ctx.text)
 
@@ -30,7 +31,8 @@ class WindowComponent(Component[Window]):
         )[x]
 
 
-MyTK = WindowRenderer(WindowComponent())
+w = WindowComponent()
+MyTK = WindowRenderer(w)
 
 MyTK(text="Hello, World!")
 sleep(2)

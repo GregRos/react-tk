@@ -26,12 +26,12 @@ from reactk.model.renderable.node.shadow_node import (
     NodeProps,
     ShadowNode,
 )
-from reactk.rendering.actions.reconciler import ReconcilerBase
+from reactk.rendering.actions.node_reconciler import ReconcilerBase
 from reactk.tk.nodes.widget import Widget
 from reactk.tk.reconcilers.widget_reconciler import WidgetReconciler
 from reactk.tk.reconcilers.window_reconciler import WindowReconciler
 from reactk.tk.types.geometry import Geometry
-from reactk.rendering.actions.reconciler import reconciler
+from reactk.rendering.actions.node_reconciler import reconciler
 
 
 class WindowProps(NodeProps):

@@ -3,10 +3,15 @@ import sys
 from typing import Any
 
 from reactk.model.renderable.trace import ConstructTraceAccessor
-from reactk.util.stack import get_first_non_init_frame_info
+from reactk.util.stack import get_first_non_ctor_frame_info
 
 
-class RenderableBase(ABC):
-    def __init__(self, *_: Any, **__: Any) -> None:
-        caller = get_first_non_init_frame_info()
-        ConstructTraceAccessor(self).set(caller)
+class RenderableBase:
+
+    def __new__(cls, *args: Any, **kwargs: Any):
+        instance = super().__new__(cls)
+
+        caller = get_first_non_ctor_frame_info()
+
+        ConstructTraceAccessor(instance).set(caller)
+        return instance

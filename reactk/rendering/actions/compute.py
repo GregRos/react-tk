@@ -47,9 +47,9 @@ class _ComputeAction:
         return self.next
 
     def _get_compatibility(self, older: RenderedNode, newer: AnyNode) -> str:
-        from reactk.rendering.actions.reconciler import ReconcilerAccessor
+        from reactk.rendering.actions.node_reconciler import ReconcilerAccessor
 
-        reconciler_class = ReconcilerAccessor(older).get()
+        reconciler_class = ReconcilerAccessor(older.node).get()
         return reconciler_class.get_compatibility(older, newer)
 
     def _get_inner_action(self):
@@ -57,7 +57,7 @@ class _ComputeAction:
         if not self.prev:
             return Create(self.next, self.container)
         if self._get_compatibility(self.prev, self.next) == "recreate":
-            return Recreate(self.prev.resource, self.next, self.container)
+            return Recreate(self.prev, self.next, self.container)
         return Update(
             self.prev,
             self.next,
