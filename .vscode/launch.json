@@ -2,36 +2,19 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python: Current File",
-
-      "type": "debugpy",
-      "cwd": "${workspaceFolder}",
-      "request": "launch",
-      "program": "${file}",
-      "console": "integratedTerminal"
-    },
-    {
-      "name": "Python: Current File (Module)",
-
-      "type": "debugpy",
-      "cwd": "${workspaceFolder}",
-      "request": "launch",
-      "module": "${relativeFileDirname}.${fileBasenameNoExtension}",
-      "console": "integratedTerminal"
-    },
-    {
-      "name": "Python: Debug Tests",
-      "type": "debugpy",
-      "request": "launch",
-      "purpose": ["debug-test"],
-      "console": "integratedTerminal",
-      "justMyCode": true
-    },
-    {
       "name": "ui_test",
       "type": "debugpy",
       "request": "launch",
-      "module": "example.main",
+      "module": "example.basic",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false
+    },
+    {
+      "name": "ui_more",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "example.more",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}",
       "justMyCode": false
@@ -47,23 +30,29 @@
       "justMyCode": false
     },
     {
-      "name": "pytest",
+      "name": "Python: Debug Tests",
       "type": "debugpy",
       "request": "launch",
-      "module": "pytest",
-      "args": ["-s"],
+      "purpose": ["debug-test"],
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}",
-      "justMyCode": false
+      "justMyCode": true
     },
     {
-      "name": "Main",
+      "name": "Python: Current File",
       "type": "debugpy",
-      "request": "launch",
-      "program": "main.pyw",
-      "console": "integratedTerminal",
       "cwd": "${workspaceFolder}",
-      "justMyCode": false
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Python: Current File (Module)",
+
+      "type": "debugpy",
+      "cwd": "${workspaceFolder}",
+      "request": "launch",
+      "module": "${relativeFileDirname}.${fileBasenameNoExtension}",
+      "console": "integratedTerminal"
     }
   ]
 }

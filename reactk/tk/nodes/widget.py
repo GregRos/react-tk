@@ -5,25 +5,21 @@ from itertools import groupby
 from types import MappingProxyType
 from typing import (
     TYPE_CHECKING,
-    Annotated,
     Any,
     Callable,
     ClassVar,
     Generator,
-    Literal,
     Never,
-    NotRequired,
     Self,
-    TypedDict,
     Unpack,
     override,
 )
 
-from expression import Some
 from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
 
-from reactk.model.props.annotations import prop_meta, schema_meta, schema_setter
+from reactk.model.props.annotations import schema_meta, schema_setter
 from reactk.rendering.actions.node_reconciler import ReconcilerBase
+from reactk.tk.props.pack import PackProps
 from reactk.tk.props.text import TextProps
 from reactk.tk.props.width_height import WidthHeightProps
 from reactk.tk.props.background import BackgroundProps
@@ -44,23 +40,6 @@ class LabelProps(NodeProps, WidthHeightProps, BorderProps, BackgroundProps, Text
 
 class FrameProps(NodeProps, WidthHeightProps, BorderProps, BackgroundProps):
     pass
-
-
-class PackProps(TypedDict):
-    ipadx: Annotated[NotRequired[int], prop_meta(no_value=0)]
-    ipady: Annotated[NotRequired[int], prop_meta(no_value=0)]
-    fill: Annotated[
-        NotRequired[Literal["both", "x", "y", "none"]], prop_meta(no_value="none")
-    ]
-    side: Annotated[
-        NotRequired[Literal["top", "bottom", "left", "right"]],
-        prop_meta(no_value="top"),
-    ]
-    expand: Annotated[NotRequired[bool], prop_meta(no_value=False)]
-    anchor: Annotated[
-        NotRequired[Literal["n", "s", "e", "w", "ne", "nw", "se", "sw"]],
-        prop_meta(no_value="n"),
-    ]
 
 
 @reconciler(WidgetReconciler)

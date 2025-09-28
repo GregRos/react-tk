@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from dataclasses import dataclass
+import threading
 from tkinter import Tk, Widget, Label as TkLabel
 from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
 from reactk.rendering.actions.node_reconciler import Compat
@@ -27,6 +28,7 @@ from reactk.tk.types.font import to_tk_font
 @dataclass
 class WidgetReconciler(ReconcilerBase[Widget]):
     state: PersistentReconcileState
+    waiter = threading.Event()
 
     @classmethod
     def create(cls, state: PersistentReconcileState) -> "WidgetReconciler":
@@ -104,43 +106,49 @@ class WidgetReconciler(ReconcilerBase[Widget]):
                 assert False, f"Unknown action: {action}"
 
     def _run_action_main_thread(self, action: ReconcileAction[Widget]):
-        if action:
-            # FIXME: This should be an externalized event
-            logger.info(f"⚖️  RECONCILE {action}")
-        else:
-            logger.info(f"🚫 RECONCILE {action.key} ")
-            return
+        try:
+            if action:
+                # FIXME: This should be an externalized event
+                logger.info(f"⚖️  RECONCILE {action}")
+            else:
+                logger.info(f"🚫 RECONCILE {action.key} ")
+                return
 
-        match action:
-            case Update(existing, next):
-                self._do_create_action(action)
-            case Unplace(existing):
-                existing.resource.pack_forget()
-            case Place(_, at, Recreate(old, next, container)) as x:
-                new_resource = self._do_create_action(Create(next, container))
-                old.resource.destroy()
-                self._pack_at(new_resource.resource, x.diff, at)
-            case Place(container, at, createAction) as x if not isinstance(
-                createAction, Recreate
-            ):
-                cur = self._do_create_action(createAction)
-                self._pack_at(cur.resource, x.diff, at)
-            case Replace(_, existing, Recreate(old, next, container)) as x:
-                cur = self._do_create_action(Create(next, container))
-                self._pack_replace(cur.resource, existing.resource, x.diff)
-                old.resource.destroy()
-            case Replace(container, existing, createAction) if not isinstance(
-                createAction, Recreate
-            ):
-                cur = self._do_create_action(createAction)
-                self._pack_replace(cur.resource, existing.resource, createAction.diff)
-            case _:
-                assert False, f"Unknown action: {action}"
+            match action:
+                case Update(existing, next):
+                    self._do_create_action(action)
+                case Unplace(existing):
+                    existing.resource.pack_forget()
+                case Place(_, at, Recreate(old, next, container)) as x:
+                    new_resource = self._do_create_action(Create(next, container))
+                    old.resource.destroy()
+                    self._pack_at(new_resource.resource, x.diff, at)
+                case Place(container, at, createAction) as x if not isinstance(
+                    createAction, Recreate
+                ):
+                    cur = self._do_create_action(createAction)
+                    self._pack_at(cur.resource, x.diff, at)
+                case Replace(_, existing, Recreate(old, next, container)) as x:
+                    cur = self._do_create_action(Create(next, container))
+                    self._pack_replace(cur.resource, existing.resource, x.diff)
+                    old.resource.destroy()
+                case Replace(container, existing, createAction) if not isinstance(
+                    createAction, Recreate
+                ):
+                    cur = self._do_create_action(createAction)
+                    self._pack_replace(
+                        cur.resource, existing.resource, createAction.diff
+                    )
+                case _:
+                    assert False, f"Unknown action: {action}"
+        finally:
+            self.waiter.set()
 
     def run_action(self, action: ReconcileAction[Widget], log=True):
         existing_parent = self._get_some_ui_resource(action)
-
+        self.waiter.clear()
         existing_parent.after(0, lambda: self._run_action_main_thread(action))
+        self.waiter.wait()
 
 
 class LabelReconciler(WidgetReconciler):

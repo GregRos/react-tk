@@ -38,7 +38,7 @@ class Ctx(AbsCtx):
     _frozen: bool = False
 
     def __init__(self, **attrs: Any):
-        self._map = dict[str, Any](**attrs)
+        self._map = dict[str, Any](attrs)
         self._listeners = []
 
     def __getattr__(self, name: str) -> Any:
@@ -72,7 +72,7 @@ class Ctx(AbsCtx):
 
     def __setattr__(self, key: str, value: Any) -> None:
         if has_attr_skip_hook(self, key):
-            super().__setattr__(key, value)
+            object.__setattr__(self, key, value)
             return
 
         self._try_set(key, value)

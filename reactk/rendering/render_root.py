@@ -11,11 +11,12 @@ class RenderRoot[Node: ShadowNode[Any] = ShadowNode[Any]]:
     _reconciler: RootReconciler[Node]
     _mounted: Component[Node]
 
-    def __init__(self, initial: Component[Node]) -> None:
+    def __init__(self, initial: Component[Node], **context_kwargs: Any) -> None:
         self._mounted = initial
-        self.ctx = Ctx()
+        self.ctx = Ctx(**context_kwargs)
         self.ctx += lambda _: self._rerender()
         self._reconciler = RootReconciler(PersistentReconcileState())
+        self._rerender()
 
     def __call__(self, **kwargs: Any) -> None:
         self.ctx(**kwargs)

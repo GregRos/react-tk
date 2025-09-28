@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-
+import os
+import sys
 from time import sleep
 
 
@@ -21,14 +22,13 @@ class StuffComponent(Component[Widget]):
     text: str
 
     def render(self):
-        return Frame(background="black", width=100, height=200).Pack(fill="both")[
-            Label(
-                text=self.text,
-                background="#000001",
-                foreground="#ffffff",
-                font=Font(family="Arial", size=20, style="bold"),
-            ).Pack(ipadx=20, ipady=15, fill="both")
-        ]
+
+        return Label(
+            text=self.text,
+            background="#000001",
+            foreground="#ffffff",
+            font=Font(family="Arial", size=20, style="bold"),
+        ).Pack(ipadx=20, ipady=15, fill="both")
 
 
 @dataclass(kw_only=True)
@@ -43,5 +43,6 @@ class WindowComponent(Component[Window]):
 
 
 my_root = WindowRoot(WindowComponent(), text="Hello, World!")
+
 sleep(2)
 my_root(text="Hello again!")
