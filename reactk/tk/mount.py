@@ -4,4 +4,4 @@ from reactk.tk.nodes.widget import Label
 from reactk.tk.nodes.window import Window
 
 
-WindowRenderer = RenderRoot[Window]
+WindowRoot = RenderRoot[Window]

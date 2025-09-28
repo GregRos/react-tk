@@ -24,34 +24,26 @@ from reactk.model.renderable.node.prop_value_accessor import PropValuesAccessor
 
 from reactk.model.props.annotations import prop_meta, schema_meta, schema_setter
 from reactk.rendering.actions.node_reconciler import ReconcilerBase
-from reactk.tk.reconcilers.widget_reconciler import LabelReconciler, WidgetReconciler
+from reactk.tk.props.text import TextProps
+from reactk.tk.props.width_height import WidthHeightProps
+from reactk.tk.props.background import BackgroundProps
+from reactk.tk.props.border import BorderProps
+from reactk.tk.reconcilers.widget_reconciler import (
+    FrameReconciler,
+    LabelReconciler,
+    WidgetReconciler,
+)
 from reactk.tk.types.font import Font
 from reactk.model.renderable.node.shadow_node import NodeProps, ShadowNode
 from reactk.rendering.actions.node_reconciler import reconciler
 
 
-class WidgetProps(NodeProps):
-    text: Annotated[NotRequired[str], prop_meta(no_value="", subsection="configure")]
-    font: Annotated[NotRequired[Font], schema_meta(repr="simple", name="font")]
-    borderwidth: Annotated[
-        NotRequired[int], prop_meta(no_value=0, subsection="configure")
-    ]
-    border: Annotated[NotRequired[int], prop_meta(no_value=0, subsection="configure")]
-    background: Annotated[
-        NotRequired[str], prop_meta(no_value="#000001", subsection="configure")
-    ]
-    foreground: Annotated[
-        NotRequired[str], prop_meta(no_value="#ffffff", subsection="configure")
-    ]
-    justify: Annotated[
-        NotRequired[str], prop_meta(no_value="center", subsection="configure")
-    ]
-    wraplength: Annotated[
-        NotRequired[int], prop_meta(no_value=Some(None), subsection="configure")
-    ]
-    relief: Annotated[
-        NotRequired[str], prop_meta(no_value="solid", subsection="configure")
-    ]
+class LabelProps(NodeProps, WidthHeightProps, BorderProps, BackgroundProps, TextProps):
+    pass
+
+
+class FrameProps(NodeProps, WidthHeightProps, BorderProps, BackgroundProps):
+    pass
 
 
 class PackProps(TypedDict):
@@ -73,12 +65,18 @@ class PackProps(TypedDict):
 
 @reconciler(WidgetReconciler)
 class Widget[Kids: ShadowNode[Any]](ShadowNode[Kids]):
-    @schema_setter()
-    def __init__(self, **props: Unpack[WidgetProps]) -> None: ...
+
     @schema_setter(repr="simple")
     def Pack(self, **props: Unpack[PackProps]) -> None: ...
 
 
 @reconciler(LabelReconciler)
 class Label(Widget[Never]):
-    pass
+    @schema_setter()
+    def __init__(self, **props: Unpack[LabelProps]) -> None: ...
+
+
+@reconciler(FrameReconciler)
+class Frame(Widget[Widget[Any]]):
+    @schema_setter()
+    def __init__(self, **props: Unpack[FrameProps]) -> None: ...

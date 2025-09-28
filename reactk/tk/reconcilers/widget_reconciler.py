@@ -149,3 +149,13 @@ class LabelReconciler(WidgetReconciler):
             TkLabel(container),
             node,
         )
+
+
+class FrameReconciler(WidgetReconciler):
+    def _create(self, container: Widget, node: AnyNode) -> RenderedNode[Widget]:
+        from tkinter import Frame as TkFrame
+
+        return RenderedNode(
+            TkFrame(container),
+            node,
+        )

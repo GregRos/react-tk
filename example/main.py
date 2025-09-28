@@ -4,7 +4,17 @@ import sys
 from time import sleep
 
 
-from reactk import Ctx, Window, Label, Widget, Component, Window, Font, WindowRenderer
+from reactk import (
+    Ctx,
+    Window,
+    Label,
+    Widget,
+    Component,
+    Window,
+    Font,
+    WindowRoot,
+    Frame,
+)
 
 
 @dataclass(kw_only=True)
@@ -12,6 +22,7 @@ class StuffComponent(Component[Widget]):
     text: str
 
     def render(self):
+        return Frame(background="black").Pack()
         return Label(
             text=self.text,
             background="#000001",
@@ -32,7 +43,7 @@ class WindowComponent(Component[Window]):
 
 
 w = WindowComponent()
-MyTK = WindowRenderer(w)
+MyTK = WindowRoot(w)
 
 MyTK(text="Hello, World!")
 sleep(2)
