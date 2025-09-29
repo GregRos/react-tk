@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "reactk"
+name = "react-tk"
 version = "0.1.0"
 description = "Build cross-platform native UIs with a react-like feel."
 authors = ["GregRos <gregros@gregros.dev>"]

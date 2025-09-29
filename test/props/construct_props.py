@@ -5,7 +5,7 @@ Tests for interacting diirectly with Prop, PropSection, PValues, PDiff, PropValu
 from expression import Option, Some, Nothing
 import pytest
 from typeguard import value
-from reactk.props.impl.prop import Prop, Prop_Schema, Prop_Value
+from react_tk.props.impl.prop import Prop, Prop_Schema, Prop_Value
 
 
 def it_works_for_required_Prop():

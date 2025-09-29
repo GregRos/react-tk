@@ -6,7 +6,7 @@ from itertools import zip_longest
 from typing import Any, NotRequired, TypeVar, Unpack
 
 import pytest
-from reactk.reflect.reflector import Reflector
+from react_tk.reflect.reflector import Reflector
 
 
 r = Reflector()

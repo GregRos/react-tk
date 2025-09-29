@@ -4,7 +4,7 @@ import sys
 from time import sleep
 
 
-from reactk import (
+from react_tk import (
     Ctx,
     Window,
     Label,

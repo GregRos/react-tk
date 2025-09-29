@@ -1,6 +1,6 @@
 import pytest
 
-from reactk.reflect.reflector import Reflector
+from react_tk.reflect.reflector import Reflector
 
 
 class Sample:

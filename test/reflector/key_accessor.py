@@ -1,6 +1,6 @@
 import pytest
 
-from reactk.reflect.accessor.base import KeyAccessor
+from react_tk.reflect.accessor.base import KeyAccessor
 
 
 class WithAttr:

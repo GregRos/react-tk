@@ -2,11 +2,11 @@ from typing import Annotated, TypedDict, Unpack
 
 from expression import Some
 
-from reactk.props.annotations import prop_meta
-from reactk.props.annotations.create_props import read_props_from_top_class
-from reactk.props.annotations.decorators import _HasMerge, schema_setter
-from reactk.props.impl.prop import Prop, Prop_Schema
-from reactk.util.dict import dict_equal
+from react_tk.props.annotations import prop_meta
+from react_tk.props.annotations.create_props import read_props_from_top_class
+from react_tk.props.annotations.decorators import _HasMerge, schema_setter
+from react_tk.props.impl.prop import Prop, Prop_Schema
+from react_tk.util.dict import dict_equal
 
 
 class One_Annotated_Prop(TypedDict):

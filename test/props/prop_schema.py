@@ -1,6 +1,6 @@
 from expression import Nothing, Some
 import pytest
-from reactk.props.impl.prop import (
+from react_tk.props.impl.prop import (
     Prop,
     Prop_ComputedMapping,
     Prop_Mapping,

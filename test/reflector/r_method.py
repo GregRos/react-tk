@@ -1,6 +1,6 @@
 import pytest
 
-from reactk.reflect.reflector import Reflector
+from react_tk.reflect.reflector import Reflector
 
 
 def func_with_annotations(a: int, b: str) -> int:
@@ -25,7 +25,7 @@ def it_has_name_and_debug_signature():
 def it_preserves_target():
     m = r.method(func_with_annotations)
     # Reader_Method.__post_init__ sets target to the original function if no
-    # __reactk_original__ accessor is present; that should be the same object.
+    # __react_tk_original__ accessor is present; that should be the same object.
     assert m.target is func_with_annotations
 
 
