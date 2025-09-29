@@ -37,14 +37,9 @@ type ReconcileAction[Res] = Place[Res] | Replace[Res] | Unplace[Res] | Update[Re
 class _ComputeAction:
     prev: RenderedNode | None
     next: ShadowNode | None
+    old_next_rendered: RenderedNode | None
     container: AnyNode
     at: int
-
-    @property
-    def next_resource(self) -> RenderedNode | None:
-        if not self.next or isinstance(self.next, ShadowNode):
-            return None
-        return self.next
 
     def _get_compatibility(self, older: RenderedNode, newer: AnyNode) -> str:
         from react_tk.rendering.actions.node_reconciler import ReconcilerAccessor
@@ -52,19 +47,23 @@ class _ComputeAction:
         reconciler_class = ReconcilerAccessor(older.node).get()
         return reconciler_class.get_compatibility(older, newer)
 
+    def _diff(self, prev: RenderedNode, next: ShadowNode):
+        return PropValuesAccessor(prev.node).get().diff(PropValuesAccessor(next).get())
+
     def _get_inner_action(self):
         assert self.next
+        if self.old_next_rendered:
+            return Update(
+                self.old_next_rendered,
+                self.next,
+                diff=self._diff(self.old_next_rendered, self.next),
+            )
         if not self.prev:
             return Create(self.next, self.container)
         if self._get_compatibility(self.prev, self.next) == "recreate":
             return Recreate(self.prev, self.next, self.container)
-        return Update(
-            self.prev,
-            self.next,
-            diff=PropValuesAccessor(self.prev.node)
-            .get()
-            .diff(PropValuesAccessor(self.next).get()),
-        )
+
+        return Update(self.prev, self.next, diff=self._diff(self.prev, self.next))
 
     def compute(self):
         if not self.next:
@@ -108,7 +107,7 @@ class ComputeTreeActions:
         if messages:
             raise ValueError(messages)
 
-    def _existing_children(self, parent: AnyNode) -> Iterable[RenderedNode]:
+    def _existing_children(self, parent: AnyNode) -> Iterable[RenderedNode[Any]]:
         existing_parent = self.state.existing_resources.get(parent.__uid__)
         if not existing_parent:
             return
@@ -122,12 +121,9 @@ class ComputeTreeActions:
         self, parent: AnyNode, is_creating_new=False
     ) -> Iterable["ReconcileAction"]:
         self._check_duplicates(parent.KIDS)
-        existing_children = self._existing_children(parent)
+        existing_children = [*self._existing_children(parent)]
         pos = -1
         for prev, next in zip_longest(existing_children, parent.KIDS, fillvalue=None):
-            prev = (
-                self.state.existing_resources.get(prev.node.__uid__) if prev else None
-            )
             if is_creating_new:
                 prev = None
             pos += 1
@@ -138,10 +134,13 @@ class ComputeTreeActions:
             prev_resource = (
                 self.state.existing_resources.get(prev.node.__uid__) if prev else None
             )
-
+            old_next_rendered = (
+                self.state.existing_resources.get(next.__uid__) if next else None
+            )
             action = _ComputeAction(
                 prev=prev_resource or prev,
                 next=next,
+                old_next_rendered=old_next_rendered,
                 at=pos,
                 container=parent,
             ).compute()

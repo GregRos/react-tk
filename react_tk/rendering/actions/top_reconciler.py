@@ -42,9 +42,10 @@ class RootReconciler[Node: ShadowNode[Any] = ShadowNode[Any]]:
 
     def reconcile(self, nodes: tuple[ShadowNode[Any], ...]):
         top_level_fake = TopLevelNode(KIDS=nodes)
-        self.state.overwrite(RenderedNode(object(), top_level_fake))
+
         transient_state = self.state.new_transient()
         actions = [*self._compute_actions(transient_state, top_level_fake)]
+        self.state.overwrite(RenderedNode(object(), top_level_fake))
 
         for action in actions:
             Reconciler = ReconcilerAccessor(action.node).get()

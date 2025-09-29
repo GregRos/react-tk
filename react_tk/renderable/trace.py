@@ -16,7 +16,7 @@ replace_chars_in_key = re.compile(r"[^a-zA-Z0-9_]+")
 starts_with_non_breaking = re.compile(r"^[^a-zA-Z0-9_]")
 render_delim = "."
 
-type Display = Literal["log", "safe", "id"]
+type Display = Literal["log", "safe", "id", "short-id"]
 
 
 @dataclass(eq=True, unsafe_hash=True)
@@ -109,7 +109,11 @@ class RenderTrace:
         return self.frames[-1]
 
     def to_string(self, display: Display) -> str:
-        parts = [frame.to_string(display) for frame in self.frames]
+        frames = self.frames
+        if display == "short-id":
+            frames = self.frames[-2:]
+            display = "id"
+        parts = [frame.to_string(display) for frame in frames]
         result = ""
         for part in parts:
             if result and not starts_with_non_breaking.search(part):

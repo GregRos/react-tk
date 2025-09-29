@@ -54,9 +54,7 @@ class WidgetReconciler(ReconcilerBase[Widget]):
         )
 
     def _pack_replace(self, what: Widget, replaces: Widget, diff: Prop_ComputedMapping):
-        pack = diff.values.get("Pack")
-        if not pack:  # pragma: no cover
-            return
+        pack = diff.values.get("Pack") or {}
         pack["after"] = replaces
         self._pack(what, diff)
 

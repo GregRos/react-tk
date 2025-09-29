@@ -46,7 +46,7 @@ class FrameProps(NodeProps, WidthHeightProps, BorderProps, BackgroundProps):
 @reconciler(WidgetReconciler)
 class Widget[Kids: ShadowNode[Any] = Any](ShadowNode[Kids]):
 
-    @schema_setter(repr="simple")
+    @schema_setter(diffing="simple")
     def Pack(self, **props: Unpack[PackProps]) -> None: ...
 
 

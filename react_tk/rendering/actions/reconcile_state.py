@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from react_tk.renderable.node.prop_value_accessor import PropValuesAccessor
-from react_tk.renderable.node.shadow_node import ShadowNode
+from react_tk.renderable.node.shadow_node import ShadowNode, ShadowNodeInfo
 from react_tk.renderable.trace import RenderTrace, RenderTraceAccessor
 
 if TYPE_CHECKING:
@@ -13,6 +13,12 @@ if TYPE_CHECKING:
 class RenderedNode[Res]:
     resource: Res
     node: ShadowNode[Any]
+
+    def __str__(self) -> str:
+        return f"®️ {str(self.node)}"
+
+    def __repr__(self) -> str:
+        return str(self)
 
     @property
     def TRACE(self) -> RenderTrace:

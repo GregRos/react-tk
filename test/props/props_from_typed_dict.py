@@ -14,7 +14,7 @@ class One_Annotated_Prop(TypedDict):
             name="__b__",
             no_value="",
             converter=str,
-            repr="never",
+            diffing="never",
             subsection="configure",
             metadata={"x": 5},
         ),
@@ -23,7 +23,8 @@ class One_Annotated_Prop(TypedDict):
 
 class One_Annotated_Schema(TypedDict):
     a: Annotated[
-        One_Annotated_Prop, schema_meta(name="__a__", repr="never", metadata={"x": 5})
+        One_Annotated_Prop,
+        schema_meta(name="__a__", diffing="never", metadata={"x": 5}),
     ]
 
 

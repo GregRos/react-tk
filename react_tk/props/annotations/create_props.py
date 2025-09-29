@@ -39,7 +39,7 @@ def _create_prop(
     x: Any = annotation.inner_type
     return Prop[x](
         name=name,
-        repr=meta.repr,
+        repr=meta.diffing,
         no_value=maybe_normalize(meta.no_value),
         converter=meta.converter,
         computed_name=meta.name,
@@ -60,7 +60,7 @@ def _create_schema(
         name=name,
         computed_name=meta.name,
         props=_read_props_from_class(path + (name,), annotation.inner_type),
-        repr=meta.repr,
+        repr=meta.diffing,
         metadata=meta.metadata,
     )
 
@@ -89,10 +89,10 @@ def _get_meta_for_prop(
         case x if (
             isinstance(x, type) and issubclass(x, (Mapping, VMappingBase))
         ) or is_typeddict(x):
-            return schema_meta(repr="recursive")
+            return schema_meta(diffing="recursive")
         case _:
             return prop_meta(
-                no_value=Nothing, converter=None, repr="recursive", metadata={}
+                no_value=Nothing, converter=None, diffing="recursive", metadata={}
             )
 
 

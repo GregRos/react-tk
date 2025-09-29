@@ -17,14 +17,14 @@ class One_Annotated_Prop(TypedDict):
             name="__b__",
             no_value="",
             subsection="configure",
-            repr="never",
+            diffing="never",
             metadata={"x": 5},
         ),
     ]
 
 
 class One_Setter_Method_With_Dict(_HasMerge):
-    @schema_setter(repr="never", name="__Stuff__", metadata={"x": 5})
+    @schema_setter(diffing="never", name="__Stuff__", metadata={"x": 5})
     def Stuff(self, **stuff: Unpack[One_Annotated_Prop]) -> None: ...
 
 

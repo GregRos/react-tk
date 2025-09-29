@@ -50,11 +50,11 @@ class Ctx(AbsCtx):
         return self._map.get(name, None)
 
     def schedule(self, func: Callable[["Ctx"], Any], delay: float) -> None:
-        current_state = ctx_snapshot(self)
+        state_at_schedule = ctx_snapshot(self)
 
         def worker():
             sleep(delay)
-            if current_state != self:
+            if state_at_schedule != self:
                 logger.warning("Ctx has changed, skipping scheduled task")
                 return
             func(self)

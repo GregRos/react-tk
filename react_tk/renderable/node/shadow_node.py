@@ -28,6 +28,7 @@ from react_tk.renderable.node.prop_value_accessor import (
 from react_tk.renderable.renderable_base import RenderableBase
 from react_tk.renderable.trace import (
     ConstructTraceAccessor,
+    RenderFrame,
     RenderTrace,
     RenderTraceAccessor,
 )
@@ -38,6 +39,7 @@ from react_tk.props.annotations.create_props import (
 )
 from react_tk.props.impl.common import KeyedValues
 from react_tk.props.impl.prop import Prop_Mapping
+from react_tk.util.stack import ReactTkFrameInfo
 
 if TYPE_CHECKING:
     from react_tk.rendering.actions.node_reconciler import ReconcilerBase
@@ -71,12 +73,40 @@ class HasPropsSchema:
 
 class NodeProps(TypedDict):
     key: Annotated[NotRequired[str], prop_meta(no_value=Some(None))]
-    KIDS: Annotated[NotRequired[Iterable[Any]], prop_meta(no_value=(), repr="never")]
+    KIDS: Annotated[NotRequired[Iterable[Any]], prop_meta(no_value=(), diffing="never")]
+
+
+@dataclass
+class ShadowNodeInfo:
+    class_name: str
+    reconciler_name: str
+    custom_key: str
+    uid: str
+    trace: RenderTrace
+    ctor_trace: ReactTkFrameInfo
+    short_id: str
+
+    @classmethod
+    def from_node(cls, node: "ShadowNode[Any]") -> "ShadowNodeInfo":
+        from react_tk.rendering.actions.node_reconciler import ReconcilerAccessor
+
+        reconciler = ReconcilerAccessor(node).get()
+        return cls(
+            class_name=node.__class__.__name__,
+            reconciler_name=reconciler.__name__,
+            custom_key=node.key or "",
+            uid=node.__uid__,
+            ctor_trace=ConstructTraceAccessor(node).get(),
+            trace=RenderTraceAccessor(node).get(),
+            short_id=node.__uid__.split("-")[-1],
+        )
 
 
 class ShadowNode[Kids: ShadowNode[Any] = Never](
     RenderableBase, HasPropsSchema, HasChildren[Kids], ABC
 ):
+    def __repr__(self) -> str:
+        return str(self)
 
     @property
     def PROPS(self) -> Prop_Mapping:
@@ -91,3 +121,7 @@ class ShadowNode[Kids: ShadowNode[Any] = Never](
     @property
     def __uid__(self):
         return RenderTraceAccessor(self).get().to_string("id")
+
+    def __str__(self) -> str:
+        info = ShadowNodeInfo.from_node(self)
+        return f"{info.class_name} {info.short_id}"

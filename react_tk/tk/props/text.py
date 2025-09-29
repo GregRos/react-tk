@@ -8,7 +8,7 @@ from react_tk.tk.types.font import Font
 
 class TextProps(TypedDict):
     text: Annotated[NotRequired[str], prop_meta(no_value="", subsection="configure")]
-    font: Annotated[NotRequired[Font], prop_meta(repr="simple", no_value=None)]
+    font: Annotated[NotRequired[Font], prop_meta(diffing="simple", no_value=None)]
     foreground: Annotated[
         NotRequired[str], prop_meta(no_value="#ffffff", subsection="configure")
     ]

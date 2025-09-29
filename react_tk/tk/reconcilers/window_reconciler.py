@@ -38,6 +38,18 @@ class WindowReconciler(ReconcilerBase[Tk]):
     ) -> Compat:
         return "update"
 
+    def _schedule_and_wait(self, resource: Tk, func: Callable[[], Any]) -> Any:
+        result = [None]
+        event = threading.Event()
+
+        def wrapper():
+            result[0] = func()
+            event.set()
+
+        resource.after(0, wrapper)
+        event.wait()
+        return result[0]
+
     def _normalize_geo(self, existing: Tk, geo: Geometry) -> str:
         x, y, width, height = (geo[k] for k in ("x", "y", "width", "height"))
         if x < 0:
@@ -59,13 +71,15 @@ class WindowReconciler(ReconcilerBase[Tk]):
 
     def _place(self, pair: RenderedNode[Tk], diff: Prop_ComputedMapping) -> None:
         def do_place():
-            geo = diff.values["Geometry"]  # type: Geometry
+            geo = diff.values.get("Geometry")
+            if not geo:
+                return
             resource = pair.resource
             normed = self._normalize_geo(resource, geo)
             print(f"Setting {pair.TRACE.to_string("log")} geometry to {normed}")
             resource.wm_geometry(normed)
 
-        pair.resource.after(0, do_place)
+        self._schedule_and_wait(pair.resource, do_place)
 
     def _replace(self, existing: Tk, replacement: RenderedNode[Tk]) -> None:
         self._unplace(existing)
@@ -73,7 +87,7 @@ class WindowReconciler(ReconcilerBase[Tk]):
         def do_replace():
             replacement.resource.deiconify()
 
-        replacement.resource.after(0, do_replace)
+        self._schedule_and_wait(replacement.resource, do_replace)
 
     def _update(self, resource: Tk, props: Prop_ComputedMapping) -> None:
         def do_update():
@@ -87,13 +101,13 @@ class WindowReconciler(ReconcilerBase[Tk]):
             if (override_redirect := props.values.get("override_redirect")) is not None:
                 resource.overrideredirect(override_redirect)
 
-        resource.after(0, do_update)
+        self._schedule_and_wait(resource, do_update)
 
     def _unplace(self, resource: Tk) -> None:
         def do_unplace():
             resource.withdraw()
 
-        resource.after(0, do_unplace)
+        self._schedule_and_wait(resource, do_unplace)
 
     def _create_window(self, node: ShadowNode[Any]) -> "RenderedNode[Tk]":
         waiter = threading.Event()
@@ -115,7 +129,7 @@ class WindowReconciler(ReconcilerBase[Tk]):
         def do_destroy():
             resource.destroy()
 
-        resource.after(0, do_destroy)
+        self._schedule_and_wait(resource, do_destroy)
 
     def _do_create_action(self, action: Update[Tk] | Create[Tk]):
         match action:
