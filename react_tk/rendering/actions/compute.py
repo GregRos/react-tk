@@ -28,7 +28,7 @@ from react_tk.renderable.node.shadow_node import ShadowNode
 
 from itertools import groupby, zip_longest
 
-logger = logging.getLogger("ui").getChild("diff")
+logger = logging.getLogger("react_tk").getChild("diff")
 type AnyNode = ShadowNode[ShadowNode[Any]]
 type ReconcileAction[Res] = Place[Res] | Replace[Res] | Unplace[Res] | Update[Res]
 

@@ -23,6 +23,7 @@ from react_tk.rendering.actions.node_reconciler import ReconcilerBase
 from typing import Any, Callable, Iterable, override
 
 from react_tk.tk.types.font import to_tk_font
+from react_tk.tk.win32.tweaks import make_clickthrough
 
 
 @dataclass
@@ -157,6 +158,13 @@ class LabelReconciler(WidgetReconciler):
             TkLabel(container),
             node,
         )
+
+
+class ToolTipLabelReconciler(LabelReconciler):
+    def _create(self, container: Widget, node: AnyNode) -> RenderedNode[Widget]:
+        label = super()._create(container, node)
+        make_clickthrough(label.resource)
+        return label
 
 
 class FrameReconciler(WidgetReconciler):

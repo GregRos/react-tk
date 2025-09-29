@@ -47,7 +47,9 @@ class WindowProps(NodeProps):
             subsection="attributes", name="transparentcolor", no_value=Some(None)
         ),
     ]
-    override_redirect: Annotated[NotRequired[bool], prop_meta(no_value=False)]
+    override_redirect: Annotated[
+        NotRequired[bool], prop_meta(no_value=False, name="override_redirect")
+    ]
     alpha: Annotated[
         NotRequired[float], prop_meta(subsection="attributes", no_value=1.0)
     ]

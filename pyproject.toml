@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "react-tk"
-version = "0.2.0"
+version = "0.2.5"
 description = "Tkinter UI with react principles."
 authors = ["GregRos <gregros@gregros.dev>"]
 license = "MIT"
@@ -9,7 +9,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 typeguard = "^4.4.0"
-pywin32 = "^308"
+pywin32 = "^311"
 funcy = "^2.0"
 funcy-typing = "^2.0.8"
 pytest = "^8.4.2"

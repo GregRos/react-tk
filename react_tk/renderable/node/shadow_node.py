@@ -71,7 +71,7 @@ class HasPropsSchema:
 
 class NodeProps(TypedDict):
     key: Annotated[NotRequired[str], prop_meta(no_value=Some(None))]
-    KIDS: Annotated[NotRequired[Iterable[Any]], prop_meta(no_value=())]
+    KIDS: Annotated[NotRequired[Iterable[Any]], prop_meta(no_value=(), repr="never")]
 
 
 class ShadowNode[Kids: ShadowNode[Any] = Never](

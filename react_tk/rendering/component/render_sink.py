@@ -22,6 +22,7 @@ from react_tk.renderable.trace import (
     RenderTraceAccessor,
     SequencedRenderFrame,
 )
+import funcy
 
 
 class RenderState:
@@ -91,10 +92,10 @@ class RenderSink[Node: ShadowNode[Any] = ShadowNode[Any]](AbsSink[Node]):
     def run(self, node: RenderResult[Node], /) -> tuple[Node, ...]:
         rendered = []
         nodes = list(node) if isinstance(node, Iterable) else [node]
-        for node in nodes:
+        for node in funcy.flatten(nodes):
             result = self._render_one(node)
             if isinstance(result, Iterable):
-                rendered.extend(result)
+                rendered.extend(funcy.flatten(result))
             else:
                 rendered.append(result)
         return tuple(rendered)

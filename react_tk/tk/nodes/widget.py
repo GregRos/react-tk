@@ -27,6 +27,7 @@ from react_tk.tk.props.border import BorderProps
 from react_tk.tk.reconcilers.widget_reconciler import (
     FrameReconciler,
     LabelReconciler,
+    ToolTipLabelReconciler,
     WidgetReconciler,
 )
 from react_tk.tk.types.font import Font
@@ -43,7 +44,7 @@ class FrameProps(NodeProps, WidthHeightProps, BorderProps, BackgroundProps):
 
 
 @reconciler(WidgetReconciler)
-class Widget[Kids: ShadowNode[Any]](ShadowNode[Kids]):
+class Widget[Kids: ShadowNode[Any] = Any](ShadowNode[Kids]):
 
     @schema_setter(repr="simple")
     def Pack(self, **props: Unpack[PackProps]) -> None: ...
@@ -53,6 +54,11 @@ class Widget[Kids: ShadowNode[Any]](ShadowNode[Kids]):
 class Label(Widget[Never]):
     @schema_setter()
     def __init__(self, **props: Unpack[LabelProps]) -> None: ...
+
+
+@reconciler(ToolTipLabelReconciler)
+class ToolTipLabel(Label):
+    pass
 
 
 @reconciler(FrameReconciler)

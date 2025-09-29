@@ -370,7 +370,18 @@ class Prop_Mapping(VMappingBase[str, "SomePropValue"]):
 @dataclass
 class Prop_ComputedMapping:
     values: KeyedValues
-    source: Prop_Mapping
+    source: Prop_Mapping = field(repr=False)
+
+    def __post_init__(self):
+        def remove_KIDS_recursively(d: dict[str, Any]) -> dict[str, Any]:
+            if "KIDS" in d:
+                d = {k: v for k, v in d.items() if k != "KIDS"}
+            for k, v in d.items():
+                if isinstance(v, dict):
+                    d[k] = remove_KIDS_recursively(v)
+            return d
+
+        self.values = remove_KIDS_recursively(self.values)  # type: ignore
 
     def __bool__(self) -> bool:
         return bool(self.values)

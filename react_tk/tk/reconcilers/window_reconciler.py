@@ -22,7 +22,7 @@ from react_tk.rendering.actions.reconcile_state import PersistentReconcileState
 from react_tk.tk.types.geometry import Geometry
 from react_tk.tk.reconcilers.widget_reconciler import WidgetReconciler
 
-logger = logging.getLogger("ui").getChild("diff")
+logger = logging.getLogger("react_tk").getChild("diff")
 
 
 @dataclass
@@ -121,6 +121,7 @@ class WindowReconciler(ReconcilerBase[Tk]):
         match action:
             case Create(next, container) as c:
                 new_resource = self._create_window(next)
+                self._update(new_resource.resource, c.diff)
                 self._register(next, new_resource.resource)
                 return new_resource
             case Update(existing, next, diff):

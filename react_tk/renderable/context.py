@@ -11,7 +11,7 @@ from expression import Nothing
 from react_tk.renderable.component import AbsCtx
 from react_tk.util.core_reflection import get_attr_skip_hook, has_attr_skip_hook
 
-logger = getLogger("ui")
+logger = getLogger("react_tk")
 
 
 @dataclass
@@ -36,6 +36,7 @@ class Ctx(AbsCtx):
     _listeners: list[Callable[[Self], None]] = []
     _map: dict[str, Any] = {}
     _frozen: bool = False
+    _pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=1)
 
     def __init__(self, **attrs: Any):
         self._map = dict[str, Any](attrs)
@@ -47,6 +48,23 @@ class Ctx(AbsCtx):
             return attr.value
 
         return self._map.get(name, None)
+
+    def schedule(self, func: Callable[["Ctx"], Any], delay: float) -> None:
+        current_state = ctx_snapshot(self)
+
+        def worker():
+            sleep(delay)
+            if current_state != self:
+                logger.warning("Ctx has changed, skipping scheduled task")
+                return
+            func(self)
+
+        self._pool.submit(worker)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Ctx):
+            return False
+        return self._map == other._map
 
     def __iadd__(self, listener: Callable[[Self], Any]) -> Self:
         self._listeners.append(listener)
