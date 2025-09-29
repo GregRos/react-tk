@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "react-tk"
-version = "0.1.0"
-description = "Build cross-platform native UIs with a react-like feel."
+version = "0.2.0"
+description = "Tkinter UI with react principles."
 authors = ["GregRos <gregros@gregros.dev>"]
 license = "MIT"
 readme = "README.md"
@@ -13,8 +13,6 @@ pywin32 = "^308"
 funcy = "^2.0"
 funcy-typing = "^2.0.8"
 pytest = "^8.4.2"
-ward = "^0.68.0b0"
-returns = "^0.26.0"
 expression = "^5.6.0"
 [tool.pytest.ini_options]
 testpaths = "test"
