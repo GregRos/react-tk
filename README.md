@@ -1,6 +1,6 @@
-# reactk
+# react-tk
 
-Reactk is an experimental framework building Tkinter UIs using React principles.
+React-tk is an experimental framework building Tkinter UIs using React principles.
 
 Features and limitations:
 
@@ -48,7 +48,7 @@ Let's take a look at building a very simple UI step by step.
 First, let's import the stuff we'll need:
 
 ```python
-from reactk import Window, WindowRoot, Widget, Label, Component
+from react_tk import Window, WindowRoot, Widget, Label, Component
 ```
 
 1. The `WindowRoot` which is used to mount components into Tk.

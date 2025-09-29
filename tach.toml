@@ -1,18 +1,18 @@
-exclude = [
-    ".*__pycache__",
-    ".*egg-info",
-    "docs",
-    "tests",
-]
-source_roots = [
-    ".",
-]
+exclude = [".*__pycache__", ".*egg-info", "docs", "tests"]
+source_roots = ["."]
 modules = [
-    { path = "example", depends_on = [] },
-    { path = "reactk", depends_on = [] },
-    { path = "reactk.annotations", depends_on = [] },
-    { path = "reactk.model", depends_on = [] },
-    { path = "reactk.pretty", depends_on = [] },
-    { path = "reactk.rendering", depends_on = [] },
-    { path = "reactk.tk", depends_on = [] },
+    { path = "example", depends_on = [
+    ] },
+    { path = "react_tk", depends_on = [
+    ] },
+    { path = "react_tk.annotations", depends_on = [
+    ] },
+    { path = "react_tk.model", depends_on = [
+    ] },
+    { path = "react_tk.pretty", depends_on = [
+    ] },
+    { path = "react_tk.rendering", depends_on = [
+    ] },
+    { path = "react_tk.tk", depends_on = [
+    ] },
 ]
