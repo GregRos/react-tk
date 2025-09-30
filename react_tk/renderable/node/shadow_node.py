@@ -90,15 +90,17 @@ class ShadowNodeInfo:
     def from_node(cls, node: "ShadowNode[Any]") -> "ShadowNodeInfo":
         from react_tk.rendering.actions.node_reconciler import ReconcilerAccessor
 
+        trace = RenderTraceAccessor(node).get()
+        ctor_trace = ConstructTraceAccessor(node).get()
         reconciler = ReconcilerAccessor(node).get()
         return cls(
             class_name=node.__class__.__name__,
             reconciler_name=reconciler.__name__,
             custom_key=node.key or "",
             uid=node.__uid__,
-            ctor_trace=ConstructTraceAccessor(node).get(),
-            trace=RenderTraceAccessor(node).get(),
-            short_id=node.__uid__.split("-")[-1],
+            ctor_trace=ctor_trace,
+            trace=trace,
+            short_id=trace.to_string("short-id"),
         )
 
 
@@ -125,6 +127,10 @@ class ShadowNode[Kids: ShadowNode[Any] = Never](
     @property
     def __uid__(self):
         return RenderTraceAccessor(self).get().to_string("id")
+
+    @property
+    def __info__(self) -> ShadowNodeInfo:
+        return ShadowNodeInfo.from_node(self)
 
     def __str__(self) -> str:
         info = ShadowNodeInfo.from_node(self)

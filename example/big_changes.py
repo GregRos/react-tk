@@ -80,7 +80,7 @@ class WindowComponent(Component[Window]):
 
         return Window(topmost=True, background="black", alpha=85).Geometry(
             width=500, height=500, x=500, y=500, anchor_point="lt"
-        )[child, ChangingComponent(text="I'm changing")]
+        )[ChangingComponent(text="I'm changing"), child]
 
 
 my_root = WindowRoot(
@@ -92,3 +92,5 @@ my_root(text="component:2, first:False", component_id=2, first_item=False)
 
 sleep(4)
 my_root(text="component:1, first:false", component_id=1, first_item=False)
+sleep(2)
+my_root(first_item=True)

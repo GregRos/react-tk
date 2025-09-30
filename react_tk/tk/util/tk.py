@@ -27,7 +27,9 @@ def get_root(node: Misc) -> Tk:
     return node  # type: ignore[return-value]
 
 
-def get_in(resource: Widget) -> Widget | Tk:
+def get_in(resource: Widget | Tk) -> Widget | Tk:
+    if isinstance(resource, Tk):
+        return resource
     info = resource.pack_info()
     return info.get("in") or get_root(resource)  # type: ignore[return-value]
 

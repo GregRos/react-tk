@@ -8,15 +8,18 @@ from react_tk.renderable.node.shadow_node import ShadowNode
 from react_tk.props.impl.prop import Prop_ComputedMapping
 from react_tk.rendering.actions.actions import (
     Create,
-    NonCompoundReconcileAction,
     Place,
     ReconcileAction,
     RenderedNode,
+    Replace,
     Unplace,
     Update,
 )
 from react_tk.rendering.actions.compute import AnyNode, logger
-from react_tk.rendering.actions.reconcile_state import PersistentReconcileState
+from react_tk.rendering.actions.reconcile_state import (
+    PersistentReconcileState,
+    TransientReconcileState,
+)
 
 from react_tk.rendering.actions.node_reconciler import ReconcilerBase
 
@@ -29,19 +32,19 @@ from react_tk.tk.win32.tweaks import make_clickthrough
 
 @dataclass
 class WidgetReconciler(ReconcilerBase[Widget]):
-    state: PersistentReconcileState
+    state: TransientReconcileState
     waiter = threading.Event()
 
     @classmethod
-    def create(cls, state: PersistentReconcileState) -> "WidgetReconciler":
+    def create(cls, state: TransientReconcileState) -> "WidgetReconciler":
         return cls(state)
 
     @classmethod
     @override
     def get_compatibility(cls, older: RenderedNode[Widget], newer: AnyNode) -> Compat:
         # TODO: Find a better way to determine compatibility
-        if older.node.__class__.__name__ != newer.__class__.__name__:
-            return "recreate"
+        if older.node.__uid__ != newer.__uid__:
+            return "switch"
         pack_info = older.resource.pack_info()
         in_ = pack_info.get("in", None)
         assert in_ is not None
@@ -84,9 +87,7 @@ class WidgetReconciler(ReconcilerBase[Widget]):
         resource.configure(**diff.get("configure", {}))
         resource.pack_configure(**diff.get("Pack", {}))
 
-    def _get_some_ui_resource(
-        self, node: NonCompoundReconcileAction[Widget]
-    ) -> Widget | Tk:
+    def _get_some_ui_resource(self, node: ReconcileAction[Widget]) -> Widget | Tk:
         match node:
             case Update(existing) | Unplace(existing):
                 return existing.resource
@@ -119,7 +120,7 @@ class WidgetReconciler(ReconcilerBase[Widget]):
                 assert False, f"Unknown action: {action}"
 
     def _unplace(self, rendered: RenderedNode[Widget]):
-        if rendered.node.__uid__ in self.state.placed_resources:
+        if self.state.will_be_placed(rendered.node):
             return
         root = self._get_root(rendered.resource)
         limbo = root.nametowidget("limbo")
@@ -135,6 +136,10 @@ class WidgetReconciler(ReconcilerBase[Widget]):
                 return
 
             match action:
+                case Replace(container, replaces, with_what, at):
+                    self._unplace(replaces)
+                    cur = self._do_create_action(with_what)
+                    self._pack_at(container, cur.resource, at)
                 case Update(existing, next):
                     self._do_create_action(action)
                 case Unplace(existing):
@@ -147,7 +152,7 @@ class WidgetReconciler(ReconcilerBase[Widget]):
         finally:
             self.waiter.set()
 
-    def run_action(self, action: NonCompoundReconcileAction[Widget], log=True):
+    def run_action(self, action: ReconcileAction[Widget], log=True):
         existing_parent = self._get_some_ui_resource(action)
         self.waiter.clear()
         existing_parent.after(0, lambda: self._run_action_main_thread(action))

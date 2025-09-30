@@ -10,15 +10,18 @@ from react_tk.renderable.node.shadow_node import ShadowNode
 from react_tk.props.impl.prop import Prop_ComputedMapping
 from react_tk.rendering.actions.actions import (
     Create,
-    NonCompoundReconcileAction,
     ReconcileAction,
     RenderedNode,
+    Replace,
     Unplace,
     Update,
     Place,
 )
 from react_tk.rendering.actions.node_reconciler import ReconcilerBase
-from react_tk.rendering.actions.reconcile_state import PersistentReconcileState
+from react_tk.rendering.actions.reconcile_state import (
+    PersistentReconcileState,
+    TransientReconcileState,
+)
 from react_tk.tk.types.geometry import Geometry
 from react_tk.tk.reconcilers.widget_reconciler import WidgetReconciler
 
@@ -29,7 +32,7 @@ logger = logging.getLogger("react_tk").getChild("diff")
 class WindowReconciler(ReconcilerBase[Tk]):
 
     @classmethod
-    def create(cls, state: PersistentReconcileState) -> "WindowReconciler":
+    def create(cls, state: TransientReconcileState) -> "WindowReconciler":
         return cls(state)
 
     @classmethod
@@ -69,7 +72,7 @@ class WindowReconciler(ReconcilerBase[Tk]):
 
         return f"{width}x{height}+{x}+{y}"
 
-    def _place(self, pair: RenderedNode[Tk], diff: Prop_ComputedMapping) -> None:
+    def _place(self, pair: RenderedNode[Tk]) -> None:
         def do_place():
             resource = pair.resource
             resource.deiconify()
@@ -105,6 +108,10 @@ class WindowReconciler(ReconcilerBase[Tk]):
         self._schedule_and_wait(rendered.resource, do_update)
 
     def _unplace(self, resource: RenderedNode[Tk]) -> None:
+        if self.state.will_be_placed(resource.node):
+            # already unplaced by virtue of being placed somewhere else.
+            return
+
         def do_unplace():
             resource.resource.withdraw()
 
@@ -136,6 +143,7 @@ class WindowReconciler(ReconcilerBase[Tk]):
 
     def _do_create_action(self, action: Update[Tk] | Create[Tk]):
         match action:
+
             case Create(next, container) as c:
                 new_resource = self._create_window(next)
                 self._update(new_resource, c.diff)
@@ -148,7 +156,7 @@ class WindowReconciler(ReconcilerBase[Tk]):
             case _:
                 assert False, f"Unknown action: {action}"
 
-    def run_action(self, action: NonCompoundReconcileAction[Tk]) -> None:
+    def run_action(self, action: ReconcileAction[Tk]) -> None:
         if action:
             # FIXME: This should be an externalized event
             logger.info(f"⚖️  RECONCILE {action}")
@@ -157,12 +165,16 @@ class WindowReconciler(ReconcilerBase[Tk]):
             return
 
         match action:
+            case Replace(container, replaces, with_what, at):
+                cur = self._do_create_action(with_what)
+                self._unplace(replaces)
+                self._place(cur)
             case Update(existing, next, diff):
                 self._update(existing, diff)
             case Unplace(existing):
                 self._unplace(existing)
             case Place(container, at, createAction) as x:
                 cur = self._do_create_action(createAction)
-                self._place(cur, x.diff)
+                self._place(cur)
             case _:
                 assert False, f"Unknown action: {action}"

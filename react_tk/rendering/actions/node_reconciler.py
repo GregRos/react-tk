@@ -7,7 +7,6 @@ from react_tk.props.impl import prop
 from react_tk.rendering.actions.actions import (
     Compat,
     Create,
-    NonCompoundReconcileAction,
     Place,
     ReconcileAction,
     Unplace,
@@ -26,7 +25,7 @@ from typing import Callable, Iterable, Protocol
 
 @dataclass
 class ReconcilerBase[Res](ABC):
-    state: PersistentReconcileState
+    state: TransientReconcileState
 
     def _register(self, node: AnyNode, resource: Res) -> RenderedNode[Res]:
         rendered = RenderedNode(resource, node)
@@ -42,7 +41,7 @@ class ReconcilerBase[Res](ABC):
     def create(cls, state: TransientReconcileState) -> "ReconcilerBase[Res]": ...
 
     @abstractmethod
-    def run_action(self, action: NonCompoundReconcileAction[Res]) -> None: ...
+    def run_action(self, action: ReconcileAction[Res]) -> None: ...
 
 
 class ReconcilerAccessor(KeyAccessor[type[ReconcilerBase]]):

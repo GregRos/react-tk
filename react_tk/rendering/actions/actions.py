@@ -113,34 +113,37 @@ class Unplace[Res = Misc]:
         return self.what.node.__uid__
 
 
-type SubAction[T = Misc] = Update[T] | Create[T]
-type ReconcileAction[Res = Misc] = Place[Res] | Unplace[Res] | Update[Res] | Compound[
-    Res
-]
-type NonCompoundReconcileAction[Res = Misc] = Place[Res] | Unplace[Res] | Update[Res]
-
-
-class Compound[Res](Iterable[ReconcileAction[Res]]):
-    def __iter__(self) -> Iterator[ReconcileAction[Res]]:
-        return iter(self.actions)
+@dataclass
+class Replace[Res = Misc]:
+    container: "AnyNode"
+    replaces: RenderedNode[Res]
+    with_what: Update[Res] | Create[Res]
+    at: int
 
     @property
     def node(self) -> "AnyNode":
-        constructive_node = first(
-            action.node
-            for action in self.actions
-            if isinstance(action, ConstructiveAction)
-        )
-        if not constructive_node:
-            raise ValueError("No constructive action found")
-        return constructive_node
-
-    def __init__(self, *actions: ReconcileAction[Res]) -> None:
-        self.actions = actions
+        return self.with_what.next
 
     @property
     def is_creating_new(self) -> bool:
-        return any(action.is_creating_new for action in self.actions)
+        return self.with_what.is_creating_new
+
+    @property
+    def diff(self) -> Prop_ComputedMapping:
+        return self.with_what.diff
+
+    def __repr__(self) -> str:
+        return f"{self.replaces.node.__uid__} ↔️ {self.with_what.__repr__()}"
+
+    @property
+    def uid(self) -> Any:
+        return self.replaces.node.__uid__
 
 
-type Compat = Literal["update", "recreate", "place"]
+type SubAction[T = Misc] = Update[T] | Create[T]
+type ReconcileAction[Res = Misc] = Place[Res] | Unplace[Res] | Update[Res] | Replace[
+    Res
+]
+
+
+type Compat = Literal["update", "switch", "place"]

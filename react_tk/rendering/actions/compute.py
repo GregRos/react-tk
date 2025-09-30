@@ -16,10 +16,10 @@ from react_tk.rendering.actions.reconcile_state import (
 )
 
 from .actions import (
-    Compound,
     Create,
     ReconcileAction,
     RenderedNode,
+    Replace,
     SubAction,
     Unplace,
     Update,
@@ -54,7 +54,7 @@ class _ComputeAction:
     def _get_update_or_crate(
         self, target: RenderedNode | None, next: ShadowNode[Any]
     ) -> SubAction:
-        if not target or self._get_compatibility(target, next) == "recreate":
+        if not target or self._get_compatibility(target, next) == "switch":
             return Create(next, self.container)
         return Update(
             target,
@@ -70,9 +70,11 @@ class _ComputeAction:
 
     def _yield_replace(self, inner_action: SubAction):
         assert self.prev
-        return Compound(
-            Place(self.container, self.at, inner_action),
-            Unplace(self.prev),
+        return Replace(
+            self.container,
+            self.prev,
+            inner_action,
+            self.at,
         )
 
     def compute(self):
@@ -90,7 +92,9 @@ class _ComputeAction:
         match self._get_compatibility(self.prev, self.next):
             case "update" if isinstance(inner_action, Update):
                 return inner_action
-            case "replace" | "create":
+            case "place":
+                return Place(self.container, self.at, inner_action)
+            case "switch":
                 return self._yield_replace(inner_action)
             case compat:
                 raise ValueError(f"Unknown compatibility: {compat}")
@@ -119,7 +123,7 @@ class ComputeTreeActions:
         if not existing_parent:
             return
         for child in existing_parent.node.KIDS:
-            if child.__uid__ not in self.state.placing:
+            if child.__uid__ not in self.state.being_placed:
                 existing_child = self.state.existing_resources.get(child.__uid__)
                 if existing_child:
                     yield existing_child
@@ -134,12 +138,12 @@ class ComputeTreeActions:
             if is_creating_new:
                 prev = None
             pos += 1
-            if not next and prev and prev.node.__uid__ in self.state.placing:
+            if not next and prev and prev.node.__uid__ in self.state.being_placed:
                 # if the prev node has gone somewhere else, it's already been unplaced
                 # from its node-based position.
                 continue
             if next:
-                self.state.placing.add(next.__uid__)
+                self.state.being_placed.add(next.__uid__)
             prev_resource = (
                 self.state.existing_resources.get(prev.node.__uid__) if prev else None
             )

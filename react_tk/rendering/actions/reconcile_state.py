@@ -32,17 +32,24 @@ class RenderedNode[Res]:
 @dataclass
 class PersistentReconcileState:
     existing_resources: dict[str, RenderedNode] = field(default_factory=dict)
-    placed_resources: set[str] = field(default_factory=set)
+    placed_last: set[str] = field(default_factory=set)
 
     def overwrite(self, rendered: RenderedNode) -> None:
         self.existing_resources[rendered.node.__uid__] = rendered
-        self.placed_resources.add(rendered.node.__uid__)
+        self.placed_last.add(rendered.node.__uid__)
+
+    def was_last_placed(self, node: ShadowNode[Any]) -> bool:
+        return node.__uid__ in self.placed_last
 
     def new_transient(self) -> "TransientReconcileState":
         return TransientReconcileState(
             existing_resources=self.existing_resources,
-            placed_resources=self.placed_resources,
+            placed_last=self.placed_last,
         )
+
+    def from_transient(self, transient: "TransientReconcileState") -> None:
+        self.existing_resources = transient.existing_resources
+        self.placed_last = transient.being_placed
 
     def __getitem__(self, node: ShadowNode[Any]) -> RenderedNode:
         return self.existing_resources[node.__uid__]
@@ -53,4 +60,7 @@ class PersistentReconcileState:
 
 @dataclass
 class TransientReconcileState(PersistentReconcileState):
-    placing: set[str] = field(default_factory=set)
+    being_placed: set[str] = field(default_factory=set)
+
+    def will_be_placed(self, node: ShadowNode[Any]) -> bool:
+        return node.__uid__ in self.being_placed
