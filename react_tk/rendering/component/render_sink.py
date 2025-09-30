@@ -81,6 +81,7 @@ class RenderSink[Node: ShadowNode[Any] = ShadowNode[Any]](AbsSink[Node]):
         match node:
             case ShadowNode():
                 node = node.__merge__(KIDS=new_sink.run(node.KIDS))
+                node.PROPS.assert_valid()
                 return node
             case Component():
                 return new_sink._run_component_render(node)

@@ -9,16 +9,18 @@ from typing import (
 from react_tk.renderable.component import Component
 from react_tk.renderable.node.prop_value_accessor import PropValuesAccessor
 from react_tk.props.impl.prop import Prop
+from react_tk.rendering.actions.node_reconciler import Compat
 from react_tk.rendering.actions.reconcile_state import (
     PersistentReconcileState,
     TransientReconcileState,
 )
 
 from .actions import (
+    Compound,
     Create,
-    Recreate,
-    Replace,
+    ReconcileAction,
     RenderedNode,
+    SubAction,
     Unplace,
     Update,
     Place,
@@ -30,18 +32,17 @@ from itertools import groupby, zip_longest
 
 logger = logging.getLogger("react_tk").getChild("diff")
 type AnyNode = ShadowNode[ShadowNode[Any]]
-type ReconcileAction[Res] = Place[Res] | Replace[Res] | Unplace[Res] | Update[Res]
 
 
 @dataclass
 class _ComputeAction:
-    prev: RenderedNode | None
-    next: ShadowNode | None
-    old_next_rendered: RenderedNode | None
+    prev: RenderedNode[Any] | None
+    next: ShadowNode[Any] | None
+    old_next_rendered: RenderedNode[Any] | None
     container: AnyNode
     at: int
 
-    def _get_compatibility(self, older: RenderedNode, newer: AnyNode) -> str:
+    def _get_compatibility(self, older: RenderedNode, newer: AnyNode) -> Compat:
         from react_tk.rendering.actions.node_reconciler import ReconcilerAccessor
 
         reconciler_class = ReconcilerAccessor(older.node).get()
@@ -50,25 +51,34 @@ class _ComputeAction:
     def _diff(self, prev: RenderedNode, next: ShadowNode):
         return PropValuesAccessor(prev.node).get().diff(PropValuesAccessor(next).get())
 
-    def _get_inner_action(self):
+    def _get_update_or_crate(
+        self, target: RenderedNode | None, next: ShadowNode[Any]
+    ) -> SubAction:
+        if not target or self._get_compatibility(target, next) == "recreate":
+            return Create(next, self.container)
+        return Update(
+            target,
+            next,
+            diff=self._diff(target, next),
+        )
+
+    def _get_inner_action(self) -> SubAction:
         assert self.next
         if self.old_next_rendered:
-            return Update(
-                self.old_next_rendered,
-                self.next,
-                diff=self._diff(self.old_next_rendered, self.next),
-            )
-        if not self.prev:
-            return Create(self.next, self.container)
-        if self._get_compatibility(self.prev, self.next) == "recreate":
-            return Recreate(self.prev, self.next, self.container)
+            return self._get_update_or_crate(self.old_next_rendered, self.next)
+        return self._get_update_or_crate(self.prev, self.next)
 
-        return Update(self.prev, self.next, diff=self._diff(self.prev, self.next))
+    def _yield_replace(self, inner_action: SubAction):
+        assert self.prev
+        return Compound(
+            Place(self.container, self.at, inner_action),
+            Unplace(self.prev),
+        )
 
     def compute(self):
         if not self.next:
             assert self.prev, "Neither prev nor next exists"
-            return Unplace(self.prev, self.container)
+            return Unplace(self.prev)
         inner_action = self._get_inner_action()
         if not self.prev:
             return Place(
@@ -76,15 +86,12 @@ class _ComputeAction:
                 self.at,
                 inner_action,
             )
-        if self.prev.node.__uid__ != self.next.__uid__:
-            return Replace(self.container, self.prev, inner_action)
+
         match self._get_compatibility(self.prev, self.next):
             case "update" if isinstance(inner_action, Update):
                 return inner_action
-            case "replace":
-                return Replace(self.container, self.prev, inner_action)
-            case "recreate":
-                return Replace(self.container, self.prev, inner_action)
+            case "replace" | "create":
+                return self._yield_replace(inner_action)
             case compat:
                 raise ValueError(f"Unknown compatibility: {compat}")
 
@@ -112,7 +119,7 @@ class ComputeTreeActions:
         if not existing_parent:
             return
         for child in existing_parent.node.KIDS:
-            if child.__uid__ not in self.state.placed:
+            if child.__uid__ not in self.state.placing:
                 existing_child = self.state.existing_resources.get(child.__uid__)
                 if existing_child:
                     yield existing_child
@@ -127,10 +134,12 @@ class ComputeTreeActions:
             if is_creating_new:
                 prev = None
             pos += 1
-            if not next and prev and prev.node.__uid__ in self.state.placed:
+            if not next and prev and prev.node.__uid__ in self.state.placing:
+                # if the prev node has gone somewhere else, it's already been unplaced
+                # from its node-based position.
                 continue
             if next:
-                self.state.placed.add(next.__uid__)
+                self.state.placing.add(next.__uid__)
             prev_resource = (
                 self.state.existing_resources.get(prev.node.__uid__) if prev else None
             )

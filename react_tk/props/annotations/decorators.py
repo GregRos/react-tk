@@ -114,5 +114,7 @@ class prop_getter:
 
 class HasChildren[Kids: "ShadowNode[Any]"](_HasMerge):
 
-    def __getitem__(self, *children: "Kids | Component[Kids]") -> Self:
+    def __getitem__(
+        self, children: "Kids | Component[Kids] | tuple[Kids | Component[Kids], ...]"
+    ) -> Self:
         return self.__merge__({"KIDS": children})

@@ -39,7 +39,7 @@ def _create_prop(
     x: Any = annotation.inner_type
     return Prop[x](
         name=name,
-        repr=meta.diffing,
+        diffing=meta.diffing,
         no_value=maybe_normalize(meta.no_value),
         converter=meta.converter,
         computed_name=meta.name,
@@ -60,7 +60,7 @@ def _create_schema(
         name=name,
         computed_name=meta.name,
         props=_read_props_from_class(path + (name,), annotation.inner_type),
-        repr=meta.diffing,
+        diffing=meta.diffing,
         metadata=meta.metadata,
     )
 
@@ -151,11 +151,13 @@ def read_props_from_top_class(cls: type) -> "Prop_Schema":
     name = cls.__name__
     props = [*_read_props_from_class((name,), cls)]
     init_block = funcy.first(x for x in props if x.name == "__init__")
-    repr = "recursive"
+    diffing = "recursive"
     metadata = {}
     if init_block:
         props.remove(init_block)
         props.extend(init_block.values())  # type: ignore
-        repr = init_block.repr
+        diffing = init_block.diffing
         metadata = init_block.metadata
-    return Prop_Schema(path=(), name=name, props=props, repr=repr, metadata=metadata)
+    return Prop_Schema(
+        path=(), name=name, props=props, diffing=diffing, metadata=metadata
+    )

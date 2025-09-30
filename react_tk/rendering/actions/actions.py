@@ -1,5 +1,9 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from tkinter import Misc
+from typing import TYPE_CHECKING, Any, Iterable, Iterator
+from typing_extensions import Literal
+
+from funcy import first
 
 
 from react_tk.renderable.node.prop_value_accessor import PropValuesAccessor
@@ -10,8 +14,12 @@ if TYPE_CHECKING:
     from react_tk.rendering.actions.compute import AnyNode
 
 
+class ConstructiveAction:
+    pass
+
+
 @dataclass
-class Create[Res]:
+class Create[Res](ConstructiveAction):
     next: "AnyNode"
     container: "AnyNode"
 
@@ -35,7 +43,7 @@ class Create[Res]:
 
 
 @dataclass
-class Update[Res]:
+class Update[Res = Misc](ConstructiveAction):
     existing: RenderedNode[Res]
     next: "AnyNode"
     diff: Prop_ComputedMapping
@@ -60,35 +68,10 @@ class Update[Res]:
 
 
 @dataclass
-class Recreate[Res]:
-    old: RenderedNode[Res]
-    next: "AnyNode"
-    container: "AnyNode"
-
-    def node(self) -> "AnyNode":
-        return self.next
-
-    def __post_init__(self):
-        self.diff = PropValuesAccessor(self.next).get().compute()
-
-    @property
-    def props(self):
-        return f"{self.old.node.__uid__} ♻️ {PropValuesAccessor(self.next).get()}"
-
-    @property
-    def key(self) -> Any:
-        return self.next.__uid__
-
-    @property
-    def is_creating_new(self) -> bool:
-        return True
-
-
-@dataclass
-class Place[Res]:
+class Place[Res = Misc](ConstructiveAction):
     container: "AnyNode"
     at: int
-    what: Update[Res] | Recreate[Res] | Create[Res]
+    what: Update[Res] | Create[Res]
 
     @property
     def node(self) -> "AnyNode":
@@ -111,35 +94,8 @@ class Place[Res]:
 
 
 @dataclass
-class Replace[Res]:
-    container: "AnyNode"
-    replaces: RenderedNode[Res]
-    with_what: Update | Recreate | Create
-
-    @property
-    def node(self) -> "AnyNode":
-        return self.with_what.next
-
-    @property
-    def is_creating_new(self) -> bool:
-        return self.with_what.is_creating_new
-
-    @property
-    def diff(self) -> Prop_ComputedMapping:
-        return self.with_what.diff
-
-    def __repr__(self) -> str:
-        return f"{self.replaces.node.__uid__} ↔️ {self.with_what.__repr__()}"
-
-    @property
-    def uid(self) -> Any:
-        return self.replaces.node.__uid__
-
-
-@dataclass
-class Unplace[Res]:
+class Unplace[Res = Misc]:
     what: RenderedNode[Res]
-    container: "AnyNode"
 
     @property
     def node(self) -> "AnyNode":
@@ -155,3 +111,36 @@ class Unplace[Res]:
     @property
     def uid(self) -> Any:
         return self.what.node.__uid__
+
+
+type SubAction[T = Misc] = Update[T] | Create[T]
+type ReconcileAction[Res = Misc] = Place[Res] | Unplace[Res] | Update[Res] | Compound[
+    Res
+]
+type NonCompoundReconcileAction[Res = Misc] = Place[Res] | Unplace[Res] | Update[Res]
+
+
+class Compound[Res](Iterable[ReconcileAction[Res]]):
+    def __iter__(self) -> Iterator[ReconcileAction[Res]]:
+        return iter(self.actions)
+
+    @property
+    def node(self) -> "AnyNode":
+        constructive_node = first(
+            action.node
+            for action in self.actions
+            if isinstance(action, ConstructiveAction)
+        )
+        if not constructive_node:
+            raise ValueError("No constructive action found")
+        return constructive_node
+
+    def __init__(self, *actions: ReconcileAction[Res]) -> None:
+        self.actions = actions
+
+    @property
+    def is_creating_new(self) -> bool:
+        return any(action.is_creating_new for action in self.actions)
+
+
+type Compat = Literal["update", "recreate", "place"]

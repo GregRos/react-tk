@@ -10,10 +10,14 @@ from react_tk.renderable.context import Ctx
 from react_tk.renderable.node.top import TopLevelNode
 from react_tk.renderable.trace import RenderFrame
 from react_tk.renderable.trace import RenderTrace, RenderTraceAccessor
+from react_tk.rendering.actions.actions import (
+    Compound,
+    NonCompoundReconcileAction,
+    ReconcileAction,
+)
 from react_tk.rendering.actions.compute import (
     AnyNode,
     ComputeTreeActions,
-    ReconcileAction,
 )
 from react_tk.rendering.actions.node_reconciler import (
     ReconcilerBase,
@@ -37,8 +41,20 @@ class RootReconciler[Node: ShadowNode[Any] = ShadowNode[Any]]:
         default_factory=lambda: PersistentReconcileState(existing_resources={})
     )
 
+    def _yield_compound(self, action: Compound) -> Iterable[NonCompoundReconcileAction]:
+        for sub in action.actions:
+            if isinstance(sub, Compound):
+                yield from self._yield_compound(sub)
+            else:
+                yield sub
+
     def _compute_actions(self, transient_state: TransientReconcileState, root):
-        return ComputeTreeActions(transient_state).compute_actions(root)
+        for x in ComputeTreeActions(transient_state).compute_actions(root):
+            match x:
+                case Compound() as c:
+                    yield from self._yield_compound(c)
+                case _:
+                    yield x
 
     def reconcile(self, nodes: tuple[ShadowNode[Any], ...]):
         top_level_fake = TopLevelNode(KIDS=nodes)

@@ -1,21 +1,21 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 import threading
-from tkinter import Tk, Widget, Label as TkLabel
+from tkinter import Misc, Tk, Widget, Label as TkLabel
 from react_tk.renderable.node.prop_value_accessor import PropValuesAccessor
 from react_tk.rendering.actions.node_reconciler import Compat
 from react_tk.renderable.node.shadow_node import ShadowNode
 from react_tk.props.impl.prop import Prop_ComputedMapping
 from react_tk.rendering.actions.actions import (
     Create,
+    NonCompoundReconcileAction,
     Place,
-    Recreate,
-    Replace,
+    ReconcileAction,
     RenderedNode,
     Unplace,
     Update,
 )
-from react_tk.rendering.actions.compute import AnyNode, ReconcileAction, logger
+from react_tk.rendering.actions.compute import AnyNode, logger
 from react_tk.rendering.actions.reconcile_state import PersistentReconcileState
 
 from react_tk.rendering.actions.node_reconciler import ReconcilerBase
@@ -23,6 +23,7 @@ from react_tk.rendering.actions.node_reconciler import ReconcilerBase
 from typing import Any, Callable, Iterable, override
 
 from react_tk.tk.types.font import to_tk_font
+from react_tk.tk.util.tk import get_pack_position
 from react_tk.tk.win32.tweaks import make_clickthrough
 
 
@@ -38,39 +39,40 @@ class WidgetReconciler(ReconcilerBase[Widget]):
     @classmethod
     @override
     def get_compatibility(cls, older: RenderedNode[Widget], newer: AnyNode) -> Compat:
+        # TODO: Find a better way to determine compatibility
         if older.node.__class__.__name__ != newer.__class__.__name__:
             return "recreate"
-        elif PropValuesAccessor(older.node).get().diff(PropValuesAccessor(newer).get()):
-            return "replace"
-        else:
-            return "update"
+        pack_info = older.resource.pack_info()
+        in_ = pack_info.get("in", None)
+        assert in_ is not None
+        if in_.winfo_name() == "limbo":
+            return "place"
+        return "update"
 
     @abstractmethod
-    def _create(self, container: Widget, node: AnyNode) -> RenderedNode[Widget]: ...
+    def _create(
+        self, container: Widget | Tk, node: AnyNode
+    ) -> RenderedNode[Widget]: ...
 
     def _pack(self, resource: Widget, diff: Prop_ComputedMapping):
         resource.pack_configure(
-            **diff.values.get("Pack", {}),
+            **diff.source.compute().values.get("Pack", {}),
         )
 
-    def _pack_replace(self, what: Widget, replaces: Widget, diff: Prop_ComputedMapping):
-        pack = diff.values.get("Pack") or {}
-        pack["after"] = replaces
-        self._pack(what, diff)
+    def _pack_at(
+        self,
+        container: ShadowNode[Any],
+        resource: Widget,
+        at: int,
+    ):
+        rendered_container = self.state[container]
+        pack_pos = get_pack_position(rendered_container.resource, at)
+        positioning = {
+            "in_": rendered_container.resource,
+            **pack_pos.to_dict(),
+        }
 
-    def _pack_at(self, resource: Widget, diff: Prop_ComputedMapping, at: int):
-        pack = diff.values.get("Pack", {})
-        if not pack:  # pragma: no cover
-            return
-        slaves = resource.master.slaves()
-        if slaves:
-            if at >= len(slaves):
-                pack["after"] = slaves[-1]
-            elif at <= 0:
-                pack["before"] = slaves[0]
-            else:
-                pack["after"] = slaves[at - 1]
-        self._pack(resource, diff)
+        resource.pack_configure(**positioning)
 
     def _update(self, resource: Widget, props: Prop_ComputedMapping) -> None:
         diff = props.values
@@ -80,20 +82,32 @@ class WidgetReconciler(ReconcilerBase[Widget]):
         if not configure:
             return
         resource.configure(**diff.get("configure", {}))
+        resource.pack_configure(**diff.get("Pack", {}))
 
-    def _get_some_ui_resource(self, node: ReconcileAction[Widget]) -> Widget | Tk:
+    def _get_some_ui_resource(
+        self, node: NonCompoundReconcileAction[Widget]
+    ) -> Widget | Tk:
         match node:
-            case Update(existing):
+            case Update(existing) | Unplace(existing):
                 return existing.resource
             case x:
                 container = x.container
                 return self.state.existing_resources[container.__uid__].resource
 
+    def _get_root(self, node: Misc) -> Tk:
+        while node.master:
+            node = node.master
+        return node  # type: ignore[return-value]
+
+    def _get_master_from_container(self, container: AnyNode) -> Tk:
+        master = self.state.existing_resources[container.__uid__].resource
+        return self._get_root(master)
+
     def _do_create_action(self, action: Update[Widget] | Create[Widget]):
         match action:
             case Create(next, container) as c:
-                parent = self.state.existing_resources[container.__uid__].resource
-                new_resource = self._create(parent, next)
+                master_root = self._get_master_from_container(container)
+                new_resource = self._create(master_root, next)
                 self._update(new_resource.resource, c.diff)
                 self._register(next, new_resource.resource)
                 return new_resource
@@ -103,6 +117,13 @@ class WidgetReconciler(ReconcilerBase[Widget]):
                 return existing.migrate(next)
             case _:
                 assert False, f"Unknown action: {action}"
+
+    def _unplace(self, rendered: RenderedNode[Widget]):
+        if rendered.node.__uid__ in self.state.placed_resources:
+            return
+        root = self._get_root(rendered.resource)
+        limbo = root.nametowidget("limbo")
+        rendered.resource.pack(in_=limbo)
 
     def _run_action_main_thread(self, action: ReconcileAction[Widget]):
         try:
@@ -117,33 +138,16 @@ class WidgetReconciler(ReconcilerBase[Widget]):
                 case Update(existing, next):
                     self._do_create_action(action)
                 case Unplace(existing):
-                    existing.resource.pack_forget()
-                case Place(_, at, Recreate(old, next, container)) as x:
-                    new_resource = self._do_create_action(Create(next, container))
-                    old.resource.destroy()
-                    self._pack_at(new_resource.resource, x.diff, at)
-                case Place(container, at, createAction) as x if not isinstance(
-                    createAction, Recreate
-                ):
+                    self._unplace(existing)
+                case Place(container, at, createAction) as x:
                     cur = self._do_create_action(createAction)
-                    self._pack_at(cur.resource, x.diff, at)
-                case Replace(_, existing, Recreate(old, next, container)) as x:
-                    cur = self._do_create_action(Create(next, container))
-                    self._pack_replace(cur.resource, existing.resource, x.diff)
-                    old.resource.destroy()
-                case Replace(container, existing, createAction) if not isinstance(
-                    createAction, Recreate
-                ):
-                    cur = self._do_create_action(createAction)
-                    self._pack_replace(
-                        cur.resource, existing.resource, createAction.diff
-                    )
+                    self._pack_at(container, cur.resource, at)
                 case _:
                     assert False, f"Unknown action: {action}"
         finally:
             self.waiter.set()
 
-    def run_action(self, action: ReconcileAction[Widget], log=True):
+    def run_action(self, action: NonCompoundReconcileAction[Widget], log=True):
         existing_parent = self._get_some_ui_resource(action)
         self.waiter.clear()
         existing_parent.after(0, lambda: self._run_action_main_thread(action))
@@ -151,7 +155,7 @@ class WidgetReconciler(ReconcilerBase[Widget]):
 
 
 class LabelReconciler(WidgetReconciler):
-    def _create(self, container: Widget, node: AnyNode) -> RenderedNode[Widget]:
+    def _create(self, container: Misc, node: AnyNode) -> RenderedNode[Widget]:
         return RenderedNode(
             TkLabel(container),
             node,
@@ -159,14 +163,14 @@ class LabelReconciler(WidgetReconciler):
 
 
 class ToolTipLabelReconciler(LabelReconciler):
-    def _create(self, container: Widget, node: AnyNode) -> RenderedNode[Widget]:
+    def _create(self, container: Misc, node: AnyNode) -> RenderedNode[Widget]:
         label = super()._create(container, node)
         make_clickthrough(label.resource)
         return label
 
 
 class FrameReconciler(WidgetReconciler):
-    def _create(self, container: Widget, node: AnyNode) -> RenderedNode[Widget]:
+    def _create(self, container: Widget | Tk, node: AnyNode) -> RenderedNode[Widget]:
         from tkinter import Frame as TkFrame
 
         return RenderedNode(

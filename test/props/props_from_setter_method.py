@@ -36,7 +36,7 @@ def it_works_for_setter_method():
     assert isinstance(stuff, Prop_Schema)
     assert stuff.name == "Stuff"
     assert stuff.path == ("One_Setter_Method_With_Dict",)
-    assert stuff.repr == "never"
+    assert stuff.diffing == "never"
     assert dict_equal(stuff.metadata, {"x": 5})
     stuff_b = stuff["b"]
     assert isinstance(stuff_b, Prop)
@@ -44,6 +44,6 @@ def it_works_for_setter_method():
     assert stuff_b.no_value == Some("")
     assert stuff_b.converter is str
     assert stuff_b.subsection == "configure"
-    assert stuff_b.repr == "never"
+    assert stuff_b.diffing == "never"
     assert stuff_b.value_type == str
     assert stuff_b.is_required is False

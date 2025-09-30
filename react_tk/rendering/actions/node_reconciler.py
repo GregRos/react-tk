@@ -5,14 +5,15 @@ from typing import Literal
 from react_tk.reflect.accessor.base import KeyAccessor
 from react_tk.props.impl import prop
 from react_tk.rendering.actions.actions import (
+    Compat,
     Create,
+    NonCompoundReconcileAction,
     Place,
-    Recreate,
-    Replace,
+    ReconcileAction,
     Unplace,
     Update,
 )
-from react_tk.rendering.actions.compute import AnyNode, ReconcileAction, logger
+from react_tk.rendering.actions.compute import AnyNode, logger
 from react_tk.rendering.actions.reconcile_state import (
     PersistentReconcileState,
     RenderedNode,
@@ -21,8 +22,6 @@ from react_tk.rendering.actions.reconcile_state import (
 
 
 from typing import Callable, Iterable, Protocol
-
-type Compat = Literal["update", "replace", "recreate"]
 
 
 @dataclass
@@ -43,7 +42,7 @@ class ReconcilerBase[Res](ABC):
     def create(cls, state: TransientReconcileState) -> "ReconcilerBase[Res]": ...
 
     @abstractmethod
-    def run_action(self, action: ReconcileAction[Res]) -> None: ...
+    def run_action(self, action: NonCompoundReconcileAction[Res]) -> None: ...
 
 
 class ReconcilerAccessor(KeyAccessor[type[ReconcilerBase]]):

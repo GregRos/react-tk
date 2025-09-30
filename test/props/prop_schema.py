@@ -138,7 +138,7 @@ class PropMapping_Test:
         assert missing_prop.value is Nothing
 
     def it_overwrites_value(self):
-        updated = self.mapping.update({"X": "there"})
+        updated = self.mapping.merge({"X": "there"})
         x_prop = updated["X"]
         assert isinstance(x_prop, Prop_Value)
         assert x_prop.value == Some("there")
@@ -149,10 +149,10 @@ class PropMapping_Test:
 
     def it_validates_on_update(self):
         with pytest.raises(ValueError):
-            self.mapping.update({"Y": "nope"})
+            self.mapping.merge({"Y": "nope"})
 
         with pytest.raises(ValueError):
-            self.mapping.update({"Z": 5})  # Z not in schema
+            self.mapping.merge({"Z": 5})  # Z not in schema
 
     def it_diffs_another_mapping(self):
         other = two_props({"X": "there", "Y": 3})

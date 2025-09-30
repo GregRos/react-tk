@@ -65,7 +65,7 @@ class HasPropsSchema:
             pbv = Prop_Mapping(prop=schema, value=input_values, old=None)
             values = pbv
         else:
-            values = values.get().update(input_values)
+            values = values.get().merge(input_values)
         clone = copy(self)
         PropValuesAccessor(clone).set(values)
         return clone
@@ -111,6 +111,10 @@ class ShadowNode[Kids: ShadowNode[Any] = Never](
     @property
     def PROPS(self) -> Prop_Mapping:
         return PropValuesAccessor(self).get()
+
+    @PROPS.setter
+    def PROPS(self, value: Prop_Mapping) -> None:
+        PropValuesAccessor(self).set(value)
 
     @prop_getter()
     def KIDS(self) -> Iterable["ShadowNode[Any]"]: ...

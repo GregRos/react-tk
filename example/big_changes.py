@@ -1,0 +1,94 @@
+from dataclasses import dataclass, field
+import os
+import sys
+from time import sleep
+
+from funcy import first
+
+
+from react_tk import (
+    Ctx,
+    Window,
+    Label,
+    Widget,
+    Component,
+    Window,
+    Font,
+    WindowRoot,
+    Frame,
+)
+
+
+@dataclass(kw_only=True)
+class ExampleComponent_1(Component[Widget]):
+    text: str
+
+    def render(self):
+
+        return [
+            Label(
+                text=self.text,
+                background="#000001",
+                foreground="#ffffff",
+                font=Font(family="Arial", size=20, style="bold"),
+            ).Pack(ipadx=20, ipady=15, fill="both"),
+            Label(
+                text="Another label",
+                background="#000001",
+            ),
+            Label(
+                text="Yet another label",
+                background="#000001",
+            ),
+        ]
+
+
+@dataclass(kw_only=True)
+class ExampleComponent_2(Component[Widget]):
+    text: str
+
+    def render(self):
+
+        return Label(
+            text=self.text,
+            background="#000001",
+            foreground="#ffffff",
+            font=Font(family="Arial", size=20, style="bold"),
+        ).Pack(ipadx=20, ipady=15, fill="both")
+
+
+@dataclass(kw_only=True)
+class ChangingComponent(Component[Widget]):
+    text: str
+
+    def render(self):
+        if self.ctx.first_item:
+            return Label(
+                text="First item",
+            )
+        return []
+
+
+@dataclass(kw_only=True)
+class WindowComponent(Component[Window]):
+
+    def render(self):
+        if self.ctx.component_id == 1:
+            child = ExampleComponent_1(text=self.ctx.text)
+        else:
+            child = ExampleComponent_2(text=self.ctx.text)
+
+        return Window(topmost=True, background="black", alpha=85).Geometry(
+            width=500, height=500, x=500, y=500, anchor_point="lt"
+        )[child, ChangingComponent(text="I'm changing")]
+
+
+my_root = WindowRoot(
+    WindowComponent(), text="component:1, first:True", component_id=1, first_item=True
+)
+
+sleep(2)
+my_root(text="component:2, first:False", component_id=2, first_item=False)
+
+sleep(4)
+my_root(text="component:1, first:false", component_id=1, first_item=False)

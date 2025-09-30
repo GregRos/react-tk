@@ -20,6 +20,15 @@
       "justMyCode": false
     },
     {
+      "name": "big_changes",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "example.big_changes",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false
+    },
+    {
       "name": "RUN tests",
       "type": "debugpy",
       "request": "launch",

@@ -32,14 +32,25 @@ class RenderedNode[Res]:
 @dataclass
 class PersistentReconcileState:
     existing_resources: dict[str, RenderedNode] = field(default_factory=dict)
+    placed_resources: set[str] = field(default_factory=set)
 
     def overwrite(self, rendered: RenderedNode) -> None:
         self.existing_resources[rendered.node.__uid__] = rendered
+        self.placed_resources.add(rendered.node.__uid__)
 
     def new_transient(self) -> "TransientReconcileState":
-        return TransientReconcileState(existing_resources=self.existing_resources)
+        return TransientReconcileState(
+            existing_resources=self.existing_resources,
+            placed_resources=self.placed_resources,
+        )
+
+    def __getitem__(self, node: ShadowNode[Any]) -> RenderedNode:
+        return self.existing_resources[node.__uid__]
+
+    def get(self, node: ShadowNode[Any]) -> RenderedNode | None:
+        return self.existing_resources.get(node.__uid__, None)
 
 
 @dataclass
 class TransientReconcileState(PersistentReconcileState):
-    placed: set[str] = field(default_factory=set)
+    placing: set[str] = field(default_factory=set)

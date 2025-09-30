@@ -3,20 +3,20 @@ from dataclasses import dataclass
 import logging
 import threading
 from tkinter import Tk
+from tkinter.ttk import Frame
 from typing import Any
 from react_tk.rendering.actions.node_reconciler import Compat
 from react_tk.renderable.node.shadow_node import ShadowNode
 from react_tk.props.impl.prop import Prop_ComputedMapping
 from react_tk.rendering.actions.actions import (
     Create,
-    Recreate,
-    Replace,
+    NonCompoundReconcileAction,
+    ReconcileAction,
     RenderedNode,
     Unplace,
     Update,
     Place,
 )
-from react_tk.rendering.actions.compute import ReconcileAction
 from react_tk.rendering.actions.node_reconciler import ReconcilerBase
 from react_tk.rendering.actions.reconcile_state import PersistentReconcileState
 from react_tk.tk.types.geometry import Geometry
@@ -71,17 +71,14 @@ class WindowReconciler(ReconcilerBase[Tk]):
 
     def _place(self, pair: RenderedNode[Tk], diff: Prop_ComputedMapping) -> None:
         def do_place():
-            geo = diff.values.get("Geometry")
-            if not geo:
-                return
             resource = pair.resource
-            normed = self._normalize_geo(resource, geo)
-            print(f"Setting {pair.TRACE.to_string("log")} geometry to {normed}")
-            resource.wm_geometry(normed)
+            resource.deiconify()
 
         self._schedule_and_wait(pair.resource, do_place)
 
-    def _replace(self, existing: Tk, replacement: RenderedNode[Tk]) -> None:
+    def _replace(
+        self, existing: RenderedNode[Tk], replacement: RenderedNode[Tk]
+    ) -> None:
         self._unplace(existing)
 
         def do_replace():
@@ -89,25 +86,29 @@ class WindowReconciler(ReconcilerBase[Tk]):
 
         self._schedule_and_wait(replacement.resource, do_replace)
 
-    def _update(self, resource: Tk, props: Prop_ComputedMapping) -> None:
+    def _update(self, rendered: RenderedNode[Tk], props: Prop_ComputedMapping) -> None:
         def do_update():
+            resource = rendered.resource
             if attrs := props.values.get("attributes"):
                 attributes = [
                     item for k, v in attrs.items() for item in (f"-{k}", v) if v
                 ]
                 resource.attributes(*attributes)
+            if geometry := props.values.get("Geometry"):
+                normed = self._normalize_geo(resource, geometry)
+                resource.geometry(normed)
             if configure := props.values.get("configure"):
                 resource.configure(**configure)
             if (override_redirect := props.values.get("override_redirect")) is not None:
                 resource.overrideredirect(override_redirect)
 
-        self._schedule_and_wait(resource, do_update)
+        self._schedule_and_wait(rendered.resource, do_update)
 
-    def _unplace(self, resource: Tk) -> None:
+    def _unplace(self, resource: RenderedNode[Tk]) -> None:
         def do_unplace():
-            resource.withdraw()
+            resource.resource.withdraw()
 
-        self._schedule_and_wait(resource, do_unplace)
+        self._schedule_and_wait(resource.resource, do_unplace)
 
     def _create_window(self, node: ShadowNode[Any]) -> "RenderedNode[Tk]":
         waiter = threading.Event()
@@ -116,6 +117,8 @@ class WindowReconciler(ReconcilerBase[Tk]):
         def ui_thread():
             nonlocal tk
             tk = Tk()
+            Frame(tk, name="limbo")
+
             waiter.set()
             tk.mainloop()
 
@@ -135,17 +138,17 @@ class WindowReconciler(ReconcilerBase[Tk]):
         match action:
             case Create(next, container) as c:
                 new_resource = self._create_window(next)
-                self._update(new_resource.resource, c.diff)
+                self._update(new_resource, c.diff)
                 self._register(next, new_resource.resource)
                 return new_resource
             case Update(existing, next, diff):
                 if diff:
-                    self._update(existing.resource, diff)
+                    self._update(existing, diff)
                 return existing.migrate(next)
             case _:
                 assert False, f"Unknown action: {action}"
 
-    def run_action(self, action: ReconcileAction[Tk]) -> None:
+    def run_action(self, action: NonCompoundReconcileAction[Tk]) -> None:
         if action:
             # FIXME: This should be an externalized event
             logger.info(f"⚖️  RECONCILE {action}")
@@ -155,27 +158,11 @@ class WindowReconciler(ReconcilerBase[Tk]):
 
         match action:
             case Update(existing, next, diff):
-                self._update(existing.resource, diff)
+                self._update(existing, diff)
             case Unplace(existing):
-                self._unplace(existing.resource)
-            case Place(_, at, Recreate(old, next, container)) as x:
-                new_resource = self._do_create_action(Create(next, container))
-                self._destroy(old.resource)
-                self._place(new_resource, x.diff)
-            case Place(container, at, createAction) as x if not isinstance(
-                createAction, Recreate
-            ):
+                self._unplace(existing)
+            case Place(container, at, createAction) as x:
                 cur = self._do_create_action(createAction)
                 self._place(cur, x.diff)
-            case Replace(_, existing, Recreate(old, next, container)) as x:
-                cur = self._do_create_action(Create(next, container))
-                self._replace(existing.resource, cur)
-                old.resource.destroy()
-            case Replace(container, existing, createAction) if not isinstance(
-                createAction, Recreate
-            ):
-                cur = self._do_create_action(createAction)
-                self._update(existing.resource, createAction.diff)
-                self._replace(cur.resource, existing)
             case _:
                 assert False, f"Unknown action: {action}"

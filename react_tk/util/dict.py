@@ -1,4 +1,6 @@
 from collections.abc import Mapping
+from copy import deepcopy
+from typing import Any
 
 
 def deep_merge(a: Mapping, b: Mapping) -> dict:
@@ -15,6 +17,32 @@ def deep_merge(a: Mapping, b: Mapping) -> dict:
         else:
             merged[key] = b_val
     return merged
+
+
+def deep_copy(d: Mapping) -> dict:
+    result = {}
+    for key, value in d.items():
+        if isinstance(value, Mapping):
+            result[key] = deep_copy(value)
+        else:
+            result[key] = value
+    return result
+
+
+def set_path(d: Mapping[str, Any], path: str, value: Any) -> dict:
+    """
+    Set a value in a nested dictionary at the specified path.
+    Creates intermediate dictionaries as needed.
+    Returns the modified dictionary.
+    """
+    keys = path.split(".")
+    current = deep_copy(d)
+    for key in keys[:-1]:
+        if key not in current or not isinstance(current[key], dict):
+            current[key] = {}
+        current = current[key]
+    current[keys[-1]] = value
+    return current
 
 
 def deep_diff(existing: Mapping, newer: Mapping) -> dict:
@@ -51,3 +79,14 @@ def dict_equal(a: Mapping, b: Mapping) -> bool:
             if a_val != b_val:
                 return False
     return True
+
+
+def repr_dict(d: Mapping) -> str:
+    items = []
+    for key, value in d.items():
+        if isinstance(value, Mapping):
+            value_str = repr_dict(value)
+        else:
+            value_str = repr(value)
+        items.append(f"{key}: {value_str}")
+    return "{" + ", ".join(items) + "}"

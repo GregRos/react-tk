@@ -15,7 +15,13 @@ from typing import Any, Iterable, Literal, Self
 from typeguard import TypeCheckError, check_type
 
 from react_tk.props.impl.common import DiffMode
-from react_tk.util.dict import deep_diff, deep_merge, dict_equal
+from react_tk.util.dict import (
+    deep_diff,
+    deep_merge,
+    dict_equal,
+    repr_dict,
+    set_path,
+)
 from react_tk.util.maybe import MaybeOption, maybe_normalize
 from react_tk.util.missing import MISSING_TYPE, MISSING
 
@@ -37,7 +43,7 @@ type Prop_Any = "Prop | Prop_Schema"
 
 class _Prop_Base:
     name: str
-    repr: DiffMode
+    diffing: DiffMode
     metadata: Mapping[str, Any]
     computed_name: str | None = None
     path: tuple[str, ...]
@@ -71,13 +77,13 @@ class Prop_Schema(VMappingBase[str, "Prop_Any"], _Prop_Base):
         path: tuple[str, ...],
         name: str,
         props: "Prop_Schema.Input" = (),
-        repr: DiffMode = "recursive",
+        diffing: DiffMode = "recursive",
         computed_name: str | None = None,
         metadata: Mapping[str, Any] = {},
     ):
         self.path = path
         self.name = name
-        self.repr = repr
+        self.diffing = diffing
         self.computed_name = computed_name
         self.metadata = metadata
         self._props = self._to_dict(props)
@@ -149,7 +155,7 @@ class Prop[T](_Prop_Base):
     no_value: Option[T] = field(default=Nothing)
     value_type: type[T]
     name: str
-    repr: DiffMode = field(default="recursive")
+    diffing: DiffMode = field(default="recursive")
     metadata: Mapping[str, Any] = field(default=MappingProxyType({}))
     computed_name: str | None = field(default=None)
     path: tuple[str, ...]
@@ -257,6 +263,12 @@ class Prop_Mapping(VMappingBase[str, "SomePropValue"]):
         self._values = value
         self._old = old
 
+    def is_valid(self) -> bool:
+        return self.prop.is_valid(self._values)
+
+    def assert_valid(self) -> None:
+        self.prop.assert_valid(self._values)
+
     @property
     def fqn(self) -> str:
         return self.prop.fqn
@@ -267,7 +279,6 @@ class Prop_Mapping(VMappingBase[str, "SomePropValue"]):
 
     def compute(self) -> "Prop_ComputedMapping":
         result = {}
-        self.prop.assert_valid(self._values)
 
         def _get_or_create_section(name: str | None) -> dict[str, Any]:
             if name is None:
@@ -355,7 +366,11 @@ class Prop_Mapping(VMappingBase[str, "SomePropValue"]):
                     raise ValueError(f"Invalid prop type: {type(prop)}")
         return Prop_Mapping(prop=schema, value=kvs, old=old)
 
-    def update(self, overrides: KeyedValues) -> "Prop_Mapping":
+    def set(self, path: str, value: Any):
+        my_values = set_path(self._values, path, value)
+        return Prop_Mapping(prop=self.prop, value=my_values, old=self._values)
+
+    def merge(self, overrides: KeyedValues) -> "Prop_Mapping":
         new_values = deep_merge(self._values, overrides)
         return Prop_Mapping(prop=self.prop, value=new_values, old=self._values)
 
@@ -394,6 +409,9 @@ class Prop_ComputedMapping:
                 return dict_equal(self.values, m)
             case _:
                 return False
+
+    def __repr__(self) -> str:
+        return repr_dict(self.values)
 
     def diff(
         self, other: "Prop_ComputedMapping | KeyedValues"
