@@ -6,17 +6,9 @@ from time import sleep
 from funcy import first
 
 
-from react_tk import (
-    Ctx,
-    Window,
-    Label,
-    Widget,
-    Component,
-    Window,
-    Font,
-    WindowRoot,
-    Frame,
-)
+from react_tk import Ctx, Window, Widget, Component, Window, Font, WindowRoot, Button
+from react_tk.tk.nodes.frame import Frame
+from react_tk.tk.nodes.label import Label
 
 
 @dataclass(kw_only=True)
@@ -66,6 +58,9 @@ class ChangingComponent(Component[Widget]):
     text: str
 
     def render(self):
+        return Button(
+            key="cm.button", text="press me", on_click=lambda: print("pressed")
+        )
         if self.ctx.first_item:
             return Label(
                 key="cm.label",

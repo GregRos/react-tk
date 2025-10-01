@@ -43,7 +43,7 @@ type Prop_Any = "Prop | Prop_Schema"
 
 class _Prop_Base:
     name: str
-    diffing: DiffMode
+    diff: DiffMode
     metadata: Mapping[str, Any]
     computed_name: str | None = None
     path: tuple[str, ...]
@@ -77,13 +77,13 @@ class Prop_Schema(VMappingBase[str, "Prop_Any"], _Prop_Base):
         path: tuple[str, ...],
         name: str,
         props: "Prop_Schema.Input" = (),
-        diffing: DiffMode = "recursive",
+        diff: DiffMode = "recursive",
         computed_name: str | None = None,
         metadata: Mapping[str, Any] = {},
     ):
         self.path = path
         self.name = name
-        self.diffing = diffing
+        self.diff = diff
         self.computed_name = computed_name
         self.metadata = metadata
         self._props = self._to_dict(props)
@@ -155,7 +155,7 @@ class Prop[T](_Prop_Base):
     no_value: Option[T] = field(default=Nothing)
     value_type: type[T]
     name: str
-    diffing: DiffMode = field(default="recursive")
+    diff: DiffMode = field(default="recursive")
     metadata: Mapping[str, Any] = field(default=MappingProxyType({}))
     computed_name: str | None = field(default=None)
     path: tuple[str, ...]
@@ -386,6 +386,9 @@ class Prop_Mapping(VMappingBase[str, "SomePropValue"]):
 class Prop_ComputedMapping:
     values: KeyedValues
     source: Prop_Mapping = field(repr=False)
+
+    def __getitem__(self, key: str) -> Any:
+        return self.values[key]
 
     def __post_init__(self):
         def remove_KIDS_recursively(d: dict[str, Any]) -> dict[str, Any]:

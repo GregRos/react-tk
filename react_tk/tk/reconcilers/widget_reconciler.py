@@ -154,28 +154,3 @@ class WidgetReconciler(ReconcilerBase[Widget]):
         self.waiter.clear()
         existing_parent.after(0, lambda: self._run_action_main_thread(action))
         self.waiter.wait()
-
-
-class LabelReconciler(WidgetReconciler):
-    def _create(self, container: Misc, node: AnyNode) -> RenderedNode[Widget]:
-        return RenderedNode(
-            TkLabel(container),
-            node,
-        )
-
-
-class ToolTipLabelReconciler(LabelReconciler):
-    def _create(self, container: Misc, node: AnyNode) -> RenderedNode[Widget]:
-        label = super()._create(container, node)
-        make_clickthrough(label.resource)
-        return label
-
-
-class FrameReconciler(WidgetReconciler):
-    def _create(self, container: Widget | Tk, node: AnyNode) -> RenderedNode[Widget]:
-        from tkinter import Frame as TkFrame
-
-        return RenderedNode(
-            TkFrame(container),
-            node,
-        )

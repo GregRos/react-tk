@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Literal
+from logging import getLogger
+from typing import Any, Literal
 
 from react_tk.reflect.accessor.base import KeyAccessor
 from react_tk.props.impl import prop
+from react_tk.renderable.node.shadow_node import ShadowNode
 from react_tk.rendering.actions.actions import (
     Compat,
     Create,
@@ -12,15 +14,18 @@ from react_tk.rendering.actions.actions import (
     Unplace,
     Update,
 )
-from react_tk.rendering.actions.compute import AnyNode, logger
 from react_tk.rendering.actions.reconcile_state import (
     PersistentReconcileState,
     RenderedNode,
     TransientReconcileState,
 )
 
+type AnyNode = ShadowNode[ShadowNode[Any]]
+
 
 from typing import Callable, Iterable, Protocol
+
+logger = getLogger("react_tk").getChild("reconciler")
 
 
 @dataclass

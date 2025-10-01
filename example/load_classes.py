@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from typing import Self
 from react_tk.renderable.component import AbsCtx, Component, RenderResult
 from react_tk.renderable.context import Ctx
-from react_tk.tk.nodes.widget import Label, Widget
+from react_tk.tk.nodes.label import Label
+from react_tk.tk.nodes.widget import Widget
 from react_tk.tk.nodes.window import Window
 from react_tk.tk.types.font import Font
 

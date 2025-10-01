@@ -39,7 +39,7 @@ def _create_prop(
     x: Any = annotation.inner_type
     return Prop[x](
         name=name,
-        diffing=meta.diffing,
+        diff=meta.diff,
         no_value=maybe_normalize(meta.no_value),
         converter=meta.converter,
         computed_name=meta.name,
@@ -60,7 +60,7 @@ def _create_schema(
         name=name,
         computed_name=meta.name,
         props=_read_props_from_class(path + (name,), annotation.inner_type),
-        diffing=meta.diffing,
+        diff=meta.diff,
         metadata=meta.metadata,
     )
 
@@ -89,10 +89,10 @@ def _get_meta_for_prop(
         case x if (
             isinstance(x, type) and issubclass(x, (Mapping, VMappingBase))
         ) or is_typeddict(x):
-            return schema_meta(diffing="recursive")
+            return schema_meta(diff="recursive")
         case _:
             return prop_meta(
-                no_value=Nothing, converter=None, diffing="recursive", metadata={}
+                no_value=Nothing, converter=None, diff="recursive", metadata={}
             )
 
 
@@ -151,13 +151,11 @@ def read_props_from_top_class(cls: type) -> "Prop_Schema":
     name = cls.__name__
     props = [*_read_props_from_class((name,), cls)]
     init_block = funcy.first(x for x in props if x.name == "__init__")
-    diffing = "recursive"
+    diff = "recursive"
     metadata = {}
     if init_block:
         props.remove(init_block)
         props.extend(init_block.values())  # type: ignore
-        diffing = init_block.diffing
+        diff = init_block.diff
         metadata = init_block.metadata
-    return Prop_Schema(
-        path=(), name=name, props=props, diffing=diffing, metadata=metadata
-    )
+    return Prop_Schema(path=(), name=name, props=props, diff=diff, metadata=metadata)

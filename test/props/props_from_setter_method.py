@@ -17,14 +17,14 @@ class One_Annotated_Prop(TypedDict):
             name="__b__",
             no_value="",
             subsection="configure",
-            diffing="never",
+            diff="never",
             metadata={"x": 5},
         ),
     ]
 
 
 class One_Setter_Method_With_Dict(_HasMerge):
-    @schema_setter(diffing="never", name="__Stuff__", metadata={"x": 5})
+    @schema_setter(diff="never", name="__Stuff__", metadata={"x": 5})
     def Stuff(self, **stuff: Unpack[One_Annotated_Prop]) -> None: ...
 
 
@@ -36,7 +36,7 @@ def it_works_for_setter_method():
     assert isinstance(stuff, Prop_Schema)
     assert stuff.name == "Stuff"
     assert stuff.path == ("One_Setter_Method_With_Dict",)
-    assert stuff.diffing == "never"
+    assert stuff.diff == "never"
     assert dict_equal(stuff.metadata, {"x": 5})
     stuff_b = stuff["b"]
     assert isinstance(stuff_b, Prop)
@@ -44,6 +44,6 @@ def it_works_for_setter_method():
     assert stuff_b.no_value == Some("")
     assert stuff_b.converter is str
     assert stuff_b.subsection == "configure"
-    assert stuff_b.diffing == "never"
+    assert stuff_b.diff == "never"
     assert stuff_b.value_type == str
     assert stuff_b.is_required is False

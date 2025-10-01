@@ -74,7 +74,7 @@ class HasPropsSchema:
 
 class NodeProps(TypedDict):
     key: Annotated[NotRequired[str], prop_meta(no_value=Some(None))]
-    KIDS: Annotated[NotRequired[Iterable[Any]], prop_meta(no_value=(), diffing="never")]
+    KIDS: Annotated[NotRequired[Iterable[Any]], prop_meta(no_value=(), diff="never")]
 
 
 @dataclass

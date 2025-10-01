@@ -28,18 +28,16 @@ from react_tk.renderable.node.shadow_node import (
 )
 from react_tk.rendering.actions.node_reconciler import ReconcilerBase
 from react_tk.tk.nodes.widget import Widget
+from react_tk.tk.props.background import BackgroundProps
 from react_tk.tk.reconcilers.widget_reconciler import WidgetReconciler
 from react_tk.tk.reconcilers.window_reconciler import WindowReconciler
 from react_tk.tk.types.geometry import Geometry
 from react_tk.rendering.actions.node_reconciler import reconciler
 
 
-class WindowProps(NodeProps):
+class WindowProps(NodeProps, BackgroundProps):
     topmost: Annotated[
         NotRequired[bool], prop_meta(subsection="attributes", no_value=False)
-    ]
-    background: Annotated[
-        NotRequired[str], prop_meta(subsection="configure", no_value=Some(None))
     ]
     transparent_color: Annotated[
         NotRequired[str],

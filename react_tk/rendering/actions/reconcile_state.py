@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 from react_tk.renderable.node.prop_value_accessor import PropValuesAccessor
 from react_tk.renderable.node.shadow_node import ShadowNode, ShadowNodeInfo
 from react_tk.renderable.trace import RenderTrace, RenderTraceAccessor
+from react_tk.tk.widget_data import WidgetNode
 
 if TYPE_CHECKING:
     from react_tk.rendering.actions.compute import AnyNode
@@ -13,6 +14,9 @@ if TYPE_CHECKING:
 class RenderedNode[Res]:
     resource: Res
     node: ShadowNode[Any]
+
+    def __post_init__(self):
+        WidgetNode(self.resource).set(self.node)
 
     def __str__(self) -> str:
         return f"®️ {str(self.node)}"
@@ -26,6 +30,7 @@ class RenderedNode[Res]:
 
     def migrate(self, node: "AnyNode"):
         self.node = node
+        WidgetNode(self.resource).set(node)
         return self
 
 

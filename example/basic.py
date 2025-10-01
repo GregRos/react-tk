@@ -7,14 +7,14 @@ from time import sleep
 from react_tk import (
     Ctx,
     Window,
-    Label,
     Widget,
     Component,
     Window,
     Font,
     WindowRoot,
-    Frame,
 )
+from react_tk.tk.nodes.frame import Frame
+from react_tk.tk.nodes.label import Label
 
 
 @dataclass(kw_only=True)

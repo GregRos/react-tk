@@ -32,7 +32,7 @@ class common_meta:
 
 @dataclass(kw_only=True)
 class prop_meta(common_meta):
-    diffing: DiffMode = "simple"
+    diff: DiffMode = "simple"
     subsection: str | None = None
     no_value: Any = field(default=Nothing)
     converter: Converter[Any] | None = None
@@ -40,7 +40,7 @@ class prop_meta(common_meta):
 
 @dataclass(kw_only=True)
 class schema_meta(common_meta):
-    diffing: DiffMode = "recursive"
+    diff: DiffMode = "recursive"
 
 
 type some_meta = prop_meta | schema_meta
