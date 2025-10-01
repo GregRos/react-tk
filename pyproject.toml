@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "react-tk"
-version = "0.2.5"
-description = "Tkinter UI with react principles."
+version = "0.3.0"
+description = "Build Tkinter apps the React way"
 authors = ["GregRos <gregros@gregros.dev>"]
 license = "MIT"
 readme = "README.md"

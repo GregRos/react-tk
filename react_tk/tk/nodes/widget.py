@@ -19,6 +19,8 @@ from react_tk.renderable.node.prop_value_accessor import PropValuesAccessor
 
 from react_tk.props.annotations import schema_meta, schema_setter
 from react_tk.rendering.actions.node_reconciler import ReconcilerBase
+from react_tk.tk.props.frame import FrameProps
+from react_tk.tk.props.label import LabelProps
 from react_tk.tk.props.pack import PackProps
 from react_tk.tk.props.text import TextProps
 from react_tk.tk.props.width_height import WidthHeightProps
@@ -33,14 +35,6 @@ from react_tk.tk.reconcilers.widget_reconciler import (
 from react_tk.tk.types.font import Font
 from react_tk.renderable.node.shadow_node import NodeProps, ShadowNode
 from react_tk.rendering.actions.node_reconciler import reconciler
-
-
-class LabelProps(NodeProps, WidthHeightProps, BorderProps, BackgroundProps, TextProps):
-    pass
-
-
-class FrameProps(NodeProps, WidthHeightProps, BorderProps, BackgroundProps):
-    pass
 
 
 @reconciler(WidgetReconciler)

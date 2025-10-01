@@ -1,6 +1,6 @@
 # react-tk
 
-React-tk is an experimental framework building Tkinter UIs using React principles.
+React-tk is an experimental framework building Tkinter UIs using React principles. It uses a shadow UI reconciliation system, tracking changes in props and context to determine what needs to be updated in the actual Tkinter widgets.
 
 Features and limitations:
 
@@ -30,6 +30,12 @@ Features and limitations:
 - ShadowNodes sometimes accept several kinds of props.
 - For example, Widgets accept base props and layout manager props.
 - This works using a separate method you need to call. See below.
+
+## Install
+
+```bash
+poetry add react-tk
+```
 
 ## Tk Nodes / Widgets / Resources
 
@@ -157,3 +163,5 @@ ui_root(text="Hello again!")
 ```
 
 This will regenerate the component tree and reconcile any changes with the mounted UI.
+
+## Technical stuff

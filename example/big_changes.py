@@ -27,16 +27,19 @@ class ExampleComponent_1(Component[Widget]):
 
         return [
             Label(
+                key="em_1.label1",
                 text=self.text,
                 background="#000001",
                 foreground="#ffffff",
                 font=Font(family="Arial", size=20, style="bold"),
             ).Pack(ipadx=20, ipady=15, fill="both"),
             Label(
+                key="em_1.label2",
                 text="Another label",
                 background="#000001",
             ),
             Label(
+                key="em_1.label3",
                 text="Yet another label",
                 background="#000001",
             ),
@@ -50,6 +53,7 @@ class ExampleComponent_2(Component[Widget]):
     def render(self):
 
         return Label(
+            key="em_2.label1",
             text=self.text,
             background="#000001",
             foreground="#ffffff",
@@ -64,6 +68,7 @@ class ChangingComponent(Component[Widget]):
     def render(self):
         if self.ctx.first_item:
             return Label(
+                key="cm.label",
                 text="First item",
             )
         return []
@@ -86,11 +91,19 @@ class WindowComponent(Component[Window]):
 my_root = WindowRoot(
     WindowComponent(), text="component:1, first:True", component_id=1, first_item=True
 )
+ctx = my_root.ctx
 
-sleep(2)
-my_root(text="component:2, first:False", component_id=2, first_item=False)
 
-sleep(4)
-my_root(text="component:1, first:false", component_id=1, first_item=False)
-sleep(2)
-my_root(first_item=True)
+@ctx.schedule(delay=4, always_run=True)
+def step_1():
+    my_root(text="component:2, first:False", component_id=2, first_item=False)
+
+
+@ctx.schedule(delay=6, always_run=True)
+def step_2():
+    my_root(text="component:1, first:True", component_id=1, first_item=False)
+
+
+@ctx.schedule(delay=8, always_run=True)
+def step_3():
+    my_root(first_item=True)

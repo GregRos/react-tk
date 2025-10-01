@@ -43,7 +43,7 @@ class WidgetReconciler(ReconcilerBase[Widget]):
     @override
     def get_compatibility(cls, older: RenderedNode[Widget], newer: AnyNode) -> Compat:
         # TODO: Find a better way to determine compatibility
-        if older.node.__uid__ != newer.__uid__:
+        if older.node.__info__.uid != newer.__info__.uid:
             return "switch"
         pack_info = older.resource.pack_info()
         in_ = pack_info.get("in", None)
@@ -72,7 +72,7 @@ class WidgetReconciler(ReconcilerBase[Widget]):
         pack_pos = get_pack_position(rendered_container.resource, at)
         positioning = {
             "in_": rendered_container.resource,
-            **pack_pos.to_dict(),
+            **(pack_pos.to_dict() if pack_pos else {}),
         }
 
         resource.pack_configure(**positioning)
@@ -82,8 +82,6 @@ class WidgetReconciler(ReconcilerBase[Widget]):
         configure = diff.get("configure", {})
         if "font" in diff:
             configure["font"] = to_tk_font(diff["font"])
-        if not configure:
-            return
         resource.configure(**diff.get("configure", {}))
         resource.pack_configure(**diff.get("Pack", {}))
 
@@ -93,7 +91,7 @@ class WidgetReconciler(ReconcilerBase[Widget]):
                 return existing.resource
             case x:
                 container = x.container
-                return self.state.existing_resources[container.__uid__].resource
+                return self.state.existing_resources[container.__info__.uid].resource
 
     def _get_root(self, node: Misc) -> Tk:
         while node.master:
@@ -101,7 +99,7 @@ class WidgetReconciler(ReconcilerBase[Widget]):
         return node  # type: ignore[return-value]
 
     def _get_master_from_container(self, container: AnyNode) -> Tk:
-        master = self.state.existing_resources[container.__uid__].resource
+        master = self.state.existing_resources[container.__info__.uid].resource
         return self._get_root(master)
 
     def _do_create_action(self, action: Update[Widget] | Create[Widget]):
@@ -133,7 +131,6 @@ class WidgetReconciler(ReconcilerBase[Widget]):
                 logger.info(f"⚖️  RECONCILE {action}")
             else:
                 logger.info(f"🚫 RECONCILE {action.key} ")
-                return
 
             match action:
                 case Replace(container, replaces, with_what, at):

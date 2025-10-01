@@ -44,7 +44,7 @@ class RootReconciler[Node: ShadowNode[Any] = ShadowNode[Any]]:
             yield x
 
     def reconcile(self, nodes: tuple[ShadowNode[Any], ...]):
-        top_level_fake = TopLevelNode(KIDS=nodes)
+        top_level_fake = TopLevelNode(KIDS=nodes, key="top")
 
         transient_state = self.state.new_transient()
         actions = [*self._compute_actions(transient_state, top_level_fake)]

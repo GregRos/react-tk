@@ -26,6 +26,8 @@ if TYPE_CHECKING:
 
 
 class _HasMerge(Protocol):
+    def __post_init__(self) -> None:
+        pass
 
     def __merge__(self, other: "KeyedValues") -> Self: ...
 
@@ -40,6 +42,8 @@ class MethodSetterTransformer:
         def __init__(self: _HasMerge, *args, **kwargs: Any) -> None:
             result = self.__merge__(kwargs)
             PropValuesAccessor(self).set_from(result)
+            self.__post_init__()
+
             return None
 
         if f.__name__ == "__init__":

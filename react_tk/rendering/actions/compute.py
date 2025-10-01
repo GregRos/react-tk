@@ -108,7 +108,7 @@ class ComputeTreeActions:
     def _check_duplicates(rendering: Iterable[ShadowNode]):
         key_to_nodes = {
             key: list(group)
-            for key, group in groupby(rendering, key=lambda x: x.__uid__)
+            for key, group in groupby(rendering, key=lambda x: x.__info__.uid)
         }
         messages = {
             key: f"Duplicates for {key} found: {group} "
@@ -119,12 +119,12 @@ class ComputeTreeActions:
             raise ValueError(messages)
 
     def _existing_children(self, parent: AnyNode) -> Iterable[RenderedNode[Any]]:
-        existing_parent = self.state.existing_resources.get(parent.__uid__)
+        existing_parent = self.state.existing_resources.get(parent.__info__.uid)
         if not existing_parent:
             return
         for child in existing_parent.node.KIDS:
-            if child.__uid__ not in self.state.being_placed:
-                existing_child = self.state.existing_resources.get(child.__uid__)
+            if child.__info__.uid not in self.state.being_placed:
+                existing_child = self.state.existing_resources.get(child.__info__.uid)
                 if existing_child:
                     yield existing_child
 
@@ -138,17 +138,19 @@ class ComputeTreeActions:
             if is_creating_new:
                 prev = None
             pos += 1
-            if not next and prev and prev.node.__uid__ in self.state.being_placed:
+            if not next and prev and prev.node.__info__.uid in self.state.being_placed:
                 # if the prev node has gone somewhere else, it's already been unplaced
                 # from its node-based position.
                 continue
             if next:
-                self.state.being_placed.add(next.__uid__)
+                self.state.being_placed.add(next.__info__.uid)
             prev_resource = (
-                self.state.existing_resources.get(prev.node.__uid__) if prev else None
+                self.state.existing_resources.get(prev.node.__info__.uid)
+                if prev
+                else None
             )
             old_next_rendered = (
-                self.state.existing_resources.get(next.__uid__) if next else None
+                self.state.existing_resources.get(next.__info__.uid) if next else None
             )
             action = _ComputeAction(
                 prev=prev_resource or prev,

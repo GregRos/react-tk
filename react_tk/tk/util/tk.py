@@ -34,10 +34,12 @@ def get_in(resource: Widget | Tk) -> Widget | Tk:
     return info.get("in") or get_root(resource)  # type: ignore[return-value]
 
 
-def get_pack_position(resource: Widget, at: int) -> PackPosition:
+def get_pack_position(resource: Widget, at: int) -> PackPosition | None:
     packed_in = get_in(resource)
     slaves = packed_in.pack_slaves()
     if not slaves:
+        if at == 0:
+            return None
         raise ValueError("No packed slaves found")
     if at >= len(slaves):
         return After(slaves[-1])

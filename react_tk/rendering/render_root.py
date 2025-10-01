@@ -1,4 +1,5 @@
 from typing import Any
+from react_tk.interaction.scheduler import Scheduler
 from react_tk.renderable.component import Component
 from react_tk.renderable.context import Ctx, ctx_freeze
 from react_tk.renderable.node.shadow_node import ShadowNode

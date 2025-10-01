@@ -28,11 +28,13 @@ class RenderFrame:
     filename: str = field(default="")
 
     @classmethod
-    def create(
-        cls,
-        rendered: "RenderElement",
-        frame_info: ReactTkFrameInfo,
-    ) -> "RenderFrame":
+    def create(cls, rendered: "RenderElement") -> "RenderFrame":
+        frame_info = ConstructTraceAccessor(rendered).get(None)
+
+        if not frame_info:
+            raise RuntimeError(
+                f"Expected {rendered.__class__} to have a construct trace, but it was missing"
+            )
         return cls(
             type_name=type(rendered).__name__,
             key=rendered.key,
@@ -111,7 +113,7 @@ class RenderTrace:
     def to_string(self, display: Display) -> str:
         frames = self.frames
         if display == "short-id":
-            frames = self.frames[-2:]
+            frames = self.frames[-1:]
             display = "id"
         parts = [frame.to_string(display) for frame in frames]
         result = ""

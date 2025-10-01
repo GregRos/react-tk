@@ -81,11 +81,13 @@ def dict_equal(a: Mapping, b: Mapping) -> bool:
     return True
 
 
-def repr_dict(d: Mapping) -> str:
+def get_dict_one_line(d: Mapping) -> str:
     items = []
     for key, value in d.items():
         if isinstance(value, Mapping):
-            value_str = repr_dict(value)
+            value_str = get_dict_one_line(value)
+        elif value is None:
+            continue
         else:
             value_str = repr(value)
         items.append(f"{key}: {value_str}")

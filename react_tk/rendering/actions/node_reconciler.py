@@ -29,7 +29,7 @@ class ReconcilerBase[Res](ABC):
 
     def _register(self, node: AnyNode, resource: Res) -> RenderedNode[Res]:
         rendered = RenderedNode(resource, node)
-        self.state.existing_resources[node.__uid__] = rendered
+        self.state.existing_resources[node.__info__.uid] = rendered
         return rendered
 
     @classmethod

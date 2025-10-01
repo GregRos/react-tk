@@ -162,7 +162,6 @@ class WindowReconciler(ReconcilerBase[Tk]):
             logger.info(f"⚖️  RECONCILE {action}")
         else:
             logger.info(f"🚫 RECONCILE {action.key} ")
-            return
 
         match action:
             case Replace(container, replaces, with_what, at):
@@ -170,7 +169,7 @@ class WindowReconciler(ReconcilerBase[Tk]):
                 self._unplace(replaces)
                 self._place(cur)
             case Update(existing, next, diff):
-                self._update(existing, diff)
+                self._do_create_action(action)
             case Unplace(existing):
                 self._unplace(existing)
             case Place(container, at, createAction) as x:

@@ -21,6 +21,7 @@ from typing import (
 )
 
 from expression import Some
+from react_tk.props.impl import prop
 from react_tk.renderable.node.prop_value_accessor import (
     PropValuesAccessor,
     PropsAccessor,
@@ -81,10 +82,16 @@ class ShadowNodeInfo:
     class_name: str
     reconciler_name: str
     custom_key: str
-    uid: str
     trace: RenderTrace
     ctor_trace: ReactTkFrameInfo
-    short_id: str
+
+    @property
+    def short_id(self) -> str:
+        return self.trace.to_string("short-id")
+
+    @property
+    def uid(self) -> str:
+        return self.trace.to_string("id")
 
     @classmethod
     def from_node(cls, node: "ShadowNode[Any]") -> "ShadowNodeInfo":
@@ -97,10 +104,8 @@ class ShadowNodeInfo:
             class_name=node.__class__.__name__,
             reconciler_name=reconciler.__name__,
             custom_key=node.key or "",
-            uid=node.__uid__,
             ctor_trace=ctor_trace,
             trace=trace,
-            short_id=trace.to_string("short-id"),
         )
 
 
@@ -125,13 +130,9 @@ class ShadowNode[Kids: ShadowNode[Any] = Never](
     def key(self) -> str: ...
 
     @property
-    def __uid__(self):
-        return RenderTraceAccessor(self).get().to_string("id")
-
-    @property
     def __info__(self) -> ShadowNodeInfo:
         return ShadowNodeInfo.from_node(self)
 
     def __str__(self) -> str:
         info = ShadowNodeInfo.from_node(self)
-        return f"{info.class_name} {info.short_id}"
+        return f"{info.short_id}"

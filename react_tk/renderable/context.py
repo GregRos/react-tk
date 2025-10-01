@@ -1,15 +1,15 @@
-from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from logging import getLogger
-from threading import Lock
 import threading
-from time import sleep
+import asyncio
 from typing import Any, Callable, Self
 
 from expression import Nothing
 
+from react_tk.interaction.scheduler import ScheduleInfo, Scheduler, _bind_schedule
 from react_tk.renderable.component import AbsCtx
 from react_tk.util.core_reflection import get_attr_skip_hook, has_attr_skip_hook
+from react_tk.util.async_loop import create_event_loop
 
 logger = getLogger("react_tk")
 
@@ -32,34 +32,24 @@ class CtxLock:
 # - Consider coolass API for schedule, like ctx(lambda x: x + 1, 10)
 # - Probably do away with setattr and leave getattr
 # - Improve context equality mechanism
-class Ctx(AbsCtx):
+class Ctx(Scheduler, AbsCtx):
     _listeners: list[Callable[[Self], None]] = []
     _map: dict[str, Any] = {}
     _frozen: bool = False
-    _pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=1)
+
+    def __copy__(self) -> "Ctx":
+        return Ctx(**self._map.copy())
 
     def __init__(self, **attrs: Any):
+        super().__init__("CtxScheduler")
         self._map = dict[str, Any](attrs)
         self._listeners = []
 
     def __getattr__(self, name: str) -> Any:
-        attr = get_attr_skip_hook(self, name)
-        if not attr is Nothing:
-            return attr.value
-
-        return self._map.get(name, None)
-
-    def schedule(self, func: Callable[["Ctx"], Any], delay: float) -> None:
-        state_at_schedule = ctx_snapshot(self)
-
-        def worker():
-            sleep(delay)
-            if state_at_schedule != self:
-                logger.warning("Ctx has changed, skipping scheduled task")
-                return
-            func(self)
-
-        self._pool.submit(worker)
+        attr = get_attr_skip_hook(self, name, run_get=name == "scheduler")
+        if attr is Nothing:
+            return self._map.get(name, None)
+        return attr.value
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Ctx):

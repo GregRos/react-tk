@@ -19,7 +19,7 @@ from react_tk.util.dict import (
     deep_diff,
     deep_merge,
     dict_equal,
-    repr_dict,
+    get_dict_one_line,
     set_path,
 )
 from react_tk.util.maybe import MaybeOption, maybe_normalize
@@ -391,6 +391,8 @@ class Prop_ComputedMapping:
         def remove_KIDS_recursively(d: dict[str, Any]) -> dict[str, Any]:
             if "KIDS" in d:
                 d = {k: v for k, v in d.items() if k != "KIDS"}
+            if "key" in d:
+                d = {k: v for k, v in d.items() if k != "key"}
             for k, v in d.items():
                 if isinstance(v, dict):
                     d[k] = remove_KIDS_recursively(v)
@@ -411,7 +413,7 @@ class Prop_ComputedMapping:
                 return False
 
     def __repr__(self) -> str:
-        return repr_dict(self.values)
+        return get_dict_one_line(self.values)
 
     def diff(
         self, other: "Prop_ComputedMapping | KeyedValues"

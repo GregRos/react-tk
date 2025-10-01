@@ -52,19 +52,6 @@ class RenderSink[Node: ShadowNode[Any] = ShadowNode[Any]](AbsSink[Node]):
     def ctx(self) -> AbsCtx:
         return self.state.ctx
 
-    def _get_construct_trace(self, node: RenderElement[Node]):
-        if not is_render_element[Node](node):
-            raise TypeError(
-                f"Expected node to be ShadowNode or Component, but got {type(node)}"
-            )
-        construct_trace = ConstructTraceAccessor(node).get(None)
-
-        if not construct_trace:
-            raise RuntimeError(
-                f"Expected {node.__class__} to have a construct trace, but it was missing"
-            )
-        return construct_trace
-
     def _child_sink(self, trace: RenderTrace) -> "RenderSink[Node]":
         return RenderSink(
             state=self.state,
@@ -72,8 +59,7 @@ class RenderSink[Node: ShadowNode[Any] = ShadowNode[Any]](AbsSink[Node]):
         )
 
     def _render_one(self, node: RenderElement[Node]) -> RenderResult[Node]:
-        construct_trace = self._get_construct_trace(node)
-        frame_base = RenderFrame.create(node, construct_trace)
+        frame_base = RenderFrame.create(node)
         sequenced = self.state.produce_sequenced(self.trace_root, frame_base)
         new_trace = self.trace_root + sequenced
         RenderTraceAccessor(node).set(new_trace)
