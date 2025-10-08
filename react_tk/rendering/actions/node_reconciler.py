@@ -25,7 +25,7 @@ type AnyNode = ShadowNode[ShadowNode[Any]]
 
 from typing import Callable, Iterable, Protocol
 
-logger = getLogger("react_tk").getChild("reconciler")
+logger = getLogger("react_tk")
 
 
 @dataclass

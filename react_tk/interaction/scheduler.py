@@ -7,7 +7,7 @@ from operator import methodcaller
 from typing import Any, Callable, TypeVar, ParamSpec
 from react_tk.util.async_loop import create_event_loop
 
-logger = getLogger("react_tk").getChild("Scheduler")
+logger = getLogger("react_tk")
 
 
 class _bind_schedule(type):

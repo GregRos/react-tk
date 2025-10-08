@@ -30,7 +30,7 @@ from react_tk.renderable.node.shadow_node import ShadowNode
 
 from itertools import groupby, zip_longest
 
-logger = logging.getLogger("react_tk").getChild("diff")
+logger = logging.getLogger("react_tk")
 type AnyNode = ShadowNode[ShadowNode[Any]]
 
 

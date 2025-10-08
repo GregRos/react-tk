@@ -25,7 +25,7 @@ from react_tk.rendering.actions.reconcile_state import (
 from react_tk.tk.types.geometry import Geometry
 from react_tk.tk.reconcilers.widget_reconciler import WidgetReconciler
 
-logger = logging.getLogger("react_tk").getChild("diff")
+logger = logging.getLogger("react_tk")
 
 
 @dataclass
