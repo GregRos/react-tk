@@ -13,7 +13,10 @@ class ToolTipLabelReconciler(LabelReconciler):
         self, container: "tkinter.Misc", node: AnyNode
     ) -> RenderedNode["tkinter.Widget"]:
         label = super()._create(container, node)
-        make_clickthrough(label.resource)
+        try:
+            make_clickthrough(label.resource)
+        except ImportError:
+            return LabelReconciler._create(self, container, node)
         return label
 
 
