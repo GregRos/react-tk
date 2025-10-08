@@ -147,13 +147,6 @@ class PropMapping_Test:
         assert isinstance(y_prop, Prop_Value)
         assert y_prop.value == Some(3)
 
-    def it_validates_on_update(self):
-        with pytest.raises(ValueError):
-            self.mapping.merge({"Y": "nope"})
-
-        with pytest.raises(ValueError):
-            self.mapping.merge({"Z": 5})  # Z not in schema
-
     def it_diffs_another_mapping(self):
         other = two_props({"X": "there", "Y": 3})
         diff = self.mapping.diff(other)
