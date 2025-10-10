@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "react-tk"
-version = "0.4.3"
+version = "0.4.4"
 description = "Build Tkinter apps the React way"
 authors = ["GregRos <gregros@gregros.dev>"]
 license = "MIT"

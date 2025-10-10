@@ -38,7 +38,11 @@ class Ctx(Scheduler, AbsCtx):
     _frozen: bool = False
 
     def __copy__(self) -> "Ctx":
-        return Ctx(**self._map.copy())
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result.__dict__.update(self.__dict__)
+        result._map = self._map.copy()
+        return result
 
     def __init__(self, **attrs: Any):
         super().__init__("CtxScheduler")
