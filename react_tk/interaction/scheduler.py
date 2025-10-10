@@ -50,13 +50,13 @@ class _schedule(ScheduleInfo, metaclass=_bind_schedule):
 
         def _wrapped():
             if orig_state == self.parent:
-                logger.info("Running [%s]", fqn)
+                logger.debug("Running [%s]", fqn)
                 return func(*args, **kwargs)
             elif self.always_run:
-                logger.info("Force running [%s] in spite of context change", fqn)
+                logger.warning("Force running [%s] in spite of context change", fqn)
                 return func(*args, **kwargs)
             else:
-                logger.info("Skipping [%s] due to context change", fqn)
+                logger.debug("Skipping [%s] due to context change", fqn)
 
         self.parent._loop.call_soon_threadsafe(
             self.parent._loop.call_later, self.delay, _wrapped
