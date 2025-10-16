@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "react-tk"
-version = "0.4.9"
+version = "0.4.10"
 description = "Build Tkinter UIs the React way"
 authors = ["GregRos <gregros@gregros.dev>"]
 license = "MIT"
@@ -21,7 +21,7 @@ format = "wheel"
 
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = ">=3.12,<3.15"
 typeguard = "^4.4.0"
 pywin32 = { version = "^311", markers = "sys_platform == 'win32'" }
 funcy = "^2.0"
@@ -38,8 +38,15 @@ typeCheckingMode = "strict"
 autoImportCompletions = true
 autoIndent = true
 diagnosticMode = "workspace"
-ignore = ["**/Lib/*.py", "**/site-packages/**", ".venv/**/*", "**/dist"]
-exclude = ["**/site-packages/**", ".venv/**/*", "**/dist"]
+reportUnusedImport = false
+ignore = [
+    "**/Lib/*.py",
+    "**/site-packages/**",
+    "**/.venv/**/*",
+    "**/dist/**/*",
+    "**/*.pyi",
+]
+exclude = ["**/site-packages/**", "**/.venv/**/*", "**/dist/**/*", "**/*.pyi"]
 [tool.pytest.ini_options]
 testpaths = "test"
 python_functions = "it_*"

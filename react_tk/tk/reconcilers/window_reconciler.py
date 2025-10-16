@@ -96,7 +96,7 @@ class WindowReconciler(ReconcilerBase[Tk]):
                 attributes = [
                     item for k, v in attrs.items() for item in (f"-{k}", v) if v
                 ]
-                resource.attributes(*attributes)
+                resource.attributes(*attributes)  # type: ignore
             if geometry := props.values.get("Geometry"):
                 normed = self._normalize_geo(resource, geometry)
                 resource.geometry(normed)
@@ -144,7 +144,7 @@ class WindowReconciler(ReconcilerBase[Tk]):
     def _do_create_action(self, action: Update[Tk] | Create[Tk]):
         match action:
 
-            case Create(next, container) as c:
+            case Create(next, _) as c:
                 new_resource = self._create_window(next)
                 self._update(new_resource, c.diff)
                 self._register(next, new_resource.resource)
@@ -164,15 +164,15 @@ class WindowReconciler(ReconcilerBase[Tk]):
             logger.info(f"🚫 RECONCILE {action.key} ")
 
         match action:
-            case Replace(container, replaces, with_what, at):
+            case Replace(_, replaces, with_what, _):
                 cur = self._do_create_action(with_what)
                 self._unplace(replaces)
                 self._place(cur)
-            case Update(existing, next, diff):
+            case Update(existing, _, _):
                 self._do_create_action(action)
             case Unplace(existing):
                 self._unplace(existing)
-            case Place(container, at, createAction) as x:
+            case Place(_, _, createAction):
                 cur = self._do_create_action(createAction)
                 self._place(cur)
             case _:
