@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "react-tk"
-version = "0.4.7"
+version = "0.4.9"
 description = "Build Tkinter UIs the React way"
 authors = ["GregRos <gregros@gregros.dev>"]
 license = "MIT"
@@ -32,7 +32,14 @@ expression = "^5.6.0"
 pytest = "^8.4.2"
 black = "^25.9.0"
 pyright = "^1.1.406"
+[tool.pyright]
+typeCheckingMode = "strict"
 
+autoImportCompletions = true
+autoIndent = true
+diagnosticMode = "workspace"
+ignore = ["**/Lib/*.py", "**/site-packages/**", ".venv/**/*", "**/dist"]
+exclude = ["**/site-packages/**", ".venv/**/*", "**/dist"]
 [tool.pytest.ini_options]
 testpaths = "test"
 python_functions = "it_*"
