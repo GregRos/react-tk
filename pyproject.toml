@@ -1,10 +1,24 @@
 [tool.poetry]
 name = "react-tk"
-version = "0.4.5"
-description = "Build Tkinter apps the React way"
+version = "0.4.6"
+description = "Build Tkinter UIs the React way"
 authors = ["GregRos <gregros@gregros.dev>"]
 license = "MIT"
 readme = "README.md"
+
+[[tool.poetry.packages]]
+include = "react_tk"
+
+[[tool.poetry.packages]]
+include = "README.md"
+
+[[tool.poetry.packages]]
+include = "LICENSE.md"
+
+[[tool.poetry.include]]
+path = "react_tk/py.typed"
+format = "wheel"
+
 
 [tool.poetry.dependencies]
 python = "^3.12"
