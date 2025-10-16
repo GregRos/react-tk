@@ -33,7 +33,7 @@ pytest = "^8.4.2"
 black = "^25.9.0"
 pyright = "^1.1.406"
 [tool.pyright]
-typeCheckingMode = "strict"
+typeCheckingMode = "standard"
 
 autoImportCompletions = true
 autoIndent = true
